@@ -11,7 +11,7 @@
         "config": {
           "type":"object",
           "properties":{
-            "_extension": {
+            "_tincan": {
               "type":"object",
               "required":false,
               "legend": "TinCan",

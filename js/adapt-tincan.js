@@ -7,6 +7,8 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
+  var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
+  var xapiWrapper;
 
   var TinCan = Backbone.Model.extend({
 
@@ -27,6 +29,8 @@ define(function(require) {
 
     xapiStart: function () {
       // init xapi
+      xapiWrapper = ADL.XAPIWrapper;
+      console.log('xapi', xapiWrapper);
       this.set('initialised', true);
     },
 
