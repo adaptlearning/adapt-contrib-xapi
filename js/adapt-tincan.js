@@ -21,7 +21,7 @@ define(function(require) {
       if (!this.data || this.data._isEnabled === false) {
         return;
       }
-     
+
       this.xapiStart();
       $(window).unload(_.bind(this.xapiEnd, this));
       this.onDataReady();
@@ -30,12 +30,16 @@ define(function(require) {
     xapiStart: function () {
       // init xapi
       xapiWrapper = ADL.XAPIWrapper;
-      console.log('xapi', xapiWrapper);
       this.set('initialised', true);
     },
 
     xapiEnd: function () {
+      if (!this.checkTrackingCriteriaMet()) {
+        // send suspended statement
+        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.suspended));
+      }
       // send xapi end
+      xapiWrapper.sendStatement(this.getStatement(ADL.verbs.terminated));
     },
 
     onDataReady: function () {
@@ -49,8 +53,7 @@ define(function(require) {
     },
 
     onBlockComplete: function (block) {
-      this.set('lastCompletedBlock', block);
-      // TODO persist data
+      console.log('block complete', block);
     },
 
     onCourseComplete: function () {
@@ -58,12 +61,12 @@ define(function(require) {
         this.set('_attempts', this.get('_attempts') + 1);
       }
 
-      _.defer(_.bind(this.checkTrackingCriteriaMet, this));
+      _.defer(_.bind(this.updateTrackingStatus, this));
     },
 
     onAssessmentComplete: function (event) {
       Adapt.course.set('_isAssessmentPassed', event.isPass)
-      
+
       // TODO persist data
 
       if (event.isPass) {
@@ -73,7 +76,7 @@ define(function(require) {
       }
     },
 
-    checkTrackingCriteriaMet: function() {
+    checkTrackingCriteriaMet: function () {
       var criteriaMet = false;
 
       if (this.data._tracking._requireCourseCompleted && this.data._tracking._requireAssessmentPassed) { // user must complete all blocks AND pass the assessment
@@ -84,9 +87,40 @@ define(function(require) {
         criteriaMet = Adapt.course.get('_isAssessmentPassed');
       }
 
-      if (criteriaMet) {
-        // TODO set completion status
+      return criteriaMet;
+    },
+
+    /**
+     * checks if course tracking criteria have been met, and sends an xAPI
+     * statement if appropriate
+     */
+    updateTrackingStatus: function () {
+      if (this.checkTrackingCriteriaMet()) {
+        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.completed));
       }
+    },
+
+    /**
+     * generates a statement object for the xAPI wrapper method @sendStatement
+     *
+     * @param {string} verb - the action to register
+     * @param {string|object} [actor] - optional actor
+     * @param {object} [object] - optional object - defaults to this activity
+     */
+    getStatement: function (verb, actor, object) {
+      var statement = {
+        "verb": verb
+      };
+
+      // if actor is missing on statement, xapiWrapper will set it for us
+      actor && (statement.actor = actor);
+
+      // object is required, but can default to the course activity
+      statement.object = object || {
+        "id": this.data._activityID
+      }
+
+      return statement;
     }
   });
 

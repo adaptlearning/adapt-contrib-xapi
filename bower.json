@@ -1,7 +1,7 @@
 {
   "name": "adapt-tincan",
-  "version": "0.0.1",
-  "homepage": "https://github.com/adaptlearning/adapt-extension",
+  "version": "0.0.4",
+  "homepage": "https://github.com/LearningPool/adapt-tincan",
   "authors": [
     "Dennis Heaney <dennis@learningpool.com>"
   ],
@@ -11,8 +11,13 @@
   "main": "/js/adapt-tincan.js",
   "keywords": [
     "adapt-plugin",
-    "adapt-extension"
+    "adapt-extension",
+    "tincan",
+    "tin can",
+    "xapi",
+    "experience api",
+    "tracking"
   ],
   "license": "GPLv3",
-  "targetAttribute": "_extension"
+  "targetAttribute": "_tincan"
 }

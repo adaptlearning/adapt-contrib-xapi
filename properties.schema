@@ -24,6 +24,14 @@
                   "validators": [],
                   "help": "If set to 'true', this course will be tracked by TinCan/xAPI"
                 },
+                "_activityID": {
+                  "type":"string",
+                  "required":true,
+                  "title":"Activity ID",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "Unique identifier for this Tin Can activity. (Usually the URL to the course.)"
+                },
                 "_tracking": {
                   "type":"object",
                   "required":false,
@@ -40,6 +48,7 @@
                     "_requireCourseCompleted": {
                       "type":"boolean",
                       "required":false,
+                      "default":true,
                       "title":"Course completion required",
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
@@ -50,37 +59,6 @@
                       "required":false,
                       "title":"Submit score",
                       "inputType": {"type": "Boolean", "options": [true, false]},
-                      "validators": [],
-                      "help": ""
-                    }
-                  }
-                },
-                "_reporting": {
-                  "type":"object",
-                  "required":false,
-                  "title": "Reporting",
-                  "properties":{
-                    "_onTrackingCriteriaMet": {
-                      "type":"string",
-                      "required":false,
-                      "title":"Tracking success status",
-                      "enum": ["completed", "passed", "failed", "incomplete"],
-                      "inputType": {
-                        "type": "Select", 
-                        "options": ["completed", "passed", "failed", "incomplete"]
-                      },
-                      "validators": [],
-                      "help": ""
-                    },
-                    "_onAssessmentFailure": {
-                      "type":"string",
-                      "required":false,
-                      "title":"Assessment failure status",
-                      "enum": ["completed", "passed", "failed", "incomplete"],
-                      "inputType": {
-                        "type": "Select", 
-                        "options": ["completed", "passed", "failed", "incomplete"]
-                      },
                       "validators": [],
                       "help": ""
                     }
