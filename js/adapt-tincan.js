@@ -60,14 +60,23 @@ define(function(require) {
         state.blocks = [];
       }
 
-      state.blocks.push({
-        _id: block.get('_id'),
-        _trackingId: block.get('_trackingId'),
-        _isComplete: block.get('_isComplete'),
+      // check if we've already recorded state for this block.
+      var existingBlock = _.find(state.blocks, function findBlock (b) {
+        return b._id == block.get('_id');
       });
 
-      this.set('state', state);
-      Adapt.trigger('tincan:stateChanged');
+      // only fire state changes for newly completed blocks
+      if (!existingBlock) {
+        state.blocks.push({
+          _id: block.get('_id'),
+          _trackingId: block.get('_trackingId'),
+          _isComplete: block.get('_isComplete'),
+        });
+
+        this.set('state', state);
+        Adapt.trigger('tincan:stateChanged');
+      }
+
     },
 
     onCourseComplete: function () {
