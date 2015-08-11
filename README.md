@@ -8,7 +8,6 @@ An extension to track learner activity via TinCan/xAPI
 This plugin is not yet officially supported by the Adapt project, and requires a couple of manual steps in order to use it effectively.
 
 1. Add an extra grunt task in the Gruntfile for the framework:
-
 ````
 // under the copy > main task, append after the copy of adapt-contrib-spoor/required
 {
