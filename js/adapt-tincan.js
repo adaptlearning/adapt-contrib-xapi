@@ -7,8 +7,10 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
+  var xapi = require('extensions/adapt-tincan/js/xapiwrapper');
   var xapiWrapper;
+  var actor;
+  var activityId;
   var STATE_PROGRESS = 'adapt-course-progress';
 
   var TinCan = Backbone.Model.extend({
@@ -32,6 +34,18 @@ define(function(require) {
     xapiStart: function () {
       // init xapi
       xapiWrapper = ADL.XAPIWrapper;
+      
+      actor = this.getLRSAttribute('actor');
+      activityId = this.getLRSAttribute('activityId');
+      
+      try {
+          actor = JSON.parse(actor);
+      } catch(e) {
+          console.log(e);
+      }
+      
+      this.validateParams();    
+      
       this.loadState();
       this.set('initialised', true);
     },
@@ -151,8 +165,8 @@ define(function(require) {
     saveState: function () {
       if (this.get('state')) {
         xapiWrapper.sendState(
-          this.getConfig('_activityID'),
-          this.getLRSAttribute('actor'),
+          activityId,
+          actor,
           STATE_PROGRESS,
           null,
           this.get('state')
@@ -189,8 +203,8 @@ define(function(require) {
     loadState: function (async) {
       if (async) {
         xapiWrapper.getState(
-          this.getConfig('_activityID'),
-          this.getLRSAttribute('actor'),
+          activityId,
+          actor,
           STATE_PROGRESS,
           null,
           function success (result) {
@@ -211,8 +225,8 @@ define(function(require) {
         this.set(
           'state',
           xapiWrapper.getState(
-            this.getConfig('_activityID'),
-            this.getLRSAttribute('actor'),
+            activityId,
+            actor,
             STATE_PROGRESS
           )
         );
@@ -242,7 +256,7 @@ define(function(require) {
 
       // object is required, but can default to the course activity
       statement.object = object || {
-        "id": this.getConfig('_activityID')
+        "id": activityId
       }
 
       return statement;
@@ -280,9 +294,14 @@ define(function(require) {
     getLRSAttribute: function (key) {
       if (!xapiWrapper || !xapiWrapper.lrs || 'undefined' === xapiWrapper.lrs[key]) {
         return false;
+      }      
+      try {
+          console.log(xapiWrapper);
+          return xapiWrapper.lrs[key];
+      } catch(e){
+          console.log(e);
       }
-
-      return JSON.parse(xapiWrapper.lrs[key]);
+      return false;
     },
 
     markBlockAsComplete: function (block) {
@@ -293,6 +312,19 @@ define(function(require) {
       block.getChildren().each(function (child) {
         child.set('_isComplete', true);
       }, this);
+    },
+    
+    validateParams: function() {
+        var isValid = true;
+        if (!actor || typeof actor != 'object') {
+            console.log('Actor object not valid' + typeof actor);
+            isValid = false;
+        }
+        if (!activityId) {
+            console.log('ActivityId not valid');
+            isValid = false;
+        }
+        return isValid;
     }
   });
 
