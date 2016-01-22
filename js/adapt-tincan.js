@@ -7,7 +7,7 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var xapi = require('extensions/adapt-tincan/js/xapiwrapper');
+  var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
   var xapiWrapper;
   var actor;
   var activityId;
