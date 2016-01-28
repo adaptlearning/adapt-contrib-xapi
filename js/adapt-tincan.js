@@ -278,7 +278,8 @@ define(function(require) {
     * @return {object|boolean} the attribute value, or false if not found
     */
     getLRSAttribute: function (key) {
-      if (!xapiWrapper || !xapiWrapper.lrs || 'undefined' === xapiWrapper.lrs[key]) {
+      if (!xapiWrapper || !xapiWrapper.lrs || 
+        typeof xapiWrapper.lrs[key] == 'undefined') {
         return false;
       }
 
