@@ -13,6 +13,8 @@ define(function(require) {
   var activityId;
   var STATE_PROGRESS = 'adapt-course-progress';
 
+  var win = window;
+
   var TinCan = Backbone.Model.extend({
 
     defaults: {
@@ -21,6 +23,11 @@ define(function(require) {
     },
 
     initialize: function () {
+      if (win.xapiWrapper) {
+        xapiWrapper = win.xapiWrapper;
+      } else {
+        xapiWrapper = ADL.XAPIWrapper;
+      }
 
       if (undefined === Adapt.config.get("_extensions")._tincan) {
         console.log("No configuration found for tincan in config.json");
@@ -39,8 +46,6 @@ define(function(require) {
     },
 
     xapiStart: function () {
-      xapiWrapper = ADL.XAPIWrapper;
-      
       actor = this.getLRSAttribute('actor');
       activityId = this.getLRSAttribute('activityId');
       
