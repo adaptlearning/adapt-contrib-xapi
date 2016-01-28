@@ -21,7 +21,14 @@ define(function(require) {
     },
 
     initialize: function () {
-      this.setConfig(Adapt.config.get('_tincan'));
+
+      if (undefined === Adapt.config.get("_extensions")._tincan) {
+        console.log("No configuration found for tincan in config.json");
+        return;
+      }
+
+      this.setConfig(Adapt.config.get("_extensions")._tincan);
+
       if (false === this.getConfig('_isEnabled')) {
         return;
       }
@@ -32,7 +39,6 @@ define(function(require) {
     },
 
     xapiStart: function () {
-      // init xapi
       xapiWrapper = ADL.XAPIWrapper;
       
       actor = this.getLRSAttribute('actor');
@@ -41,10 +47,12 @@ define(function(require) {
       try {
           actor = JSON.parse(actor);
       } catch(e) {
-          console.log(e);
+          console.log("Failed to parse 'actor' JSON string");
       }
       
-      this.validateParams();    
+      if (!this.validateParams()) {
+        return;
+      }
       
       this.loadState();
       this.set('initialised', true);
@@ -292,15 +300,16 @@ define(function(require) {
     * @return {object|boolean} the attribute value, or false if not found
     */
     getLRSAttribute: function (key) {
-      if (!xapiWrapper || !xapiWrapper.lrs || 'undefined' === xapiWrapper.lrs[key]) {
+      if (!xapiWrapper || !xapiWrapper.lrs || undefined === xapiWrapper.lrs[key]) {
         return false;
-      }      
-      try {
-          console.log(xapiWrapper);
-          return xapiWrapper.lrs[key];
-      } catch(e){
-          console.log(e);
       }
+
+      try {
+        return xapiWrapper.lrs[key];
+      } catch(e) {
+        return false;
+      }
+
       return false;
     },
 
@@ -317,13 +326,15 @@ define(function(require) {
     validateParams: function() {
         var isValid = true;
         if (!actor || typeof actor != 'object') {
-            console.log('Actor object not valid' + typeof actor);
+            console.log('actor object not valid' + typeof actor);
             isValid = false;
         }
+
         if (!activityId) {
-            console.log('ActivityId not valid');
+            console.log('activityId not valid');
             isValid = false;
         }
+
         return isValid;
     }
   });
