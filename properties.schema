@@ -19,6 +19,7 @@
                 "_isEnabled": {
                   "type":"boolean",
                   "required":true,
+                  "default": true,
                   "title":"Is Enabled",
                   "inputType": {"type": "Boolean", "options": [true, false]},
                   "validators": [],
@@ -32,6 +33,7 @@
                     "_requireAssessmentPassed": {
                       "type":"boolean",
                       "required":false,
+                      "default": false,
                       "title":"Assessment pass required",
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
@@ -49,6 +51,7 @@
                     "_shouldSubmitScore": {
                       "type":"boolean",
                       "required":false,
+                      "default": false,
                       "title":"Submit score",
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
