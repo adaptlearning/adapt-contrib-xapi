@@ -11,22 +11,20 @@ define(function(require) {
   var _ = require('underscore');
   var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
   var xapiWrapper;
-  var actor;
-  var activityId;
   var STATE_PROGRESS = 'adapt-course-progress';
 
-  var win = window;
-
   var TinCan = Backbone.Model.extend({
+    actor: null,
+    activityId: null,
 
     defaults: {
       initialised: false,
       state: null
     },
 
-    initialize: function () {
-      if (win.xapiWrapper) {
-        xapiWrapper = win.xapiWrapper;
+    initialize: function() {
+      if (window.xapiWrapper) {
+        xapiWrapper = window.xapiWrapper;
       } else {
         xapiWrapper = ADL.XAPIWrapper;
       }
