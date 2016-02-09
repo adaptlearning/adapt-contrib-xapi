@@ -25,6 +25,15 @@
                   "validators": [],
                   "help": "If set to 'true', this course will be tracked by TinCan/xAPI"
                 },
+                "_activityID": {
+                  "type":"string",
+                  "required":true,
+                  "title":"Activity ID",
+                  "default": "",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "Unique identifier for this Tin Can activity. (Usually the URL to the course.)"
+                },
                 "_tracking": {
                   "type":"object",
                   "required":false,

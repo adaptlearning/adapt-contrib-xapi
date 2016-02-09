@@ -10,6 +10,7 @@ define(function(require) {
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
   var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
+  
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
@@ -29,8 +30,7 @@ define(function(require) {
         xapiWrapper = ADL.XAPIWrapper;
       }
 
-      if (undefined === Adapt.config.get("_extensions")._tincan) {
-        console.log("No configuration found for tincan in config.json");
+      if (!Adapt.config.get("_extensions") || !Adapt.config.get("_extensions")._tincan) {
         return;
       }
 
@@ -40,39 +40,38 @@ define(function(require) {
         return;
       }
 
-      this.setupListeners();
-      this.xapiStart();
-      $(window).unload(_.bind(this.xapiEnd, this));
-    },
+      this.actor = this.getLRSAttribute('actor');
 
-    xapiStart: function () {
-      actor = this.getLRSAttribute('actor');
-      activityId = this.getLRSAttribute('activityId');
-      
-      try {
-          actor = JSON.parse(actor);
-      } catch(e) {
-          console.log("Failed to parse 'actor' JSON string");
-      }
-      
+      this.activityId = this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id');
+
       if (!this.validateParams()) {
         return;
       }
-      
+
+      this.xapiStart();
+
+      $(window).unload(_.bind(this.xapiEnd, this));
+    },
+
+    xapiStart: function() {
+      this.setupListeners();
       this.loadState();
       this.set('initialised', true);
     },
 
-    xapiEnd: function () {
+    xapiEnd: function() {
+      if (!this.validateParams()) {
+        return;
+      }
+
       if (!this.checkTrackingCriteriaMet()) {
-        // send suspended statement
         xapiWrapper.sendStatement(this.getStatement(ADL.verbs.suspended));
       }
-      // send xapi end
+
       xapiWrapper.sendStatement(this.getStatement(ADL.verbs.terminated));
     },
 
-    setupListeners: function () {
+    setupListeners: function() {
       Adapt.blocks.on('change:_isComplete', this.onBlockComplete, this);
       Adapt.course.on('change:_isComplete', this.onCourseComplete, this);
       Adapt.on('assessment:complete', this.onAssessmentComplete, this);
@@ -80,20 +79,18 @@ define(function(require) {
       Adapt.on('tincan:stateLoaded', this.restoreState, this);
     },
 
-    onBlockComplete: function (block) {
+    onBlockComplete: function(block) {
       var state = this.get('state') || {};
 
       if (!state.blocks) {
         state.blocks = [];
       }
 
-      // check if we've already recorded state for this block.
-      var existingBlock = _.find(state.blocks, function findBlock (b) {
+      var blockStateRecorded = _.find(state.blocks, function findBlock(b) {
         return b._id == block.get('_id');
       });
 
-      // only fire state changes for newly completed blocks
-      if (!existingBlock) {
+      if (!blockStateRecorded) {
         state.blocks.push({
           _id: block.get('_id'),
           _trackingId: block.get('_trackingId'),
@@ -101,12 +98,12 @@ define(function(require) {
         });
 
         this.set('state', state);
+
         Adapt.trigger('tincan:stateChanged');
       }
-
     },
 
-    onCourseComplete: function () {
+    onCourseComplete: function() {
       if (Adapt.course.get('_isComplete') === true) {
         this.set('_attempts', this.get('_attempts') + 1);
       }
@@ -114,7 +111,7 @@ define(function(require) {
       _.defer(_.bind(this.updateTrackingStatus, this));
     },
 
-    onAssessmentComplete: function (event) {
+    onAssessmentComplete: function(event) {
       Adapt.course.set('_isAssessmentPassed', event.isPass);
       var tracking = this.getConfig('_tracking');
 
@@ -130,15 +127,15 @@ define(function(require) {
       }
     },
 
-    onStateChanged: function (event) {
+    onStateChanged: function(event) {
       this.saveState();
     },
 
     /**
-    * Check if course tracking criteria have been met
-    * @return {boolean} - true, if criteria have been met; otherwise false
-    */
-    checkTrackingCriteriaMet: function () {
+     * Check if course tracking criteria have been met
+     * @return {boolean} - true, if criteria have been met; otherwise false
+     */
+    checkTrackingCriteriaMet: function() {
       var criteriaMet = false;
       var tracking = this.getConfig('_tracking');
 
@@ -162,43 +159,43 @@ define(function(require) {
     },
 
     /**
-    * Check if course tracking criteria have been met, and send an xAPI
-    * statement if appropriate
-    */
-    updateTrackingStatus: function () {
+     * Check if course tracking criteria have been met, and send an xAPI
+     * statement if appropriate
+     */
+    updateTrackingStatus: function() {
       if (this.checkTrackingCriteriaMet()) {
         xapiWrapper.sendStatement(this.getStatement(ADL.verbs.completed));
       }
     },
 
     /**
-    * Send the current state of the course (completed blocks, duration, etc)
-    * to the LRS
-    */
-    saveState: function () {
+     * Send the current state of the course (completed blocks, duration, etc)
+     * to the LRS
+     */
+    saveState: function() {
       if (this.get('state')) {
         xapiWrapper.sendState(
-          activityId,
-          actor,
-          STATE_PROGRESS,
-          null,
-          this.get('state')
+            this.activityId,
+            this.actor,
+            STATE_PROGRESS,
+            null,
+            this.get('state')
         );
       }
     },
 
     /**
-    * Refresh course progress from loaded state
-    *
-    */
-    restoreState: function () {
+     * Refresh course progress from loaded state
+     *
+     */
+    restoreState: function() {
       var state = this.get('state');
 
       if (!state) {
         return;
       }
 
-      state.blocks && _.each(state.blocks, function (block) {
+      state.blocks && _.each(state.blocks, function(block) {
         if (block._isComplete) {
           this.markBlockAsComplete(Adapt.blocks.findWhere({
             _trackingId: block._trackingId
@@ -208,40 +205,40 @@ define(function(require) {
     },
 
     /**
-    * Loads the last saved state of the course from the LRS, if a state exists
-    *
-    * @param {boolean} async - whether to load asynchronously, default is false
-    * @fires tincan:loadStateFailed or tincan:stateLoaded
-    */
-    loadState: function (async) {
+     * Loads the last saved state of the course from the LRS, if a state exists
+     *
+     * @param {boolean} async - whether to load asynchronously, default is false
+     * @fires tincan:loadStateFailed or tincan:stateLoaded
+     */
+    loadState: function(async) {
       if (async) {
         xapiWrapper.getState(
-          activityId,
-          actor,
-          STATE_PROGRESS,
-          null,
-          function success (result) {
-            if ('undefined' === typeof result || 404 === result.status) {
-              Adapt.trigger('tincan:loadStateFailed');
-              return;
-            }
+            this.activityId,
+            this.actor,
+            STATE_PROGRESS,
+            null,
+            function success(result) {
+              if ('undefined' === typeof result || 404 === result.status) {
+                Adapt.trigger('tincan:loadStateFailed');
+                return;
+              }
 
-            try {
-              this.set('state', JSON.parse(result.response));
-              Adapt.trigger('tincan:stateLoaded');
-            } catch (ex) {
-              Adapt.trigger('tincan:loadStateFailed');
+              try {
+                this.set('state', JSON.parse(result.response));
+                Adapt.trigger('tincan:stateLoaded');
+              } catch (ex) {
+                Adapt.trigger('tincan:loadStateFailed');
+              }
             }
-          }
         );
       } else {
         this.set(
-          'state',
-          xapiWrapper.getState(
-            activityId,
-            actor,
-            STATE_PROGRESS
-          )
+            'state',
+            xapiWrapper.getState(
+                this.activityId,
+                this.actor,
+                STATE_PROGRESS
+            )
         );
 
         if (!this.get('state')) {
@@ -253,13 +250,13 @@ define(function(require) {
     },
 
     /**
-    * Generate a statement object for the xAPI wrapper method @sendStatement
-    *
-    * @param {string} verb - the action to register
-    * @param {string|object} [actor] - optional actor
-    * @param {object} [object] - optional object - defaults to this activity
-    */
-    getStatement: function (verb, actor, object) {
+     * Generate a statement object for the xAPI wrapper method @sendStatement
+     *
+     * @param {string} verb - the action to register
+     * @param {string|object} [actor] - optional actor
+     * @param {object} [object] - optional object - defaults to this activity
+     */
+    getStatement: function(verb, actor, object) {
       var statement = {
         "verb": verb
       };
@@ -269,28 +266,28 @@ define(function(require) {
 
       // object is required, but can default to the course activity
       statement.object = object || {
-        "id": activityId
-      }
+            "id": this.activityId
+          }
 
       return statement;
     },
 
     /**
-    * Set the extension config
-    *
-    * @param {object} key - the data attribute to fetch
-    */
-    setConfig: function (conf) {
+     * Set the extension config
+     *
+     * @param {object} key - the data attribute to fetch
+     */
+    setConfig: function(conf) {
       this.data = conf;
     },
 
     /**
-    * Retrieve a config item for the current course, e.g. '_activityID'
-    *
-    * @param {string} key - the data attribute to fetch
-    * @return {object|boolean} the attribute value, or false if not found
-    */
-    getConfig: function (key) {
+     * Retrieve a config item for the current course, e.g. '_activityID'
+     *
+     * @param {string} key - the data attribute to fetch
+     * @return {object|boolean} the attribute value, or false if not found
+     */
+    getConfig: function(key) {
       if (!this.data || 'undefined' === this.data[key]) {
         return false;
       }
@@ -299,48 +296,50 @@ define(function(require) {
     },
 
     /**
-    * Retrieve an LRS attribute for the current session, e.g. 'actor'
-    *
-    * @param {string} key - the attribute to fetch
-    * @return {object|boolean} the attribute value, or false if not found
-    */
-    getLRSAttribute: function (key) {
+     * Retrieve an LRS attribute for the current session, e.g. 'actor'
+     *
+     * @param {string} key - the attribute to fetch
+     * @return {object|boolean} the attribute value, or false if not found
+     */
+    getLRSAttribute: function(key) {
       if (!xapiWrapper || !xapiWrapper.lrs || undefined === xapiWrapper.lrs[key]) {
-        return false;
+        return null;
       }
 
       try {
+        if (key === 'actor') {
+          return JSON.parse(xapiWrapper.lrs[key]);
+        }
+
         return xapiWrapper.lrs[key];
-      } catch(e) {
-        return false;
+      } catch (e) {
+        return null;
       }
 
-      return false;
+      return null;
     },
 
-    markBlockAsComplete: function (block) {
+    markBlockAsComplete: function(block) {
       if (!block || block.get('_isComplete')) {
         return;
       }
 
-      block.getChildren().each(function (child) {
+      block.getChildren().each(function(child) {
         child.set('_isComplete', true);
       }, this);
     },
-    
+
     validateParams: function() {
-        var isValid = true;
-        if (!actor || typeof actor != 'object') {
-            console.log('actor object not valid' + typeof actor);
-            isValid = false;
-        }
+      var isValid = true;
+      if (!this.actor || typeof this.actor != 'object') {
+        isValid = false;
+      }
 
-        if (!activityId) {
-            console.log('activityId not valid');
-            isValid = false;
-        }
+      if (!this.activityId) {
+        isValid = false;
+      }
 
-        return isValid;
+      return isValid;
     }
   });
 
