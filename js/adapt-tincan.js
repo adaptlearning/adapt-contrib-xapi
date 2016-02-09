@@ -1,8 +1,10 @@
 /*
-* adapt-tincan
-* License - http://github.com/adaptlearning/adapt_framework/LICENSE
-* Maintainers - Dennis Heaney <dennis@learningpool.com>
-*/
+ * adapt-tincan
+ * License - http://github.com/adaptlearning/adapt_framework/LICENSE
+ * Maintainers  - Dennis Heaney <dennis@learningpool.com>
+ *              - Barry McKay <barry@learningpool.com>
+ *              - Andy Bell <andrewb@learningpool.com>
+ */
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
