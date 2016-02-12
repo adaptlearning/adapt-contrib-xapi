@@ -49,9 +49,6 @@ define(function(require) {
       }
 
       this.xapiStart();
-      xapiWrapper.lrs.user = '147be28c57a756d20dc8183f9c8aa2c206e6d545';
-      xapiWrapper.lrs.password = '	5a6173230f92b84517401511e5a5ef9a07b30756';
-      xapiWrapper.updateAuth(xapiWrapper.lrs, xapiWrapper.lrs.user, xapiWrapper.lrs.password);
 
       $(window).unload(_.bind(this.xapiEnd, this));
     },
@@ -75,11 +72,6 @@ define(function(require) {
     },
 
     setupListeners: function() {
-      //Adapt.blocks.on('change:_isComplete', this.onBlockComplete, this);
-      //Adapt.course.on('change:_isComplete', this.onCourseComplete, this);
-      //Adapt.on('assessment:complete', this.onAssessmentComplete, this);
-      //Adapt.on('tincan:stateChanged', this.onStateChanged, this);
-      //Adapt.on('tincan:stateLoaded', this.restoreState, this);
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessment:complete", this.onAssessmentSubmitted);
@@ -127,26 +119,6 @@ define(function(require) {
       }
 
       Adapt.course.set('_isAssessmentPassed', event.isPass);
-
-      //if (event.isPass == 'false') {
-      //  Adapt.course.set('_isAssessmentPassed', event.isPass);
-      //}
-      //Adapt.course.set('_isAssessmentPassed', event.isPass);
-      //var tracking = this.getConfig('_tracking');
-      //
-      //if (!tracking) {
-      //  return;
-      //}
-      //
-      //// persist data
-      //if (event.isPass) {
-      //  _.defer(_.bind(this.updateTrackingStatus, this));
-      //} else if (tracking._requireAssessmentPassed) {
-      //  // TODO set failed/incomplete status
-      //  _.defer(_.bind(this.updateTrackingStatus, this));
-      //  // this will need to send a statement with user failed assessment.
-      //  //xapiWrapper.sendStatement(this.getStatement(ADL.verbs.failed));
-      //}
     },
 
     onStateChanged: function(event) {
@@ -363,19 +335,19 @@ define(function(require) {
       return isValid;
     },
 
-    getIriForBlock() {
+    getIriForBlock: function() {
       return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'block' + '/' + 'blockID';
     },
 
-    getIriForComponent() {
+    getIriForComponent: function() {
       return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'component' + '/' + 'componentID';
     },
 
-    getIriForAssessment() {
+    getIriForAssessment: function() {
       return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'assessment';
     },
 
-    getObjectForAssessment() {
+    getObjectForAssessment: function() {
       return {
         'id' : this.getIriForAssessment()
       };
