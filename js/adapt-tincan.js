@@ -341,10 +341,12 @@ define(function(require) {
         typeof this.actor != 'object' ||
         !this.actor.objectType
       ) {
+        console.log('\'actor\' is invalid');
         return false;
       }
 
       if (!this.activityId) {
+        console.log('\'activity_id\' is invalid');
         return false;
       }
 
