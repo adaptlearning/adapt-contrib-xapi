@@ -64,17 +64,15 @@ define(function(require) {
         return;
       }
 
-      if (!this.checkTrackingCriteriaMet()) {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.suspended));
-      }
-
-      xapiWrapper.sendStatement(this.getStatement(ADL.verbs.terminated));
+      this.sendStatement(
+        (!this.checkTrackingCriteriaMet()) ? this.getStatement(ADL.verbs.suspended) : this.getStatement(ADL.verbs.terminated)
+      );
     },
 
     setupListeners: function() {
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
-      this.listenTo(Adapt, "assessment:complete", this.onAssessmentSubmitted);
+      this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
       this.listenTo(Adapt, "tincan:stateChanged", this.onStateChanged);
       this.listenTo(Adapt, "tincan:stateLoaded", this.restoreState);
     },
@@ -111,14 +109,16 @@ define(function(require) {
       _.defer(_.bind(this.updateTrackingStatus, this));
     },
 
-    onAssessmentSubmitted: function(event) {
-      if (event.isPass == true) {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.completed), this.getObjectForAssessment());
-      } else {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.failed), this.getObjectForAssessment());
-      }
+    onAssessmentComplete: function(assessment) {
+      this.sendStatement(
+        this.getStatement(
+          this.getVerbForAssessment(assessment),
+          this.getObjectForAssessment(assessment),
+          this.getResultForAssessment(assessment)
+        )
+      );
 
-      Adapt.course.set('_isAssessmentPassed', event.isPass);
+      Adapt.course.set('_isAssessmentPassed', assessment.isPass);
     },
 
     onStateChanged: function(event) {
@@ -158,7 +158,7 @@ define(function(require) {
      */
     updateTrackingStatus: function() {
       if (this.checkTrackingCriteriaMet()) {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.completed));
+        this.sendStatement(this.getStatement(ADL.verbs.completed));
       }
     },
 
@@ -169,11 +169,11 @@ define(function(require) {
     saveState: function() {
       if (this.get('state')) {
         xapiWrapper.sendState(
-            this.activityId,
-            this.actor,
-            STATE_PROGRESS,
-            null,
-            this.get('state')
+          this.activityId,
+          this.actor,
+          STATE_PROGRESS,
+          null,
+          this.get('state')
         );
       }
     },
@@ -207,32 +207,32 @@ define(function(require) {
     loadState: function(async) {
       if (async) {
         xapiWrapper.getState(
-            this.activityId,
-            this.actor,
-            STATE_PROGRESS,
-            null,
-            function success(result) {
-              if ('undefined' === typeof result || 404 === result.status) {
-                Adapt.trigger('tincan:loadStateFailed');
-                return;
-              }
-
-              try {
-                this.set('state', JSON.parse(result.response));
-                Adapt.trigger('tincan:stateLoaded');
-              } catch (ex) {
-                Adapt.trigger('tincan:loadStateFailed');
-              }
+          this.activityId,
+          this.actor,
+          STATE_PROGRESS,
+          null,
+          function success(result) {
+            if ('undefined' === typeof result || 404 === result.status) {
+              Adapt.trigger('tincan:loadStateFailed');
+              return;
             }
+
+            try {
+              this.set('state', JSON.parse(result.response));
+              Adapt.trigger('tincan:stateLoaded');
+            } catch (ex) {
+              Adapt.trigger('tincan:loadStateFailed');
+            }
+          }
         );
       } else {
         this.set(
-            'state',
-            xapiWrapper.getState(
-                this.activityId,
-                this.actor,
-                STATE_PROGRESS
-            )
+          'state',
+          xapiWrapper.getState(
+            this.activityId,
+            this.actor,
+            STATE_PROGRESS
+          )
         );
 
         if (!this.get('state')) {
@@ -246,21 +246,34 @@ define(function(require) {
     /**
      * Generate a statement object for the xAPI wrapper method @sendStatement
      *
-     * @param {string} verb - the action to register
-     * @param {string|object} [actor] - optional actor
-     * @param {object} [object] - optional object - defaults to this activity
+     * @param {string} verb
+     * @param {object} [object]
+     * @param {object} [result] - optional
      */
-    getStatement: function(verb, object) {
-      var statement = {
-        "verb": verb
-      };
+    getStatement: function(verb, object, result) {
+      var statement = {};
 
+      if (!verb) {
+        return null;
+      }
+      statement.verb = verb;
+
+      if (!this.actor) {
+        return null;
+      }
       statement.actor = this.actor;
 
-      // object is required, but can default to the course activity
-      statement.object = object || {
-            "id": this.activityId
-          }
+      if (
+        !object || !object.id
+      ) {
+        return null;
+      }
+
+      statement.object = object;
+
+      if (result) {
+        statement.result = result;
+      }
 
       return statement;
     },
@@ -323,34 +336,92 @@ define(function(require) {
     },
 
     validateParams: function() {
-      var isValid = true;
-      if (!this.actor || typeof this.actor != 'object') {
-        isValid = false;
+      if (
+        !this.actor ||
+        typeof this.actor != 'object' ||
+        !this.actor.objectType
+      ) {
+        return false;
       }
 
       if (!this.activityId) {
-        isValid = false;
+        return false;
       }
 
-      return isValid;
+      return true;
     },
 
-    getIriForBlock: function() {
-      return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'block' + '/' + 'blockID';
+    //getIriForArticle: function() {
+    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID'].join('/');
+    //},
+
+    //getIriForBlock: function() {
+    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID'].join('/');
+    //},
+
+    //getIriForComponent: function() {
+    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID', 'component', 'COMPONENT_ID'].join('/');
+    //},
+
+    getIriForAssessment: function(assessment) {
+      if (
+        !this.activityId || !assessment.pageId || !assessment.articleId
+      ) {
+        return null;
+      }
+
+      return [this.activityId, 'page', assessment.pageId, 'article', assessment.articleId, 'assessment'].join('/');
     },
 
-    getIriForComponent: function() {
-      return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'component' + '/' + 'componentID';
+    getVerbForAssessment: function(assessment) {
+      return (assessment.isPass && assessment.isPass == true) ? ADL.verbs.completed : ADL.verbs.failed;
     },
 
-    getIriForAssessment: function() {
-      return 'AU ID' + '/' + 'page' + '/' + 'pageID' + '/' + 'article' + '/' + 'articleID' + '/' + 'assessment';
-    },
-
-    getObjectForAssessment: function() {
+    getObjectForAssessment: function(assessment) {
       return {
-        'id' : this.getIriForAssessment()
+        'id': this.getIriForAssessment(assessment)
       };
+    },
+
+    getScoreForAssessment: function(assessment) {
+      var score = {};
+
+      if (assessment.scoreAsPercent != undefined && assessment.scoreAsPercent != null) {
+        score.scaled = assessment.scoreAsPercent;
+      }
+
+      if (assessment.score != undefined && assessment.score != null) {
+        score.raw = assessment.score;
+      }
+
+      return score != {} ?  score : null;
+    },
+
+    getResultForAssessment: function(assessment) {
+      var result = {};
+
+      var score = this.getScoreForAssessment(assessment);
+      if (score != null) {
+        result.score = score;
+      }
+
+      if (assessment.isPass != undefined && assessment.isPass != null) {
+        result.success = assessment.isPass;
+      }
+
+      if (assessment.isComplete != undefined && assessment.isComplete != null) {
+        result.completion = assessment.isComplete;
+      }
+
+      return result != {} ?  result : null;
+    },
+
+    sendStatement: function(statement, callback) {
+      if (!statement) {
+        return;
+      }
+
+      xapiWrapper.sendStatement(statement, callback)
     }
   });
 
