@@ -332,10 +332,12 @@ define(function(require) {
     validateParams: function() {
       var isValid = true;
       if (!this.actor || typeof this.actor != 'object') {
+        console.log('\'actor\' is invalid');
         isValid = false;
       }
 
       if (!this.activityId) {
+        console.log('\'activity_id\' is invalid');
         isValid = false;
       }
 

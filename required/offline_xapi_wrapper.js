@@ -1,7 +1,7 @@
 var xapiWrapper = {
 	lrs: {
 		actor: "{\"objectType\": \"Agent\",\"account\": {\"homePage\": \"http://www.example.com\",\"name\": \"1625378\"}}",
-		activityId: "http://www.example.com/LA1/001/intro",
+		activity_id: "http://www.example.com/LA1/001/intro",
 		endpoint: "http://lrs.example.com/lrslistener/",
 	},
 
@@ -11,8 +11,8 @@ var xapiWrapper = {
 
 	sendStatement: function(stmt, callback) {
 		var a = this.lrs.actor.name;
-		var v = statement.verb.display["en-US"];
-		var o = statement.object.id;
+		var v = stmt.verb.display["en-US"];
+		var o = stmt.object.id;
 
 		console.log("xAPI: \"" + a + " " + v + " " + o + "\"");
 
@@ -25,4 +25,8 @@ var xapiWrapper = {
 
 		return true;
 	},
+
+	updateAuth: function (a, b, c) {
+		return true;
+	}
 };
