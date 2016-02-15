@@ -1,6 +1,6 @@
 // to be added to course/config.json
 {
-	"_tincan": {
+	"_xapi": {
 		"_isEnabled": true,
 		"_activityID" : "http://example.com/my_unique_identifier",
 		"_tracking": {

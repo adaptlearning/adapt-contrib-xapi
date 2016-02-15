@@ -1,5 +1,5 @@
 /*
- * adapt-tincan
+ * adapt-xapi
  * License - http://github.com/adaptlearning/adapt_framework/LICENSE
  * Maintainers  - Dennis Heaney <dennis@learningpool.com>
  *              - Barry McKay <barry@learningpool.com>
@@ -9,16 +9,16 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
+  var xapi = require('./xapiwrapper.min');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
-  var TinCan = Backbone.Model.extend({
-    actor: null,
-    activityId: null,
+  var xAPI = Backbone.Model.extend({
 
     defaults: {
+      activityId: null,
+      actor: null,
       initialised: false,
       state: null
     },
@@ -30,19 +30,20 @@ define(function(require) {
         xapiWrapper = ADL.XAPIWrapper;
       }
 
-      if (!Adapt.config.get("_extensions") || !Adapt.config.get("_extensions")._tincan) {
+      if (!Adapt.config.get("_xapi")) {
+        console.log("No configuration found for xAPI in config.json");
         return;
       }
 
-      this.setConfig(Adapt.config.get("_extensions")._tincan);
+      this.setConfig(Adapt.config.get("_xapi"));
 
       if (false === this.getConfig('_isEnabled')) {
         return;
       }
 
-      this.actor = this.getLRSAttribute('actor');
+      this.set('actor', this.getLRSAttribute('actor'));
 
-      this.activityId = this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id');
+      this.set('activityId', this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
 
       if (!this.validateParams()) {
         return;
@@ -73,8 +74,8 @@ define(function(require) {
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
-      this.listenTo(Adapt, "tincan:stateChanged", this.onStateChanged);
-      this.listenTo(Adapt, "tincan:stateLoaded", this.restoreState);
+      this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
+      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
     },
 
     onBlockComplete: function(block) {
@@ -97,7 +98,7 @@ define(function(require) {
 
         this.set('state', state);
 
-        Adapt.trigger('tincan:stateChanged');
+        Adapt.trigger('xapi:stateChanged');
       }
     },
 
@@ -169,8 +170,8 @@ define(function(require) {
     saveState: function() {
       if (this.get('state')) {
         xapiWrapper.sendState(
-          this.activityId,
-          this.actor,
+          this.get('activityId'),
+          this.get('actor'),
           STATE_PROGRESS,
           null,
           this.get('state')
@@ -202,26 +203,26 @@ define(function(require) {
      * Loads the last saved state of the course from the LRS, if a state exists
      *
      * @param {boolean} async - whether to load asynchronously, default is false
-     * @fires tincan:loadStateFailed or tincan:stateLoaded
+     * @fires xapi:loadStateFailed or xapi:stateLoaded
      */
     loadState: function(async) {
       if (async) {
         xapiWrapper.getState(
-          this.activityId,
-          this.actor,
+          this.get('activityId'),
+          this.get('actor'),
           STATE_PROGRESS,
           null,
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
-              Adapt.trigger('tincan:loadStateFailed');
+              Adapt.trigger('xapi:loadStateFailed');
               return;
             }
 
             try {
               this.set('state', JSON.parse(result.response));
-              Adapt.trigger('tincan:stateLoaded');
+              Adapt.trigger('xapi:stateLoaded');
             } catch (ex) {
-              Adapt.trigger('tincan:loadStateFailed');
+              Adapt.trigger('xapi:loadStateFailed');
             }
           }
         );
@@ -229,16 +230,16 @@ define(function(require) {
         this.set(
           'state',
           xapiWrapper.getState(
-            this.activityId,
-            this.actor,
+            this.get('activityId'),
+            this.get('actor'),
             STATE_PROGRESS
           )
         );
 
         if (!this.get('state')) {
-          Adapt.trigger('tincan:loadStateFailed');
+          Adapt.trigger('xapi:loadStateFailed');
         } else {
-          Adapt.trigger('tincan:stateLoaded');
+          Adapt.trigger('xapi:stateLoaded');
         }
       }
     },
@@ -256,12 +257,14 @@ define(function(require) {
       if (!verb) {
         return null;
       }
+
       statement.verb = verb;
 
-      if (!this.actor) {
+      if (!this.get('actor')) {
         return null;
       }
-      statement.actor = this.actor;
+
+      statement.actor = this.get('actor');
 
       if (
         !object || !object.id
@@ -305,7 +308,7 @@ define(function(require) {
      * Retrieve an LRS attribute for the current session, e.g. 'actor'
      *
      * @param {string} key - the attribute to fetch
-     * @return {object|boolean} the attribute value, or false if not found
+     * @return {object|null} the attribute value, or null if not found
      */
     getLRSAttribute: function(key) {
       if (!xapiWrapper || !xapiWrapper.lrs || undefined === xapiWrapper.lrs[key]) {
@@ -337,15 +340,15 @@ define(function(require) {
 
     validateParams: function() {
       if (
-        !this.actor ||
-        typeof this.actor != 'object' ||
-        !this.actor.objectType
+        !this.get('actor') ||
+        typeof this.get('actor') != 'object' ||
+        !this.get('actor').objectType
       ) {
         console.log('\'actor\' is invalid');
         return false;
       }
 
-      if (!this.activityId) {
+      if (!this.get('activityId')) {
         console.log('\'activity_id\' is invalid');
         return false;
       }
@@ -354,25 +357,25 @@ define(function(require) {
     },
 
     //getIriForArticle: function() {
-    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID'].join('/');
+    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID'].join('/');
     //},
 
     //getIriForBlock: function() {
-    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID'].join('/');
+    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID'].join('/');
     //},
 
     //getIriForComponent: function() {
-    //  return [this.activityId, 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID', 'component', 'COMPONENT_ID'].join('/');
+    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID', 'component', 'COMPONENT_ID'].join('/');
     //},
 
     getIriForAssessment: function(assessment) {
       if (
-        !this.activityId || !assessment.pageId || !assessment.articleId
+        !this.get('activityId') || !assessment.pageId || !assessment.articleId
       ) {
         return null;
       }
 
-      return [this.activityId, 'page', assessment.pageId, 'article', assessment.articleId, 'assessment'].join('/');
+      return [this.get('activityId'), 'page', assessment.pageId, 'article', assessment.articleId, 'assessment'].join('/');
     },
 
     getVerbForAssessment: function(assessment) {
@@ -428,6 +431,6 @@ define(function(require) {
   });
 
   Adapt.on('app:dataReady', function() {
-    new TinCan();
+    new xAPI();
   });
 });
