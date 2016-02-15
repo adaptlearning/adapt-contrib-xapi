@@ -10,7 +10,7 @@ define(function(require) {
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
   var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
-  
+
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
@@ -299,7 +299,7 @@ define(function(require) {
      * Retrieve an LRS attribute for the current session, e.g. 'actor'
      *
      * @param {string} key - the attribute to fetch
-     * @return {object|boolean} the attribute value, or false if not found
+     * @return {object|null} the attribute value, or null if not found
      */
     getLRSAttribute: function(key) {
       if (!xapiWrapper || !xapiWrapper.lrs || undefined === xapiWrapper.lrs[key]) {
