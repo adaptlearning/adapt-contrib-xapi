@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<xapi xmlns="http://projecttincan.com/tincan.xsd">
+    <activities>
+        <activity id="https://bitbucket.org/dennis-learningpool/adapt-xapi" type="http://adlnet.gov/expapi/activities/course">
+            <name>Adapt xAPI Test</name>
+            <description lang="en-US">A Test case for an Adapt xAPI activity</description>
+            <launch lang="en-us">index.html</launch>
+        </activity>
+    </activities>
+</xapi>
