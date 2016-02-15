@@ -1,0 +1,19 @@
+<courseStructure xmlns="http://www.adlnet.gov/cmi5/CourseStructure.xsd">
+    <course id="">
+        <title>
+            <langstring lang="en-US">@@title</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">@@body</langstring>
+        </description>
+    </course>
+    <au id="">
+        <title>
+            <langstring lang="en-US">@@title</langstring>
+        </title>
+        <description>
+            <langstring lang="en-US">@@body</langstring>
+        </description>
+        <url></url>
+    </au>
+</courseStructure>
