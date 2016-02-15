@@ -1,9 +1,11 @@
 {
   "name": "adapt-tincan",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "homepage": "https://github.com/LearningPool/adapt-tincan",
   "authors": [
-    "Dennis Heaney <dennis@learningpool.com>"
+    "Dennis Heaney <dennis@learningpool.com>",
+    "Barry McKay <barry@learningpool.com>",
+    "Andy Bell <andrewb@learningpool.com>"
   ],
   "displayName" : "TinCan",
   "extension" : "tincan",

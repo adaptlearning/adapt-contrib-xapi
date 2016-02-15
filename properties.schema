@@ -19,6 +19,7 @@
                 "_isEnabled": {
                   "type":"boolean",
                   "required":true,
+                  "default": true,
                   "title":"Is Enabled",
                   "inputType": {"type": "Boolean", "options": [true, false]},
                   "validators": [],
@@ -28,7 +29,7 @@
                   "type":"string",
                   "required":true,
                   "title":"Activity ID",
-                  "default": "https://bitbucket.org/dennis-learningpool/adapt-tincan",
+                  "default": "",
                   "inputType": "Text",
                   "validators": [],
                   "help": "Unique identifier for this Tin Can activity. (Usually the URL to the course.)"
@@ -41,6 +42,7 @@
                     "_requireAssessmentPassed": {
                       "type":"boolean",
                       "required":false,
+                      "default": false,
                       "title":"Assessment pass required",
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
@@ -58,6 +60,7 @@
                     "_shouldSubmitScore": {
                       "type":"boolean",
                       "required":false,
+                      "default": false,
                       "title":"Submit score",
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
