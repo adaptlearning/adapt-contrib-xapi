@@ -9,16 +9,16 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var xapi = require('extensions/adapt-tincan/js/xapiwrapper.min');
+  var xapi = require('./xapiwrapper.min');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
   var TinCan = Backbone.Model.extend({
-    actor: null,
-    activityId: null,
 
     defaults: {
+      activityId: null,
+      actor: null,
       initialised: false,
       state: null
     },
@@ -40,9 +40,9 @@ define(function(require) {
         return;
       }
 
-      this.actor = this.getLRSAttribute('actor');
+      this.set('actor', this.getLRSAttribute('actor'));
 
-      this.activityId = this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id');
+      this.set('activityId', this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
 
       if (!this.validateParams()) {
         return;
@@ -175,11 +175,11 @@ define(function(require) {
     saveState: function() {
       if (this.get('state')) {
         xapiWrapper.sendState(
-            this.activityId,
-            this.actor,
-            STATE_PROGRESS,
-            null,
-            this.get('state')
+          this.get('activityId'),
+          this.get('actor'),
+          STATE_PROGRESS,
+          null,
+          this.get('state')
         );
       }
     },
@@ -213,32 +213,32 @@ define(function(require) {
     loadState: function(async) {
       if (async) {
         xapiWrapper.getState(
-            this.activityId,
-            this.actor,
-            STATE_PROGRESS,
-            null,
-            function success(result) {
-              if ('undefined' === typeof result || 404 === result.status) {
-                Adapt.trigger('tincan:loadStateFailed');
-                return;
-              }
-
-              try {
-                this.set('state', JSON.parse(result.response));
-                Adapt.trigger('tincan:stateLoaded');
-              } catch (ex) {
-                Adapt.trigger('tincan:loadStateFailed');
-              }
+          this.get('activityId'),
+          this.get('actor'),
+          STATE_PROGRESS,
+          null,
+          function success(result) {
+            if ('undefined' === typeof result || 404 === result.status) {
+              Adapt.trigger('tincan:loadStateFailed');
+              return;
             }
+
+            try {
+              this.set('state', JSON.parse(result.response));
+              Adapt.trigger('tincan:stateLoaded');
+            } catch (ex) {
+              Adapt.trigger('tincan:loadStateFailed');
+            }
+          }
         );
       } else {
         this.set(
-            'state',
-            xapiWrapper.getState(
-                this.activityId,
-                this.actor,
-                STATE_PROGRESS
-            )
+          'state',
+          xapiWrapper.getState(
+            this.get('activityId'),
+            this.get('actor'),
+            STATE_PROGRESS
+          )
         );
 
         if (!this.get('state')) {
@@ -266,8 +266,8 @@ define(function(require) {
 
       // object is required, but can default to the course activity
       statement.object = object || {
-            "id": this.activityId
-          }
+          "id": this.get('activityId')
+        }
 
       return statement;
     },
@@ -331,12 +331,12 @@ define(function(require) {
 
     validateParams: function() {
       var isValid = true;
-      if (!this.actor || typeof this.actor != 'object') {
+      if (!this.get('actor') || typeof this.get('actor') != 'object') {
         console.log('\'actor\' is invalid');
         isValid = false;
       }
 
-      if (!this.activityId) {
+      if (!this.get('activityId')) {
         console.log('\'activity_id\' is invalid');
         isValid = false;
       }
