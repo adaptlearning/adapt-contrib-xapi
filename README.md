@@ -21,10 +21,10 @@ This plugin is not yet officially supported by the Adapt project, and requires a
 # How to Use
 
 1. Create a new course and click "Manage Extensions" and enable the xAPI extension
-2. The activityID for the module is currently hardcoded in the included xapi.xml.
+2. The activityID for the module is currently hardcoded in the included tincan.xml.
     * The current activityID is https://bitbucket.org/dennis-learningpool/adapt-xapi.
     * You need to add this activity after enabling the extension on your authoring tool course by editing the xAPI section under Project Settings.
-    * If you choose a different activityID than the one above, be sure to hand edit the published zip and set the activityid attribute in the xapi.xml file bundled in the root of the published course.
+    * If you choose a different activityID than the one above, be sure to hand edit the published zip and set the activityid attribute in the tincan.xml file bundled in the root of the published course.
 3. Unzip your published course to a location on the web.
 4. Browse to the published course.
 5. View LRS for xAPI statements.
