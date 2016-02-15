@@ -30,11 +30,12 @@ define(function(require) {
         xapiWrapper = ADL.XAPIWrapper;
       }
 
-      if (!Adapt.config.get("_extensions") || !Adapt.config.get("_extensions")._tincan) {
+      if (!Adapt.config.get("_tincan")) {
+        console.log("No configuration found for Tin Can in config.json");
         return;
       }
 
-      this.setConfig(Adapt.config.get("_extensions")._tincan);
+      this.setConfig(Adapt.config.get("_tincan"));
 
       if (false === this.getConfig('_isEnabled')) {
         return;
