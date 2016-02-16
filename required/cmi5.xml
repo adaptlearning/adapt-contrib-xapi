@@ -1,18 +1,18 @@
 <courseStructure xmlns="http://www.adlnet.gov/cmi5/CourseStructure.xsd">
-    <course id="">
+    <course id="@@config._xapi._activityID">
         <title>
-            <langstring lang="en-US">@@title</langstring>
+            <langstring lang="en-US">@@course.title</langstring>
         </title>
         <description>
-            <langstring lang="en-US">@@body</langstring>
+            <langstring lang="en-US">@@course.description</langstring>
         </description>
     </course>
-    <au id="">
+    <au id="@@config._xapi._activityID">
         <title>
-            <langstring lang="en-US">@@title</langstring>
+            <langstring lang="en-US">@@course.title</langstring>
         </title>
         <description>
-            <langstring lang="en-US">@@body</langstring>
+            <langstring lang="en-US">@@course.description</langstring>
         </description>
         <url></url>
     </au>
