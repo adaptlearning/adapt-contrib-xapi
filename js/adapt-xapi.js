@@ -1,5 +1,5 @@
 /*
- * adapt-tincan
+ * adapt-xapi
  * License - http://github.com/adaptlearning/adapt_framework/LICENSE
  * Maintainers  - Dennis Heaney <dennis@learningpool.com>
  *              - Barry McKay <barry@learningpool.com>
@@ -14,7 +14,7 @@ define(function(require) {
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
-  var TinCan = Backbone.Model.extend({
+  var xAPI = Backbone.Model.extend({
 
     defaults: {
       activityId: null,
@@ -30,12 +30,12 @@ define(function(require) {
         xapiWrapper = ADL.XAPIWrapper;
       }
 
-      if (!Adapt.config.get("_tincan")) {
-        console.log("No configuration found for Tin Can in config.json");
+      if (!Adapt.config.get("_xapi")) {
+        console.log("No configuration found for xAPI in config.json");
         return;
       }
 
-      this.setConfig(Adapt.config.get("_tincan"));
+      this.setConfig(Adapt.config.get("_xapi"));
 
       if (false === this.getConfig('_isEnabled')) {
         return;
@@ -76,8 +76,8 @@ define(function(require) {
       Adapt.blocks.on('change:_isComplete', this.onBlockComplete, this);
       Adapt.course.on('change:_isComplete', this.onCourseComplete, this);
       Adapt.on('assessment:complete', this.onAssessmentComplete, this);
-      Adapt.on('tincan:stateChanged', this.onStateChanged, this);
-      Adapt.on('tincan:stateLoaded', this.restoreState, this);
+      Adapt.on('xapi:stateChanged', this.onStateChanged, this);
+      Adapt.on('xapi:stateLoaded', this.restoreState, this);
     },
 
     onBlockComplete: function(block) {
@@ -100,7 +100,7 @@ define(function(require) {
 
         this.set('state', state);
 
-        Adapt.trigger('tincan:stateChanged');
+        Adapt.trigger('xapi:stateChanged');
       }
     },
 
@@ -209,7 +209,7 @@ define(function(require) {
      * Loads the last saved state of the course from the LRS, if a state exists
      *
      * @param {boolean} async - whether to load asynchronously, default is false
-     * @fires tincan:loadStateFailed or tincan:stateLoaded
+     * @fires xapi:loadStateFailed or xapi:stateLoaded
      */
     loadState: function(async) {
       if (async) {
@@ -220,15 +220,15 @@ define(function(require) {
           null,
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
-              Adapt.trigger('tincan:loadStateFailed');
+              Adapt.trigger('xapi:loadStateFailed');
               return;
             }
 
             try {
               this.set('state', JSON.parse(result.response));
-              Adapt.trigger('tincan:stateLoaded');
+              Adapt.trigger('xapi:stateLoaded');
             } catch (ex) {
-              Adapt.trigger('tincan:loadStateFailed');
+              Adapt.trigger('xapi:loadStateFailed');
             }
           }
         );
@@ -243,9 +243,9 @@ define(function(require) {
         );
 
         if (!this.get('state')) {
-          Adapt.trigger('tincan:loadStateFailed');
+          Adapt.trigger('xapi:loadStateFailed');
         } else {
-          Adapt.trigger('tincan:stateLoaded');
+          Adapt.trigger('xapi:stateLoaded');
         }
       }
     },
@@ -347,6 +347,6 @@ define(function(require) {
   });
 
   Adapt.on('app:dataReady', function() {
-    new TinCan();
+    new xAPI();
   });
 });
