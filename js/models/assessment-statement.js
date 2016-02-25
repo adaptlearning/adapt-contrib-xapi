@@ -125,7 +125,7 @@ define(function(require) {
       var score = {};
 
       if (this.get('assessmentState').scoreAsPercent != undefined && this.get('assessmentState').scoreAsPercent != null) {
-        score.scaled = this.get('assessmentState').scoreAsPercent;
+        score.scaled = this.get('assessmentState').scoreAsPercent / 100;
       }
 
       if (this.get('assessmentState').score != undefined && this.get('assessmentState').score != null) {
