@@ -356,26 +356,14 @@ define(function(require) {
       return true;
     },
 
-    //getIriForArticle: function() {
-    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID'].join('/');
-    //},
-
-    //getIriForBlock: function() {
-    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID'].join('/');
-    //},
-
-    //getIriForComponent: function() {
-    //  return [this.get('activityId'), 'page', 'PAGE_ID', 'article', 'ARTICLE_ID', 'block', 'BLOCK_ID', 'component', 'COMPONENT_ID'].join('/');
-    //},
-
     getIriForAssessment: function(assessment) {
       if (
-        !this.get('activityId') || !assessment.pageId || !assessment.articleId
+        !this.get('activityId') || !assessment.pageId || !assessment.id
       ) {
         return null;
       }
 
-      return [this.get('activityId'), 'page', assessment.pageId, 'article', assessment.articleId, 'assessment'].join('/');
+      return [this.get('activityId'), 'page', assessment.pageId, 'article', assessment.id, 'assessment'].join('/');
     },
 
     getVerbForAssessment: function(assessment) {
