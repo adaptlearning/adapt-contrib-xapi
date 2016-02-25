@@ -384,15 +384,23 @@ define(function(require) {
     },
 
     getContextForAssessment: function(assessment) {
+      var context = {};
+
       var contextActivities = this.getContextActivitiesForAssessment(assessment);
 
       if (!contextActivities) {
         return null;
       }
 
-      return {
-        'contextActivities': contextActivities
-      };
+      context.contextActivities = contextActivities;
+
+      var language = Adapt.config.get('_defaultLanguage');
+
+      if (language) {
+        context.language = language
+      }
+
+      return context;
     },
 
     getContextActivitiesForAssessment: function(assessment) {
