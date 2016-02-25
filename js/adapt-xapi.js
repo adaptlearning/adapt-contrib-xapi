@@ -115,7 +115,8 @@ define(function(require) {
         this.getStatement(
           this.getVerbForAssessment(assessment),
           this.getObjectForAssessment(assessment),
-          this.getResultForAssessment(assessment)
+          this.getResultForAssessment(assessment),
+          this.getContextForAssessment(assessment)
         )
       );
 
@@ -250,8 +251,10 @@ define(function(require) {
      * @param {string} verb
      * @param {object} [object]
      * @param {object} [result] - optional
+     * @param {object} [context] - optional
+     *
      */
-    getStatement: function(verb, object, result) {
+    getStatement: function(verb, object, result, context) {
       var statement = {};
 
       if (!verb) {
@@ -276,6 +279,10 @@ define(function(require) {
 
       if (result) {
         statement.result = result;
+      }
+
+      if (context) {
+        statement.context = context;
       }
 
       return statement;
@@ -374,6 +381,31 @@ define(function(require) {
       return {
         'id': this.getIriForAssessment(assessment)
       };
+    },
+
+    getContextForAssessment: function(assessment) {
+      var contextActivities = this.getContextActivitiesForAssessment(assessment);
+
+      if (!contextActivities) {
+        return null;
+      }
+
+      return {
+        'contextActivities': contextActivities
+      };
+    },
+
+    getContextActivitiesForAssessment: function(assessment) {
+      var contextActivities = {};
+
+      if (this.get('activityId')) {
+        contextActivities.parent = {
+          id : this.get('activityId'),
+          objectType : "Activity"
+        }
+      }
+
+      return contextActivities;
     },
 
     getScoreForAssessment: function(assessment) {
