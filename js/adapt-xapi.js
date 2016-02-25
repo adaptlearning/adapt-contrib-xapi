@@ -8,8 +8,10 @@
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
+  var Backbone = require('backbone');
   var _ = require('underscore');
   var xapi = require('./xapiwrapper.min');
+  var AssessmentStatementModel = require('./models/assessment-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -111,13 +113,18 @@ define(function(require) {
     },
 
     onAssessmentComplete: function(assessment) {
+      var statement = new AssessmentStatementModel({
+        activityId : this.get('activityId'),
+        actor : this.get('actor'),
+        assessmentState : assessment
+      }).getStatementObject();
+
+      if (!statement) {
+        return;
+      }
+
       this.sendStatement(
-        this.getStatement(
-          this.getVerbForAssessment(assessment),
-          this.getObjectForAssessment(assessment),
-          this.getResultForAssessment(assessment),
-          this.getContextForAssessment(assessment)
-        )
+        statement
       );
 
       Adapt.course.set('_isAssessmentPassed', assessment.isPass);
@@ -361,92 +368,6 @@ define(function(require) {
       }
 
       return true;
-    },
-
-    getIriForAssessment: function(assessment) {
-      if (
-        !this.get('activityId') || !assessment.id
-      ) {
-        return null;
-      }
-
-      return [this.get('activityId'), 'assessment', assessment.id].join('/');
-    },
-
-    getVerbForAssessment: function(assessment) {
-      return (assessment.isPass && assessment.isPass == true) ? ADL.verbs.completed : ADL.verbs.failed;
-    },
-
-    getObjectForAssessment: function(assessment) {
-      return {
-        'id': this.getIriForAssessment(assessment)
-      };
-    },
-
-    getContextForAssessment: function(assessment) {
-      var context = {};
-
-      var contextActivities = this.getContextActivitiesForAssessment(assessment);
-
-      if (!contextActivities) {
-        return null;
-      }
-
-      context.contextActivities = contextActivities;
-
-      var language = Adapt.config.get('_defaultLanguage');
-
-      if (language) {
-        context.language = language
-      }
-
-      return context;
-    },
-
-    getContextActivitiesForAssessment: function(assessment) {
-      var contextActivities = {};
-
-      if (this.get('activityId')) {
-        contextActivities.parent = {
-          id : this.get('activityId'),
-          objectType : "Activity"
-        }
-      }
-
-      return contextActivities;
-    },
-
-    getScoreForAssessment: function(assessment) {
-      var score = {};
-
-      if (assessment.scoreAsPercent != undefined && assessment.scoreAsPercent != null) {
-        score.scaled = assessment.scoreAsPercent;
-      }
-
-      if (assessment.score != undefined && assessment.score != null) {
-        score.raw = assessment.score;
-      }
-
-      return score != {} ?  score : null;
-    },
-
-    getResultForAssessment: function(assessment) {
-      var result = {};
-
-      var score = this.getScoreForAssessment(assessment);
-      if (score != null) {
-        result.score = score;
-      }
-
-      if (assessment.isPass != undefined && assessment.isPass != null) {
-        result.success = assessment.isPass;
-      }
-
-      if (assessment.isComplete != undefined && assessment.isComplete != null) {
-        result.completion = assessment.isComplete;
-      }
-
-      return result != {} ?  result : null;
     },
 
     sendStatement: function(statement, callback) {
