@@ -358,12 +358,12 @@ define(function(require) {
 
     getIriForAssessment: function(assessment) {
       if (
-        !this.get('activityId') || !assessment.pageId || !assessment.id
+        !this.get('activityId') || !assessment.id
       ) {
         return null;
       }
 
-      return [this.get('activityId'), 'page', assessment.pageId, 'article', assessment.id, 'assessment'].join('/');
+      return [this.get('activityId'), 'assessment', assessment.id].join('/');
     },
 
     getVerbForAssessment: function(assessment) {
