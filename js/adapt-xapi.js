@@ -68,7 +68,9 @@ define(function(require) {
       }
 
       this.sendStatement(
-        (!this.checkTrackingCriteriaMet()) ? this.getStatement(ADL.verbs.suspended) : this.getStatement(ADL.verbs.terminated)
+        (!this.checkTrackingCriteriaMet()) ?
+          this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
+          this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
       );
     },
 
@@ -167,7 +169,7 @@ define(function(require) {
      */
     updateTrackingStatus: function() {
       if (this.checkTrackingCriteriaMet()) {
-        this.sendStatement(this.getStatement(ADL.verbs.completed));
+        this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
       }
     },
 
@@ -376,7 +378,22 @@ define(function(require) {
       }
 
       xapiWrapper.sendStatement(statement, callback)
-    }
+    },
+
+    getObjectForActivity : function() {
+      var object = {};
+
+      var iri = this.get("activityId");
+      if (!iri) {
+        return null;
+      }
+
+      object.id = iri;
+      object.objectType = "Activity";
+
+      return object;
+    },
+
   });
 
   Adapt.on('app:dataReady', function() {
