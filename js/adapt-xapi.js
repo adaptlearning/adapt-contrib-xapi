@@ -44,7 +44,7 @@ define(function(require) {
       }
 
       this.set('actor', this.getLRSAttribute('actor'));
-
+      this.set('registration', this.getLRSAttribute('registration'));
       this.set('activityId', this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
 
       if (!this.validateParams()) {
@@ -181,7 +181,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           this.get('state')
         );
       }
@@ -219,7 +219,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
               Adapt.trigger('xapi:loadStateFailed');
