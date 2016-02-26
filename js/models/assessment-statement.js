@@ -47,9 +47,7 @@ define(function(require) {
 
       statement.actor = this.get('actor');
 
-      if (
-        !object || !object.id
-      ) {
+      if (!object || !object.id) {
         console.log('Failed to generate statement for assessment: Could not generate \'object\'');
         return null;
       }
@@ -72,7 +70,7 @@ define(function(require) {
         return null;
       }
 
-      return (this.get('assessmentState').isPass && this.get('assessmentState').isPass == true) ? ADL.verbs.completed : ADL.verbs.failed;
+      return (this.get('assessmentState').isPass == true) ? ADL.verbs.completed : ADL.verbs.failed;
     },
 
     getObject: function() {
@@ -83,7 +81,7 @@ define(function(require) {
         return null;
       }
 
-      object.id = this.getIri()
+      object.id = iri
 
       return object;
     },
@@ -124,15 +122,15 @@ define(function(require) {
     getScore: function() {
       var score = {};
 
-      if (this.get('assessmentState').scoreAsPercent != undefined && this.get('assessmentState').scoreAsPercent != null) {
+      if (this.get('assessmentState').scoreAsPercent != null) {
         score.scaled = this.get('assessmentState').scoreAsPercent / 100;
       }
 
-      if (this.get('assessmentState').score != undefined && this.get('assessmentState').score != null) {
+      if (this.get('assessmentState').score != null) {
         score.raw = this.get('assessmentState').score;
       }
 
-      return score != {} ? score : null;
+      return score;
     },
 
     getResult: function() {
@@ -143,11 +141,11 @@ define(function(require) {
         result.score = score;
       }
 
-      if (this.get('assessmentState').isPass != undefined && this.get('assessmentState').isPass != null) {
+      if (this.get('assessmentState').isPass != null) {
         result.success = this.get('assessmentState').isPass;
       }
 
-      if (this.get('assessmentState').isComplete != undefined && this.get('assessmentState').isComplete != null) {
+      if (this.get('assessmentState').isComplete != null) {
         result.completion = this.get('assessmentState').isComplete;
       }
 
@@ -155,9 +153,7 @@ define(function(require) {
     },
 
     getIri: function() {
-      if (
-        !this.get('activityId') || !this.get('assessmentState').id
-      ) {
+      if (!this.get('activityId') || !this.get('assessmentState').id) {
         return null;
       }
 

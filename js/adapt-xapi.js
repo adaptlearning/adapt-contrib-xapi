@@ -112,9 +112,9 @@ define(function(require) {
 
     onAssessmentComplete: function(assessment) {
       var statement = new AssessmentStatementModel({
-        activityId : this.get('activityId'),
-        actor : this.get('actor'),
-        assessmentState : assessment
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        assessmentState: assessment
       }).getStatementObject();
 
       if (!statement) {
@@ -254,12 +254,10 @@ define(function(require) {
 
     /**
      * Generate a statement object for the xAPI wrapper method @sendStatement
-     *
      * @param {string} verb
-     * @param {object} [object]
-     * @param {object} [result] - optional
-     * @param {object} [context] - optional
-     *
+     * @param {object} object
+     * @param {object} result - optional
+     * @param {object} context - optional
      */
     getStatement: function(verb, object, result, context) {
       var statement = {};
@@ -355,15 +353,14 @@ define(function(require) {
     validateParams: function() {
       if (
         !this.get('actor') ||
-        typeof this.get('actor') != 'object' ||
-        !this.get('actor').objectType
+        typeof this.get('actor') != 'object' || !this.get('actor').objectType
       ) {
         console.log('\'actor\' is invalid');
         return false;
       }
 
       if (!this.get('activityId')) {
-        console.log('\'activity_id\' is invalid');
+        console.log('\'activity_id\' is missing');
         return false;
       }
 
@@ -378,7 +375,7 @@ define(function(require) {
       xapiWrapper.sendStatement(statement, callback)
     },
 
-    getObjectForActivity : function() {
+    getObjectForActivity: function() {
       var object = {};
 
       var iri = this.get("activityId");
