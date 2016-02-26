@@ -254,10 +254,10 @@ define(function(require) {
 
     /**
      * Generate a statement object for the xAPI wrapper method @sendStatement
-     * @param {string} verb
+     * @param {object} verb
      * @param {object} object
-     * @param {object} result - optional
-     * @param {object} context - optional
+     * @param {object} [result]
+     * @param {object} [context]
      */
     getStatement: function(verb, object, result, context) {
       var statement = {};
