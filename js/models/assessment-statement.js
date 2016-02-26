@@ -70,7 +70,7 @@ define(function(require) {
         return null;
       }
 
-      return (this.get('assessmentState').isPass == true) ? ADL.verbs.completed : ADL.verbs.failed;
+      return (this.get('assessmentState').isPass == true) ? ADL.verbs.passed : ADL.verbs.failed;
     },
 
     getObject: function() {
@@ -91,11 +91,9 @@ define(function(require) {
 
       var contextActivities = this.getContextActivities();
 
-      if (!contextActivities) {
-        return null;
+      if (contextActivities) {
+        context.contextActivities = contextActivities;
       }
-
-      context.contextActivities = contextActivities;
 
       var language = Adapt.config.get('_defaultLanguage');
 
