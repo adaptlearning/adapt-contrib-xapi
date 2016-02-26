@@ -115,7 +115,8 @@ define(function(require) {
       var statement = new AssessmentStatementModel({
         activityId: this.get('activityId'),
         actor: this.get('actor'),
-        assessmentState: assessment
+        assessmentState: assessment,
+        registration: this.get('registration')
       }).getStatementObject();
 
       if (!statement) {

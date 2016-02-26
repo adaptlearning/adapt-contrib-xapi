@@ -8,7 +8,8 @@ define(function(require) {
     defaults: {
       activityId: "",
       actor: null,
-      assessmentState: null
+      assessmentState: null,
+      registration: null
     },
 
     initialize: function() {
@@ -21,6 +22,10 @@ define(function(require) {
       }
 
       if (!this.get("assessmentState")) {
+        return null;
+      }
+
+      if (!this.get("registration")) {
         return null;
       }
     },
@@ -99,6 +104,11 @@ define(function(require) {
 
       if (language) {
         context.language = language
+      }
+
+      var registration = this.get("registration");
+      if (registration) {
+        context.registration = registration
       }
 
       return context;
