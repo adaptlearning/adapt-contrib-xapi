@@ -45,7 +45,7 @@ define(function(require) {
 
       this.set('actor', this.getLRSAttribute('actor'));
 
-      this.set('activityId', this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
+      this.set('activityId', this.getLRSAttribute('activity_id'));
 
       if (!this.validateParams()) {
         return;
