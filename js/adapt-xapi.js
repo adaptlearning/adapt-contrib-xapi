@@ -46,6 +46,7 @@ define(function(require) {
       this.set('actor', this.getLRSAttribute('actor'));
 
       this.set('activityId', this.getLRSAttribute('activity_id'));
+      this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
         return;
@@ -181,7 +182,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           this.get('state')
         );
       }
@@ -219,7 +220,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
               Adapt.trigger('xapi:loadStateFailed');
@@ -353,7 +354,8 @@ define(function(require) {
     validateParams: function() {
       if (
         !this.get('actor') ||
-        typeof this.get('actor') != 'object' || !this.get('actor').objectType
+        typeof this.get('actor') != 'object' ||
+        !this.get('actor').objectType
       ) {
         console.log('\'actor\' is invalid');
         return false;
@@ -361,6 +363,11 @@ define(function(require) {
 
       if (!this.get('activityId')) {
         console.log('\'activity_id\' is missing');
+        return false;
+      }
+
+      if (!this.get('registration')) {
+        console.log('\'registration\' is missing');
         return false;
       }
 
