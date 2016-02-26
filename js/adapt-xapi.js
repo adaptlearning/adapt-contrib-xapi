@@ -51,15 +51,10 @@ define(function(require) {
         return;
       }
 
-      this.xapiStart();
-
-      $(window).unload(_.bind(this.xapiEnd, this));
-    },
-
-    xapiStart: function() {
-      this.setupListeners();
       this.loadState();
       this.set('initialised', true);
+
+      $(window).unload(_.bind(this.xapiEnd, this));
     },
 
     xapiEnd: function() {
@@ -78,6 +73,7 @@ define(function(require) {
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
+      this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
       this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
     },
@@ -111,7 +107,7 @@ define(function(require) {
         this.set('_attempts', this.get('_attempts') + 1);
       }
 
-      _.defer(_.bind(this.updateTrackingStatus, this));
+      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
     onAssessmentComplete: function(assessment) {
@@ -128,8 +124,10 @@ define(function(require) {
       this.sendStatement(
         statement
       );
+    },
 
-      Adapt.course.set('_isAssessmentPassed', assessment.isPass);
+    onAllAssessmentsComplete: function() {
+      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
     onStateChanged: function(event) {
@@ -167,7 +165,7 @@ define(function(require) {
      * Check if course tracking criteria have been met, and send an xAPI
      * statement if appropriate
      */
-    updateTrackingStatus: function() {
+    checkIfCourseIsReallyComplete: function() {
       if (this.checkTrackingCriteriaMet()) {
         this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
       }
@@ -397,6 +395,10 @@ define(function(require) {
   });
 
   Adapt.on('app:dataReady', function() {
-    new xAPI();
+    xAPI = new xAPI();
+  });
+
+  Adapt.on('adapt:initialize', function() {
+    xAPI.setupListeners();
   });
 });
