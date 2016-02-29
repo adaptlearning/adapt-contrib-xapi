@@ -33,7 +33,6 @@ define(function(require) {
       }
 
       if (!Adapt.config.get("_xapi")) {
-        console.log("No configuration found for xAPI in config.json");
         return;
       }
 
@@ -353,26 +352,13 @@ define(function(require) {
     },
 
     validateParams: function() {
-      if (
+      return !(
         !this.get('actor') ||
         typeof this.get('actor') != 'object' ||
-        !this.get('actor').objectType
-      ) {
-        console.log('\'actor\' is invalid');
-        return false;
-      }
-
-      if (!this.get('activityId')) {
-        console.log('\'activity_id\' is missing');
-        return false;
-      }
-
-      if (!this.get('registration')) {
-        console.log('\'registration\' is missing');
-        return false;
-      }
-
-      return true;
+        !this.get('actor').objectType ||
+        !this.get('activityId') ||
+        !this.get('registration')
+      );
     },
 
     sendStatement: function(statement, callback) {
