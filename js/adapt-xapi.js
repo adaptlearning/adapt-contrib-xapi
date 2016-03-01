@@ -8,8 +8,10 @@
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
+  var Backbone = require('backbone');
   var _ = require('underscore');
   var xapi = require('./xapiwrapper.min');
+  var AssessmentStatementModel = require('./models/assessment-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -31,7 +33,6 @@ define(function(require) {
       }
 
       if (!Adapt.config.get("_xapi")) {
-        console.log("No configuration found for xAPI in config.json");
         return;
       }
 
@@ -43,21 +44,17 @@ define(function(require) {
 
       this.set('actor', this.getLRSAttribute('actor'));
 
-      this.set('activityId', this.getConfig('_activityID') ? this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
+      this.set('activityId', this.getLRSAttribute('activity_id'));
+      this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
         return;
       }
 
-      this.xapiStart();
-
-      $(window).unload(_.bind(this.xapiEnd, this));
-    },
-
-    xapiStart: function() {
-      this.setupListeners();
       this.loadState();
       this.set('initialised', true);
+
+      $(window).unload(_.bind(this.xapiEnd, this));
     },
 
     xapiEnd: function() {
@@ -65,19 +62,20 @@ define(function(require) {
         return;
       }
 
-      if (!this.checkTrackingCriteriaMet()) {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.suspended));
-      }
-
-      xapiWrapper.sendStatement(this.getStatement(ADL.verbs.terminated));
+      this.sendStatement(
+        (!this.checkTrackingCriteriaMet()) ?
+          this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
+          this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
+      );
     },
 
     setupListeners: function() {
-      Adapt.blocks.on('change:_isComplete', this.onBlockComplete, this);
-      Adapt.course.on('change:_isComplete', this.onCourseComplete, this);
-      Adapt.on('assessment:complete', this.onAssessmentComplete, this);
-      Adapt.on('xapi:stateChanged', this.onStateChanged, this);
-      Adapt.on('xapi:stateLoaded', this.restoreState, this);
+      this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
+      this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
+      this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
+      this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
+      this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
+      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
     },
 
     onBlockComplete: function(block) {
@@ -109,23 +107,28 @@ define(function(require) {
         this.set('_attempts', this.get('_attempts') + 1);
       }
 
-      _.defer(_.bind(this.updateTrackingStatus, this));
+      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
-    onAssessmentComplete: function(event) {
-      Adapt.course.set('_isAssessmentPassed', event.isPass);
-      var tracking = this.getConfig('_tracking');
+    onAssessmentComplete: function(assessment) {
+      var statement = new AssessmentStatementModel({
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        assessmentState: assessment,
+        registration: this.get('registration')
+      }).getStatementObject();
 
-      if (!tracking) {
+      if (!statement) {
         return;
       }
 
-      // persist data
-      if (event.isPass) {
-        _.defer(_.bind(this.updateTrackingStatus, this));
-      } else if (tracking._requireAssessmentPassed) {
-        // TODO set failed/incomplete status
-      }
+      this.sendStatement(
+        statement
+      );
+    },
+
+    onAllAssessmentsComplete: function() {
+      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
     onStateChanged: function(event) {
@@ -163,9 +166,9 @@ define(function(require) {
      * Check if course tracking criteria have been met, and send an xAPI
      * statement if appropriate
      */
-    updateTrackingStatus: function() {
+    checkIfCourseIsReallyComplete: function() {
       if (this.checkTrackingCriteriaMet()) {
-        xapiWrapper.sendStatement(this.getStatement(ADL.verbs.completed));
+        this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
       }
     },
 
@@ -179,7 +182,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           this.get('state')
         );
       }
@@ -217,7 +220,7 @@ define(function(require) {
           this.get('activityId'),
           this.get('actor'),
           STATE_PROGRESS,
-          null,
+          this.get('registration'),
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
               Adapt.trigger('xapi:loadStateFailed');
@@ -252,23 +255,41 @@ define(function(require) {
 
     /**
      * Generate a statement object for the xAPI wrapper method @sendStatement
-     *
-     * @param {string} verb - the action to register
-     * @param {string|object} [actor] - optional actor
-     * @param {object} [object] - optional object - defaults to this activity
+     * @param {object} verb
+     * @param {object} object
+     * @param {object} [result]
+     * @param {object} [context]
      */
-    getStatement: function(verb, actor, object) {
-      var statement = {
-        "verb": verb
-      };
+    getStatement: function(verb, object, result, context) {
+      var statement = {};
 
-      // if actor is missing on statement, xapiWrapper will set it for us
-      actor && (statement.actor = actor);
+      if (!verb) {
+        return null;
+      }
 
-      // object is required, but can default to the course activity
-      statement.object = object || {
-          "id": this.get('activityId')
-        }
+      statement.verb = verb;
+
+      if (!this.get('actor')) {
+        return null;
+      }
+
+      statement.actor = this.get('actor');
+
+      if (
+        !object || !object.id
+      ) {
+        return null;
+      }
+
+      statement.object = object;
+
+      if (result) {
+        statement.result = result;
+      }
+
+      if (context) {
+        statement.context = context;
+      }
 
       return statement;
     },
@@ -331,22 +352,50 @@ define(function(require) {
     },
 
     validateParams: function() {
-      var isValid = true;
-      if (!this.get('actor') || typeof this.get('actor') != 'object') {
-        console.log('\'actor\' is invalid');
-        isValid = false;
+      if (!this.get('actor') || typeof this.get('actor') != 'object' || !this.get('actor').objectType) {
+        return false;
       }
 
       if (!this.get('activityId')) {
-        console.log('\'activity_id\' is invalid');
-        isValid = false;
+        return false;
       }
 
-      return isValid;
-    }
+      if (!this.get('registration')) {
+        return false;
+      }
+
+      return true;
+    },
+
+    sendStatement: function(statement, callback) {
+      if (!statement) {
+        return;
+      }
+
+      xapiWrapper.sendStatement(statement, callback)
+    },
+
+    getObjectForActivity: function() {
+      var object = {};
+
+      var iri = this.get("activityId");
+      if (!iri) {
+        return null;
+      }
+
+      object.id = iri;
+      object.objectType = "Activity";
+
+      return object;
+    },
+
   });
 
   Adapt.on('app:dataReady', function() {
-    new xAPI();
+    xAPI = new xAPI();
+  });
+
+  Adapt.on('adapt:initialize', function() {
+    xAPI.setupListeners();
   });
 });
