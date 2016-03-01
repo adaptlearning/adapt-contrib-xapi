@@ -352,13 +352,19 @@ define(function(require) {
     },
 
     validateParams: function() {
-      return !(
-        !this.get('actor') ||
-        typeof this.get('actor') != 'object' ||
-        !this.get('actor').objectType ||
-        !this.get('activityId') ||
-        !this.get('registration')
-      );
+      if (!this.get('actor') || typeof this.get('actor') != 'object' || !this.get('actor').objectType) {
+        return false;
+      }
+
+      if (!this.get('activityId')) {
+        return false;
+      }
+
+      if (!this.get('registration')) {
+        return false;
+      }
+
+      return true;
     },
 
     sendStatement: function(statement, callback) {
