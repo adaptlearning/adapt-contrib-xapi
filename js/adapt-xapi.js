@@ -12,6 +12,7 @@ define(function(require) {
   var _ = require('underscore');
   var xapi = require('./xapiwrapper.min');
   var AssessmentStatementModel = require('./models/assessment-statement');
+  var ComponentStatementModel = require('./models/component-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -70,12 +71,30 @@ define(function(require) {
     },
 
     setupListeners: function() {
+      this.listenTo(Adapt.components, "change:_isComplete", this.onComponentComplete);
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
       this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
       this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
+    },
+
+    onComponentComplete: function(component) {
+      var statement = new ComponentStatementModel({
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        registration: this.get('registration'),
+        componentState: component
+      }).getStatementObject();
+
+      if (!statement) {
+        return;
+      }
+
+      this.sendStatement(
+        statement
+      );
     },
 
     onBlockComplete: function(block) {
