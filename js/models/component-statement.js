@@ -73,7 +73,7 @@ define(function(require) {
     getObject: function() {
       var object = {};
 
-      var iri = this.getIri();
+      var iri = this.getIriForModel(this.get('componentState'));
       if (!iri) {
         return null;
       }
@@ -82,23 +82,7 @@ define(function(require) {
 
       object.objectType = "Activity";
 
-      object.definition = this.getActivityDefinitionObject();
-
-      return object;
-    },
-
-    //@TODO - move to super
-    getActivityDefinitionObject: function() {
-      var object = {
-        name: null,
-        description: null,
-        type: null
-      };
-
-      object.name = {};
-      object.name[Adapt.config.get('_defaultLanguage')] = this.get('componentState').get('title');
-
-      object.type = this.get('componentState').get('_type');
+      object.definition = this.getActivityDefinitionObjectForModel(this.get('componentState'));
 
       return object;
     },
@@ -113,7 +97,6 @@ define(function(require) {
       }
 
       var language = Adapt.config.get('_defaultLanguage');
-
       if (language) {
         context.language = language
       }
@@ -123,30 +106,44 @@ define(function(require) {
         context.registration = registration
       }
 
-      //@TODO - can do parent until...
-
       return context;
     },
 
     getContextActivities: function() {
       var contextActivities = {};
 
-      if (this.get('activityId')) {
-        contextActivities.parent = {
-          id: this.get('activityId'),
-          objectType: "Activity"
+      if (this.get('componentState').get('_isPartOfAssessment') == true) {
+        var article = this.get('componentState').getParent().getParent();
+
+        if (article) {
+          var assessmentIri = [this.get('activityId'), 'assessment', this.get('assessmentState').id].join('/');
+          contextActivities.parent = {
+            id : assessmentIri
+          }
         }
+
       }
 
       return contextActivities;
     },
 
-    getIri: function() {
-      if (!this.get('activityId') || !this.get('_id')) {
+    getIriForModel: function(model) {
+      if (!this.get('activityId') || !model.get('_type') || !model.get('_id')) {
         return null;
       }
 
-      return [this.get('activityId'), 'component', this.get('_id')].join('/');
+      return [this.get('activityId'), model.get('_type'), model.get('_id')].join('/');
+    },
+
+    getActivityDefinitionObjectForModel: function(model) {
+      var object = {};
+
+      object.name = {};
+      object.name[Adapt.config.get('_defaultLanguage')] = model.get('title');
+
+      object.type = model.get('_type');
+
+      return object;
     },
 
   });
@@ -154,7 +151,3 @@ define(function(require) {
   return ComponentStatementModel;
 
 });
-
-//@TODO - if we record a statement for a component should we avoid bubbling up? or vice versa
-
-//@TODO - registration needs set when working off downloaded course - fake it?
