@@ -38,21 +38,18 @@ define(function(require) {
       var context = this.getContext();
 
       if (!verb) {
-        console.log('Failed to generate statement for assessment: Could not generate \'verb\'');
         return null;
       }
 
       statement.verb = verb;
 
       if (!this.get('actor')) {
-        console.log('Failed to generate statement for assessment: \'actor\' is missing or invalid');
         return null;
       }
 
       statement.actor = this.get('actor');
 
       if (!object || !object.id) {
-        console.log('Failed to generate statement for assessment: Could not generate \'object\'');
         return null;
       }
 
@@ -73,7 +70,7 @@ define(function(require) {
     getObject: function() {
       var object = {};
 
-      var iri = this.getIriForModel(this.get('componentState'));
+      var iri = this.getIri(this.get('componentState'));
       if (!iri) {
         return null;
       }
@@ -82,7 +79,7 @@ define(function(require) {
 
       object.objectType = "Activity";
 
-      object.definition = this.getActivityDefinitionObjectForModel(this.get('componentState'));
+      object.definition = this.getActivityDefinitionObject(this.get('componentState'));
 
       return object;
     },
@@ -116,7 +113,7 @@ define(function(require) {
         var article = this.get('componentState').getParent().getParent();
 
         if (article) {
-          var assessmentIri = [this.get('activityId'), 'assessment', this.get('assessmentState').id].join('/');
+          var assessmentIri = [this.get('activityId'), 'assessment', article.get('_id')].join('/');
           contextActivities.parent = {
             id : assessmentIri
           }
@@ -127,21 +124,21 @@ define(function(require) {
       return contextActivities;
     },
 
-    getIriForModel: function(model) {
-      if (!this.get('activityId') || !model.get('_type') || !model.get('_id')) {
+    getIri: function() {
+      if (!this.get('activityId') || !this.get('componentState').get('_type') || !this.get('componentState').get('_id')) {
         return null;
       }
 
-      return [this.get('activityId'), model.get('_type'), model.get('_id')].join('/');
+      return [this.get('activityId'), this.get('componentState').get('_type'), this.get('componentState').get('_id')].join('/');
     },
 
-    getActivityDefinitionObjectForModel: function(model) {
+    getActivityDefinitionObject: function() {
       var object = {};
 
       object.name = {};
-      object.name[Adapt.config.get('_defaultLanguage')] = model.get('title');
+      object.name[Adapt.config.get('_defaultLanguage')] = this.get('componentState').get('title');
 
-      object.type = model.get('_type');
+      object.type = [this.get('componentState').get('_component'), this.get('componentState').get('_type')].join('-');
 
       return object;
     },
