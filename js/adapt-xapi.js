@@ -81,16 +81,18 @@ define(function(require) {
     },
 
     onComponentComplete: function(component) {
-      var statement = new ComponentStatementModel({
+      var statementModel = new ComponentStatementModel({
         activityId: this.get('activityId'),
         actor: this.get('actor'),
         registration: this.get('registration'),
         model: component
-      }).getStatementObject();
+      });
 
-      if (!statement) {
+      if (!statementModel) {
         return;
       }
+
+      var statement = statementModel.getStatementObject();
 
       this.sendStatement(
         statement
@@ -130,16 +132,18 @@ define(function(require) {
     },
 
     onAssessmentComplete: function(assessment) {
-      var statement = new AssessmentStatementModel({
+      var statementModel = new AssessmentStatementModel({
         activityId: this.get('activityId'),
         actor: this.get('actor'),
-        assessmentState: assessment,
+        model: assessment,
         registration: this.get('registration')
-      }).getStatementObject();
+      });
 
-      if (!statement) {
+      if (!statementModel) {
         return;
       }
+
+      var statement = statementModel.getStatementObject();
 
       this.sendStatement(
         statement

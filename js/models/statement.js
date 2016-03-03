@@ -1,6 +1,7 @@
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
+  var _ = require('underscore');
   var Backbone = require('backbone');
 
   var StatementModel = Backbone.Model.extend({

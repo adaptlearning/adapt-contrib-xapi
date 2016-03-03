@@ -1,6 +1,7 @@
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
+  var _ = require('underscore');
   var Backbone = require('backbone');
   var StatementModel = require('./statement');
 
@@ -11,7 +12,25 @@ define(function(require) {
     },
 
     getStatementObject: function() {
-      return StatementModel.prototype.getStatementObject.call(this);
+      var statement = StatementModel.prototype.getStatementObject.call(this);
+
+      var verb = this.getVerb();
+      var object = this.getObject();
+      var context = this.getContext();
+
+      if (
+        _.isEmpty(verb) ||
+        _.isEmpty(object) ||
+        _.isEmpty(context)
+      ) {
+        return null;
+      }
+
+      statement.verb = verb;
+      statement.object = object;
+      statement.context = context;
+
+      return statement;
     },
 
     getVerb: function() {
@@ -25,7 +44,7 @@ define(function(require) {
     getActivityDefinitionObject: function() {
       var object = StatementModel.prototype.getActivityDefinitionObject.call(this);
 
-      if (!object) {
+      if (_.isEmpty(object)) {
         object = {};
       }
 
@@ -38,7 +57,12 @@ define(function(require) {
     },
 
     getIri: function() {
-      if (!this.get('activityId') || !this.get('model') || !this.get('model').get('_type') || !this.get('model').get('_id')) {
+      if (
+        _.isEmpty(this.get('activityId')) ||
+        _.isEmpty(this.get('model')) ||
+        _.isEmpty(this.get('model').get('_type')) ||
+        _.isEmpty(this.get('model').get('_id'))
+      ) {
         return null;
       }
 
@@ -52,14 +76,15 @@ define(function(require) {
     getContextActivities: function() {
       var contextActivities = StatementModel.prototype.getContextActivities.call(this);
 
-      if (!contextActivities) {
+      if (_.isEmpty(contextActivities)) {
         contextActivities = {};
       }
 
       if (this.get('model').get('_isPartOfAssessment') == true) {
+        // component -> block -> article
         var article = this.get('model').getParent().getParent();
 
-        if (article) {
+        if (!_.isEmpty(article)) {
           var assessmentIri = [this.get('activityId'), 'assessment', article.get('_id')].join('/');
           contextActivities.parent = {
             id : assessmentIri
