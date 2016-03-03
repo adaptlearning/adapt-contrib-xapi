@@ -85,7 +85,7 @@ define(function(require) {
         activityId: this.get('activityId'),
         actor: this.get('actor'),
         registration: this.get('registration'),
-        componentState: component
+        model: component
       }).getStatementObject();
 
       if (!statement) {
