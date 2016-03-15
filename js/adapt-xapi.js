@@ -51,7 +51,8 @@ define(function(require) {
       if (!this.validateParams()) {
         return;
       }
-
+      // We need to listen for stateLoad before we load state.
+      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
       this.loadState();
       this.set('initialised', true);
 
@@ -76,7 +77,6 @@ define(function(require) {
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
       this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
-      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
     },
 
     onBlockComplete: function(block) {
