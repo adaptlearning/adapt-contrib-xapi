@@ -3,6 +3,7 @@ var xapiWrapper = {
     actor: "{\"objectType\": \"Agent\",\"account\": {\"homePage\": \"http://www.example.com\",\"name\": \"1625378\"}}",
     activity_id: "http://www.example.com/LA1/001/intro",
     endpoint: "http://lrs.example.com/lrslistener/",
+    registration: "760e3480-ba55-4991-94b0-01820dbd23a2"
   },
 
   getState: function(activityid, agent, stateid, registration, since, callback) {
@@ -10,23 +11,8 @@ var xapiWrapper = {
   },
 
   sendStatement: function(stmt, callback) {
-    var a = stmt.actor.account.name;
-    var v = stmt.verb.display["en-US"];
-    var o = stmt.object.id;
-    var r = stmt.result;
-
-    var message = "xAPI statement sent: " + a + " " + v + " " + o;
-
-    if (r && r.score) {
-      if (r.score.scaled) {
-        message += " with a scaled score of " + r.score.scaled;
-      } else if (r.score.raw) {
-        message += " with a raw score of " + r.score.raw;
-      }
-    }
-
-    console.log(message);
-
+    console.log("xAPI statement sent:");
+    console.log(JSON.stringify(stmt));
     return true;
   },
 

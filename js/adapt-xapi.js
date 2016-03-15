@@ -12,6 +12,7 @@ define(function(require) {
   var _ = require('underscore');
   var xapi = require('./xapiwrapper.min');
   var AssessmentStatementModel = require('./models/assessment-statement');
+  var ComponentStatementModel = require('./models/component-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -70,12 +71,32 @@ define(function(require) {
     },
 
     setupListeners: function() {
+      this.listenTo(Adapt.components, "change:_isComplete", this.onComponentComplete);
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
       this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
       this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
+    },
+
+    onComponentComplete: function(component) {
+      var statementModel = new ComponentStatementModel({
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        registration: this.get('registration'),
+        model: component
+      });
+
+      if (!statementModel) {
+        return;
+      }
+
+      var statement = statementModel.getStatementObject();
+
+      this.sendStatement(
+        statement
+      );
     },
 
     onBlockComplete: function(block) {
@@ -111,16 +132,18 @@ define(function(require) {
     },
 
     onAssessmentComplete: function(assessment) {
-      var statement = new AssessmentStatementModel({
+      var statementModel = new AssessmentStatementModel({
         activityId: this.get('activityId'),
         actor: this.get('actor'),
-        assessmentState: assessment,
+        model: assessment,
         registration: this.get('registration')
-      }).getStatementObject();
+      });
 
-      if (!statement) {
+      if (!statementModel) {
         return;
       }
+
+      var statement = statementModel.getStatementObject();
 
       this.sendStatement(
         statement
