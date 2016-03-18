@@ -45,13 +45,15 @@ define(function(require) {
 
       this.set('actor', this.getLRSAttribute('actor'));
 
-      this.set('activityId', this.getLRSAttribute('activity_id'));
+      this.set('activityId', (this.getConfig('_activityID')) ?
+        this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
       this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
         return;
       }
-
+      // We need to listen for stateLoad before we load state.
+      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
       this.loadState();
       this.set('initialised', true);
 
@@ -77,7 +79,6 @@ define(function(require) {
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
       this.listenTo(Adapt, "assessment:complete", this.onAllAssessmentsComplete);
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
-      this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
     },
 
     onComponentComplete: function(component) {
