@@ -1,0 +1,109 @@
+define(function(require) {
+
+  var Adapt = require('coreJS/adapt');
+  var _ = require('underscore');
+  var Backbone = require('backbone');
+  var QuestionComponentStatementModel = require('./question-component-statement');
+
+  var MCQComponentStatementModel = QuestionComponentStatementModel.extend({
+
+    initialize: function() {
+      return QuestionComponentStatementModel.prototype.initialize.call(this);
+    },
+
+    getStatementObject: function() {
+      var statement = QuestionComponentStatementModel.prototype.getStatementObject.call(this);
+
+      var verb = this.getVerb();
+      var object = this.getObject();
+      var context = this.getContext();
+      var result = this.getResult();
+
+      if (
+        _.isEmpty(verb) ||
+        _.isEmpty(object) ||
+        _.isEmpty(context) ||
+        _.isEmpty(result)
+      ) {
+        return null;
+      }
+
+      statement.verb = verb;
+      statement.object = object;
+      statement.context = context;
+      statement.result = result;
+
+      return statement;
+    },
+
+    getVerb: function() {
+      return QuestionComponentStatementModel.prototype.getVerb.call(this);
+    },
+
+    getObject: function() {
+      return QuestionComponentStatementModel.prototype.getObject.call(this);
+    },
+
+    getResult: function() {
+      var result = QuestionComponentStatementModel.prototype.getResult.call(this);
+
+      result.response = [];
+      _.each(this.get('model').get('_selectedItems'), function(item) {
+        result.response.push(item._index);
+      });
+
+      return result;
+    },
+
+    getScore: function() {
+      var score = QuestionComponentStatementModel.prototype.getScore.call(this);
+
+      // MCQ is either 0 or 1
+      score.scaled = score.raw;
+
+      return score;
+    },
+
+    getObject: function() {
+      var object = QuestionComponentStatementModel.prototype.getObject.call(this);
+
+      object.definition.interactionType = "choice";
+
+      object.definition.correctResponsePattern = [];
+      _.each(this.get('model').get('_items'), function(item) {
+        if (item._shouldBeSelected) {
+          object.definition.correctResponsePattern.push(item._index);
+        }
+      });
+
+      object.definition.choices = this.getDefinitionChoices();
+
+      return object;
+    },
+
+    getDefinitionChoices: function() {
+      var choices = [];
+
+      if (
+        _.isEmpty(this.get('model').get('_items'))
+      ) {
+        return null;
+      }
+
+      _.each(this.get('model').get('_items'), function(item) {
+        var choice = {};
+        choice.id = item._index;
+        choice.description = {};
+        choice.description[Adapt.config.get('_defaultLanguage')] = item.text;
+
+        choices.push(choice);
+      });
+
+      return choices;
+    },
+
+  });
+
+  return MCQComponentStatementModel;
+
+});

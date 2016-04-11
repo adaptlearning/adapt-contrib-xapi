@@ -41,17 +41,12 @@ define(function(require) {
       return StatementModel.prototype.getObject.call(this);
     },
 
-    getActivityDefinitionObject: function() {
-      var object = StatementModel.prototype.getActivityDefinitionObject.call(this);
+    getObject: function() {
+      var object = StatementModel.prototype.getObject.call(this);
 
-      if (_.isEmpty(object)) {
-        object = {};
-      }
+      object.id = ['http://adaptlearning.org', this.get('model').get('_type'), this.get('model').get('_component')].join('/');
 
-      object.name = {};
-      object.name[Adapt.config.get('_defaultLanguage')] = this.get('model').get('title');
-
-      object.type = ['http://adaptlearning.org', this.get('model').get('_type'), this.get('model').get('_component')].join('/');
+      object.definition.name[Adapt.config.get('_defaultLanguage')] = this.get('model').get('title');
 
       return object;
     },

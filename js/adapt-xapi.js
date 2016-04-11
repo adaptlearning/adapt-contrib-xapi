@@ -13,6 +13,8 @@ define(function(require) {
   var xapi = require('./xapiwrapper.min');
   var AssessmentStatementModel = require('./models/assessment-statement');
   var ComponentStatementModel = require('./models/component-statement');
+  var QuestionComponentStatementModel = require('./models/question-component-statement');
+  var MCQComponentStatementModel = require('./models/mcq-component-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -74,6 +76,7 @@ define(function(require) {
 
     setupListeners: function() {
       this.listenTo(Adapt.components, "change:_isComplete", this.onComponentComplete);
+      this.listenTo(Adapt, 'questionView:recordInteraction', this.onQuestionAttempt);
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
       this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
@@ -97,10 +100,39 @@ define(function(require) {
         return;
       }
 
-      var statement = statementModel.getStatementObject();
+      this.sendStatement(
+        statementModel.getStatementObject()
+      );
+    },
+
+    onQuestionAttempt: function(question) {
+      if (!question.model.get('_recordInteraction')) {
+        return;
+      }
+
+      var data = {
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        registration: this.get('registration'),
+        model: question.model
+      };
+
+      var statementModel;
+      switch (question.model.get('_component')) {
+        case "mcq":
+          statementModel = new MCQComponentStatementModel(data);
+          break;
+        default:
+          statementModel = null;
+          break;
+      }
+
+      if (!statementModel) {
+        return;
+      }
 
       this.sendStatement(
-        statement
+        statementModel.getStatementObject()
       );
     },
 

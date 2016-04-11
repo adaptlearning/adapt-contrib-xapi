@@ -79,20 +79,20 @@ define(function(require) {
 
       object.objectType = "Activity";
 
-      object.definition = this.getActivityDefinitionObject(this.get('model'));
+      object.definition = this.getObjectDefinition(this.get('model'));
 
       return object;
     },
 
-    getActivityDefinitionObject: function() {
-      var object = {};
+    getObjectDefinition: function() {
+      var objectDefinition = {};
 
-      object.name = {};
-      object.name[Adapt.config.get('_defaultLanguage')] = this.get('model').get('title');
+      objectDefinition.name = {};
+      objectDefinition.name[Adapt.config.get('_defaultLanguage')] = this.get('model').get('title');
 
-      object.type = this.get('model').get('_type');
+      objectDefinition.type = this.get('model').get('_type');
 
-      return object;
+      return objectDefinition;
     },
 
     getContext: function() {
