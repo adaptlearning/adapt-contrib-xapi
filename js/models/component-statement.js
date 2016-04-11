@@ -76,13 +76,24 @@ define(function(require) {
       }
 
       if (this.get('model').get('_isPartOfAssessment') == true) {
+        // Parent is the assessment
         // component -> block -> article
         var article = this.get('model').getParent().getParent();
 
         if (!_.isEmpty(article)) {
           var assessmentIri = [this.get('activityId'), 'assessment', article.get('_id')].join('/');
           contextActivities.parent = {
-            id : assessmentIri
+            id: assessmentIri
+          }
+        }
+      } else {
+        // Parent is the course
+        // component -> block -> article -> page -> course
+        var course = this.get('model').getParent().getParent().getParent().getParent();
+        if (!_.isEmpty(course)) {
+          var courseIri = [this.get('activityId'), 'course', course.get('_id')].join('/');
+          contextActivities.parent = {
+            id: courseIri
           }
         }
       }
