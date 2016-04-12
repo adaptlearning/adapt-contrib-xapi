@@ -66,7 +66,6 @@ define(function(require) {
       var object = QuestionComponentStatementModel.prototype.getObject.call(this);
 
       object.definition.interactionType = "textinput";
-      //@TODO fill correctResponsesPattern with answers and figure out what the [,] actually is / needs to do
       object.definition.correctResponsePattern = [];
 
       var item = this.get('model').get('_items')[0];
@@ -76,30 +75,7 @@ define(function(require) {
 
       });
 
-      object.definition.choices = this.getDefinitionChoices();
-
       return object;
-    },
-
-    getDefinitionChoices: function() {
-      var choices = [];
-
-      if (
-          _.isEmpty(this.get('model').get('_items'))
-      ) {
-        return null;
-      }
-
-      _.each(this.get('model').get('_items'), function(item) {
-        var choice = {};
-        choice.id = item._index;
-        choice.description = {};
-        choice.description[Adapt.config.get('_defaultLanguage')] = item.text;
-
-        choices.push(choice);
-      });
-
-      return choices;
     },
 
   });
