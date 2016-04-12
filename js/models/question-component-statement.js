@@ -2,17 +2,17 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var Backbone = require('backbone');
   var ComponentStatementModel = require('./component-statement');
+  var ADL = require('question-component-statement.js/../../xapiwrapper.min');
 
-  var QuestionComponentStatementModel = ComponentStatementModel.extend({
+  return ComponentStatementModel.extend({
 
     initialize: function() {
       return ComponentStatementModel.prototype.initialize.call(this);
     },
 
-    getStatementObject: function() {
-      var statement = ComponentStatementModel.prototype.getStatementObject.call(this);
+    getStatement: function() {
+      var statement = ComponentStatementModel.prototype.getStatement.call(this);
 
       var verb = this.getVerb();
       var object = this.getObject();
@@ -45,6 +45,8 @@ define(function(require) {
 
       object.definition.type = "http://adlnet.gov/expapi/activities/cmi.interaction";
 
+      object.definition.description[Adapt.config.get('_defaultLanguage')] = this.get('model').get('body');
+
       return object;
     },
 
@@ -73,21 +75,8 @@ define(function(require) {
       score.raw = this.get('model').get('_score');
 
       return score;
-    },
-
-    getObject: function() {
-      var object = ComponentStatementModel.prototype.getObject.call(this);
-
-      object.type = this.get('model').get('_component');
-
-      object.definition.description = {};
-      object.definition.description[Adapt.config.get('_defaultLanguage')] = this.get('model').get('body');
-
-      return object;
-    },
+    }
 
   });
-
-  return QuestionComponentStatementModel;
 
 });

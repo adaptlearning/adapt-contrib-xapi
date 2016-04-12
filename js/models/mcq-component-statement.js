@@ -11,8 +11,8 @@ define(function(require) {
       return QuestionComponentStatementModel.prototype.initialize.call(this);
     },
 
-    getStatementObject: function() {
-      var statement = QuestionComponentStatementModel.prototype.getStatementObject.call(this);
+    getStatement: function() {
+      var statement = QuestionComponentStatementModel.prototype.getStatement.call(this);
 
       var verb = this.getVerb();
       var object = this.getObject();

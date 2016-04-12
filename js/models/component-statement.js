@@ -2,17 +2,16 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
-  var Backbone = require('backbone');
   var StatementModel = require('./statement');
 
-  var ComponentStatementModel = StatementModel.extend({
+  return StatementModel.extend({
 
     initialize: function() {
       return StatementModel.prototype.initialize.call(this);
     },
 
-    getStatementObject: function() {
-      var statement = StatementModel.prototype.getStatementObject.call(this);
+    getStatement: function() {
+      var statement = StatementModel.prototype.getStatement.call(this);
 
       var verb = this.getVerb();
       var object = this.getObject();
@@ -35,10 +34,6 @@ define(function(require) {
 
     getVerb: function() {
       return StatementModel.prototype.getVerb.call(this);
-    },
-
-    getObject: function() {
-      return StatementModel.prototype.getObject.call(this);
     },
 
     getObject: function() {
@@ -99,10 +94,8 @@ define(function(require) {
       }
 
       return contextActivities;
-    },
+    }
 
   });
-
-  return ComponentStatementModel;
 
 });

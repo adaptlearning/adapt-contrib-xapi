@@ -15,6 +15,7 @@ define(function(require) {
   var ComponentStatementModel = require('./models/component-statement');
   var QuestionComponentStatementModel = require('./models/question-component-statement');
   var MCQComponentStatementModel = require('./models/mcq-component-statement');
+  var ADL = require('adapt-xapi.js/./xapiwrapper.min');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -101,7 +102,7 @@ define(function(require) {
       }
 
       this.sendStatement(
-        statementModel.getStatementObject()
+        statementModel.getStatement()
       );
     },
 
@@ -132,7 +133,7 @@ define(function(require) {
       }
 
       this.sendStatement(
-        statementModel.getStatementObject()
+        statementModel.getStatement()
       );
     },
 
@@ -155,7 +156,7 @@ define(function(require) {
         state.blocks.push({
           _id: block.get('_id'),
           _trackingId: block.get('_trackingId'),
-          _isComplete: block.get('_isComplete'),
+          _isComplete: block.get('_isComplete')
         });
 
         this.set('state', state);
@@ -192,7 +193,7 @@ define(function(require) {
         return;
       }
 
-      var statement = statementModel.getStatementObject();
+      var statement = statementModel.getStatement();
 
       this.sendStatement(
         statement
@@ -203,7 +204,7 @@ define(function(require) {
       _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
-    onStateChanged: function(event) {
+    onStateChanged: function() {
       this.saveState();
     },
 
@@ -219,11 +220,11 @@ define(function(require) {
         return criteriaMet;
       }
 
-      if (tracking._requireCourseCompleted && tracking._requireAssessmentPassed) {
+      if (tracking['_requireCourseCompleted'] && tracking._requireAssessmentPassed) {
         // user must complete all blocks AND pass the assessment
         criteriaMet = (Adapt.course.get('_isComplete') &&
         Adapt.course.get('_isAssessmentPassed'));
-      } else if (tracking._requireCourseCompleted) {
+      } else if (tracking['_requireCourseCompleted']) {
         // user only needs to complete all blocks
         criteriaMet = Adapt.course.get('_isComplete');
       } else if (tracking._requireAssessmentPassed) {
@@ -283,16 +284,18 @@ define(function(require) {
     /**
      * Loads the last saved state of the course from the LRS, if a state exists
      *
-     * @param {boolean} async - whether to load asynchronously, default is false
+     * @param {boolean} [async] - whether to load asynchronously, default is false
      * @fires xapi:loadStateFailed or xapi:stateLoaded
      */
     loadState: function(async) {
+      var self = this;
+
       if (async) {
         xapiWrapper.getState(
-          this.get('activityId'),
-          this.get('actor'),
+          self.get('activityId'),
+          self.get('actor'),
           STATE_PROGRESS,
-          this.get('registration'),
+          self.get('registration'),
           function success(result) {
             if ('undefined' === typeof result || 404 === result.status) {
               Adapt.trigger('xapi:loadStateFailed');
@@ -300,8 +303,8 @@ define(function(require) {
             }
 
             try {
-              this.set('state', JSON.parse(result.response));
-              Adapt.trigger('xapi:stateLoaded');
+              self.set('state', JSON.parse(result.response.toString));
+              self.trigger('xapi:stateLoaded');
             } catch (ex) {
               Adapt.trigger('xapi:loadStateFailed');
             }
@@ -369,7 +372,7 @@ define(function(require) {
     /**
      * Set the extension config
      *
-     * @param {object} key - the data attribute to fetch
+     * @param {object} conf - the data attribute to set
      */
     setConfig: function(conf) {
       this.data = conf;
@@ -409,8 +412,6 @@ define(function(require) {
       } catch (e) {
         return null;
       }
-
-      return null;
     },
 
     markBlockAsComplete: function(block) {
@@ -432,11 +433,7 @@ define(function(require) {
         return false;
       }
 
-      if (!this.get('registration')) {
-        return false;
-      }
-
-      return true;
+      return this.get('registration');
     },
 
     sendStatement: function(statement, callback) {
@@ -459,7 +456,7 @@ define(function(require) {
       object.objectType = "Activity";
 
       return object;
-    },
+    }
 
   });
 
