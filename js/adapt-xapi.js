@@ -15,6 +15,7 @@ define(function(require) {
   var ComponentStatementModel = require('./models/component-statement');
   var QuestionComponentStatementModel = require('./models/question-component-statement');
   var MCQComponentStatementModel = require('./models/mcq-component-statement');
+  var TextInputComponentStatementModel = require('./models/textinput-component-statement');
   var ADL = require('./xapiwrapper.min');
 
   var xapiWrapper;
@@ -49,7 +50,7 @@ define(function(require) {
       this.set('actor', this.getLRSAttribute('actor'));
 
       this.set('activityId', (this.getConfig('_activityID')) ?
-        this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
+          this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
       this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
@@ -69,9 +70,9 @@ define(function(require) {
       }
 
       this.sendStatement(
-        (!this.checkTrackingCriteriaMet()) ?
-          this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
-          this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
+          (!this.checkTrackingCriteriaMet()) ?
+              this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
+              this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
       );
     },
 
@@ -122,6 +123,9 @@ define(function(require) {
       switch (question.model.get('_component')) {
         case "mcq":
           statementModel = new MCQComponentStatementModel(data);
+          break;
+        case "textinput":
+          statementModel = new TextInputComponentStatementModel(data);
           break;
         default:
           statementModel = new QuestionComponentStatementModel(data);
@@ -184,7 +188,7 @@ define(function(require) {
       var statement = statementModel.getStatement();
 
       this.sendStatement(
-        statement
+          statement
       );
     },
 
@@ -240,11 +244,11 @@ define(function(require) {
     saveState: function() {
       if (this.get('state')) {
         xapiWrapper.sendState(
-          this.get('activityId'),
-          this.get('actor'),
-          STATE_PROGRESS,
-          this.get('registration'),
-          this.get('state')
+            this.get('activityId'),
+            this.get('actor'),
+            STATE_PROGRESS,
+            this.get('registration'),
+            this.get('state')
         );
       }
     },
@@ -300,12 +304,12 @@ define(function(require) {
         );
       } else {
         this.set(
-          'state',
-          xapiWrapper.getState(
-            this.get('activityId'),
-            this.get('actor'),
-            STATE_PROGRESS
-          )
+            'state',
+            xapiWrapper.getState(
+                this.get('activityId'),
+                this.get('actor'),
+                STATE_PROGRESS
+            )
         );
 
         if (!this.get('state')) {
@@ -339,7 +343,7 @@ define(function(require) {
       statement.actor = this.get('actor');
 
       if (
-        !object || !object.id
+          !object || !object.id
       ) {
         return null;
       }
