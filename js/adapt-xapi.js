@@ -123,7 +123,7 @@ define(function(require) {
           statementModel = new MCQComponentStatementModel(data);
           break;
         default:
-          statementModel = null;
+          statementModel = new QuestionComponentStatementModel(data);
           break;
       }
 

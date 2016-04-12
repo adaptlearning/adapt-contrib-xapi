@@ -56,12 +56,12 @@ define(function(require) {
         result.score = score;
       }
 
-      if (this.get('model').isCorrect != null) {
-        result.success = this.get('model').isCorrect;
+      if (this.get('model').get('_isCorrect') != null) {
+        result.success = this.get('model').get('_isCorrect');
       }
 
-      if (this.get('model').isComplete != null) {
-        result.completion = this.get('model').isComplete;
+      if (this.get('model').get('_isComplete') != null) {
+        result.completion = this.get('model').get('_isComplete');
       }
 
       return result;
