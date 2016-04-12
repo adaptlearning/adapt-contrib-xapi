@@ -1,8 +1,9 @@
 define(function(require) {
 
   var Adapt = require('coreJS/adapt');
+  var _ = require('underscore');
   var Backbone = require('backbone');
-  var ADL = require('../../xapiwrapper.min');
+  var ADL = require('../xapiwrapper.min');
 
   /**
    * @typedef   {Object}      xAPI.Statement            The Statement is the core of the xAPI. All learning events are stored as Statements. A Statement is akin to a sentence of the form "I did this".

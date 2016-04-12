@@ -2,8 +2,9 @@ define(function(require) {
 
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
+  var Backbone = require('backbone');
+  var ADL = require('../xapiwrapper.min');
   var ComponentStatementModel = require('./component-statement');
-  var ADL = require('question-component-statement.js/../../xapiwrapper.min');
 
   return ComponentStatementModel.extend({
 

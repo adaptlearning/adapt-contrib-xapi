@@ -3,6 +3,7 @@ define(function(require) {
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
   var Backbone = require('backbone');
+  var ADL = require('../xapiwrapper.min');
   var StatementModel = require('./statement');
 
   var AssessmentStatementModel = StatementModel.extend({
