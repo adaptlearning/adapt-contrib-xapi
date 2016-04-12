@@ -11,8 +11,8 @@ define(function(require) {
       return QuestionComponentStatementModel.prototype.initialize.call(this);
     },
 
-    getStatementObject: function() {
-      var statement = QuestionComponentStatementModel.prototype.getStatementObject.call(this);
+    getStatement: function() {
+      var statement = QuestionComponentStatementModel.prototype.getStatement.call(this);
 
       var verb = this.getVerb();
       var object = this.getObject();
@@ -59,12 +59,7 @@ define(function(require) {
     },
 
     getScore: function() {
-      var score = QuestionComponentStatementModel.prototype.getScore.call(this);
-      //@TODO score may need tweaked here this is MCQ related score
-      // MCQ is either 0 or 1
-      score.scaled = score.raw;
-
-      return score;
+      return QuestionComponentStatementModel.prototype.getScore.call(this);
     },
 
     getObject: function() {
