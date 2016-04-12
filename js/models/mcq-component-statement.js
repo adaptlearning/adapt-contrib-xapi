@@ -69,12 +69,15 @@ define(function(require) {
 
       object.definition.interactionType = "choice";
 
-      object.definition.correctResponsePattern = [];
+      object.definition.correctResponsePattern = "";
+      var correctResponses = [];
       _.each(this.get('model').get('_items'), function(item) {
         if (item._shouldBeSelected) {
-          object.definition.correctResponsePattern.push(item._index);
+          correctResponses.push(item._index);
         }
       });
+
+      object.definition.correctResponsePattern = correctResponses.join("[,]");
 
       object.definition.choices = this.getDefinitionChoices();
 
