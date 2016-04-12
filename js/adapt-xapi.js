@@ -82,7 +82,7 @@ define(function(require) {
     },
 
     onComponentComplete: function(component) {
-      if (!component.get('_recordInteraction')) {
+      if (component.get('_recordInteraction') !== false) {
         return;
       }
 
@@ -105,10 +105,6 @@ define(function(require) {
     },
 
     onBlockComplete: function(block) {
-      if (!block.get('_recordInteraction')) {
-        return;
-      }
-
       var state = this.get('state') || {};
 
       if (!state.blocks) {
@@ -133,10 +129,6 @@ define(function(require) {
     },
 
     onCourseComplete: function() {
-      if (!Adapt.course.get('_recordInteraction')) {
-        return;
-      }
-
       if (Adapt.course.get('_isComplete') === true) {
         this.set('_attempts', this.get('_attempts') + 1);
       }
@@ -145,10 +137,6 @@ define(function(require) {
     },
 
     onAssessmentComplete: function(assessment) {
-      if (!assessment.get('_recordInteraction')) {
-        return;
-      }
-
       var statementModel = new AssessmentStatementModel({
         activityId: this.get('activityId'),
         actor: this.get('actor'),
