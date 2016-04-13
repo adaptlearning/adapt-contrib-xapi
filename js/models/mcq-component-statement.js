@@ -43,7 +43,29 @@ define(function(require) {
     },
 
     getObject: function() {
-      return QuestionComponentStatementModel.prototype.getObject.call(this);
+      var object = QuestionComponentStatementModel.prototype.getObject.call(this);
+      
+      if (
+        _.isNull(object)
+      ) {
+        return null;
+      }
+
+      object.definition.interactionType = "choice";
+
+      object.definition.correctResponsePattern = "";
+      var correctResponses = [];
+      _.each(this.get('model').get('_items'), function(item) {
+        if (item._shouldBeSelected) {
+          correctResponses.push(item._index);
+        }
+      });
+
+      object.definition.correctResponsePattern = correctResponses.join("[,]");
+
+      object.definition.choices = this.getDefinitionChoices();
+
+      return object;
     },
 
     getResult: function() {

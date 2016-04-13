@@ -45,6 +45,12 @@ define(function(require) {
     getObject: function() {
       var object = ComponentStatementModel.prototype.getObject.call(this);
 
+      if (
+        _.isNull(object)
+      ) {
+        return null;
+      }
+
       object.definition.type = "http://adlnet.gov/expapi/activities/cmi.interaction";
 
       object.definition.description[Adapt.config.get('_defaultLanguage')] = this.get('model').get('body');
