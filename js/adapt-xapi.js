@@ -7,6 +7,8 @@
  */
 define(function(require) {
 
+  require('./xapiwrapper.min');
+
   var Adapt = require('coreJS/adapt');
   var Backbone = require('backbone');
   var _ = require('underscore');
@@ -16,7 +18,6 @@ define(function(require) {
   var QuestionComponentStatementModel = require('./models/question-component-statement');
   var MCQComponentStatementModel = require('./models/mcq-component-statement');
   var TextInputComponentStatementModel = require('./models/textinput-component-statement');
-  var ADL = require('./xapiwrapper.min');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';

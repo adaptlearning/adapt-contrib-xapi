@@ -1,9 +1,10 @@
 define(function(require) {
 
+  require('../xapiwrapper.min');
+
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
   var Backbone = require('backbone');
-  var ADL = require('../xapiwrapper.min');
   var StatementModel = require('./statement');
 
   return StatementModel.extend({
@@ -35,11 +36,25 @@ define(function(require) {
     },
 
     getVerb: function() {
-      return StatementModel.prototype.getVerb.call(this);
+      var verb = StatementModel.prototype.getVerb.call(this);
+
+      if (
+        _.isNull(verb)
+      ) {
+        return null;
+      }
+
+      return verb;
     },
 
     getObject: function() {
       var object = StatementModel.prototype.getObject.call(this);
+
+      if (
+        _.isNull(object)
+      ) {
+        return null;
+      }
 
       object.id = ['http://adaptlearning.org', this.get('model').get('_type'), this.get('model').get('_component')].join('/');
 

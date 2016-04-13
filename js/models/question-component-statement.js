@@ -1,9 +1,10 @@
 define(function(require) {
 
+  require('../xapiwrapper.min');
+
   var Adapt = require('coreJS/adapt');
   var _ = require('underscore');
   var Backbone = require('backbone');
-  var ADL = require('../xapiwrapper.min');
   var ComponentStatementModel = require('./component-statement');
 
   return ComponentStatementModel.extend({
@@ -43,6 +44,12 @@ define(function(require) {
 
     getObject: function() {
       var object = ComponentStatementModel.prototype.getObject.call(this);
+
+      if (
+        _.isNull(object)
+      ) {
+        return null;
+      }
 
       object.definition.type = "http://adlnet.gov/expapi/activities/cmi.interaction";
 
