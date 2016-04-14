@@ -28,19 +28,16 @@ define(function(require) {
 
     getObject: function() {
       var object = QuestionComponentStatementModel.prototype.getObject.call(this);
+      var item = this.get('model').get('_items')[0];
+      var correctResponses = [];
 
       object.definition.interactionType = "fill-in";
 
-      object.definition.correctResponsePattern = "";
-      var correctResponses = [];
-
-      var item = this.get('model').get('_items')[0];
       _.each(item._answers, function(answer) {
         correctResponses.push(answer);
-
       });
 
-      object.definition.correctResponsePattern = correctResponses.join("[,]");
+      object.definition.correctResponsePattern = correctResponses;
 
       return object;
     },
