@@ -4,6 +4,7 @@
  * Maintainers  - Dennis Heaney <dennis@learningpool.com>
  *              - Barry McKay <barry@learningpool.com>
  *              - Andy Bell <andrewb@learningpool.com>
+ *              - Ryan Lynch <ryanlynch@learningpool.com>
  */
 define(function(require) {
 
