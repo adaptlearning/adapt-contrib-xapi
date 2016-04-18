@@ -52,7 +52,7 @@ define(function(require) {
       this.set('actor', this.getLRSAttribute('actor'));
 
       this.set('activityId', (this.getConfig('_activityID')) ?
-          this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
+        this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
       this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
@@ -72,9 +72,9 @@ define(function(require) {
       }
 
       this.sendStatement(
-          (!this.checkTrackingCriteriaMet()) ?
-              this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
-              this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
+        (!this.checkTrackingCriteriaMet()) ?
+            this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
+            this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
       );
     },
 
@@ -190,7 +190,7 @@ define(function(require) {
       var statement = statementModel.getStatement();
 
       this.sendStatement(
-          statement
+        statement
       );
     },
 
@@ -308,9 +308,9 @@ define(function(require) {
         this.set(
             'state',
             xapiWrapper.getState(
-                this.get('activityId'),
-                this.get('actor'),
-                STATE_PROGRESS
+              this.get('activityId'),
+              this.get('actor'),
+              STATE_PROGRESS
             )
         );
 
