@@ -9,10 +9,10 @@ define(function(require) {
 
     getResult: function() {
       var result = QuestionComponentStatementModel.prototype.getResult.call(this);
-      var item = this.get('model').get('_items')[0];
+      var item = this.get('model').attributes;
 
-      if (item.userAnswer != null) {
-        result.response = item.userAnswer;
+      if (item._userAnswer !== null) {
+        result.response = item._userAnswer;
       }
 
       return result;
@@ -28,16 +28,14 @@ define(function(require) {
 
     getObject: function() {
       var object = QuestionComponentStatementModel.prototype.getObject.call(this);
-      var item = this.get('model').get('_items')[0];
+      var item = this.get('model').attributes;
       var correctResponses = [];
 
-      object.definition.interactionType = "fill-in";
+      object.definition.interactionType = "long-fill-in";
+      var defaultLang = Adapt.config.get('_defaultLanguage');
+      var responsePatternString = '{case_matters=false}{lang='+defaultLang+'}' + this.cleanHtml(item.modelAnswer);
 
-      _.each(item._answers, function(answer) {
-        correctResponses.push(answer);
-      });
-
-      object.definition.correctResponsePattern = correctResponses;
+      object.definition.correctResponsePattern = [responsePatternString];
 
       return object;
     },
