@@ -19,7 +19,8 @@ define(function(require) {
   var QuestionComponentStatementModel = require('./models/question-component-statement');
   var MCQComponentStatementModel = require('./models/mcq-component-statement');
   var TextInputComponentStatementModel = require('./models/textinput-component-statement');
-
+  var OpenTextInputComponentStatementModel = require('./models/opentextinput-component-statement');
+  
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
 
@@ -128,6 +129,9 @@ define(function(require) {
           break;
         case "textinput":
           statementModel = new TextInputComponentStatementModel(data);
+          break;
+        case "openTextInput": 
+          statementModel = new OpenTextInputComponentStatementModel(data);
           break;
         default:
           statementModel = new QuestionComponentStatementModel(data);
