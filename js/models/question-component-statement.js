@@ -45,9 +45,7 @@ define(function(require) {
     getObject: function() {
       var object = ComponentStatementModel.prototype.getObject.call(this);
 
-      if (
-        _.isNull(object)
-      ) {
+      if (_.isNull(object)) {
         return null;
       }
 
