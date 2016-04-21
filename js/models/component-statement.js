@@ -37,22 +37,14 @@ define(function(require) {
 
     getVerb: function() {
       var verb = StatementModel.prototype.getVerb.call(this);
-
-      if (
-        _.isNull(verb)
-      ) {
-        return null;
-      }
-
-      return verb;
+      
+      return _.isNull(verb) ? null : verb;
     },
 
     getObject: function() {
       var object = StatementModel.prototype.getObject.call(this);
 
-      if (
-        _.isNull(object)
-      ) {
+      if (_.isNull(object)) {
         return null;
       }
 
@@ -100,7 +92,6 @@ define(function(require) {
         }
       } else {
         // Parent is the course
-        // component -> block -> article -> page -> course
         var course = this.get('model').getParent().getParent().getParent().getParent();
         if (!_.isEmpty(course)) {
           var courseIri = [this.get('activityId'), 'course', course.get('_id')].join('/');
