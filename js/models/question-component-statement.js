@@ -6,6 +6,7 @@ define(function(require) {
   var _ = require('underscore');
   var Backbone = require('backbone');
   var ComponentStatementModel = require('./component-statement');
+  var StatementModel = require('./statement');
 
   return ComponentStatementModel.extend({
 
@@ -21,12 +22,9 @@ define(function(require) {
       var context = this.getContext();
       var result = this.getResult();
 
-      if (
-        _.isEmpty(verb) ||
-        _.isEmpty(object) ||
-        _.isEmpty(context) ||
-        _.isEmpty(result)
-      ) {
+      var validProps = StatementModel.prototype.requiredPropertiesAvailable([verb, object, context, result]);
+
+      if (!validProps) {
         return null;
       }
 

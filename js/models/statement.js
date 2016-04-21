@@ -185,11 +185,28 @@ define(function(require) {
     },
 
     getIri: function() {
+      
       if (!this.get('activityId') || !this.get('model').get('_type') || this.get('model').get('_id')) {
         return null;
       }
 
       return [this.get('activityId'), this.get('model').get('_type'), this.get('model').get('_id')].join('/');
+    },
+    
+    requiredPropertiesAvailable: function(props) {
+      
+      if (props.length === 0) {
+        return false;
+      }
+      
+      _.each(props, function(prop) {
+        if (_.isEmpty(prop)) {
+          return false;
+        }
+      });
+      
+      return true;
+      
     }
 
   });

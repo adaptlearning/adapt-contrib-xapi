@@ -19,12 +19,10 @@ define(function(require) {
       var verb = this.getVerb();
       var object = this.getObject();
       var context = this.getContext();
+      
+      var validProps = StatementModel.prototype.requiredPropertiesAvailable([verb, object, context]);
 
-      if (
-        _.isEmpty(verb) ||
-        _.isEmpty(object) ||
-        _.isEmpty(context)
-      ) {
+      if (!validProps) {
         return null;
       }
 
@@ -56,12 +54,14 @@ define(function(require) {
     },
 
     getIri: function() {
-      if (
-        _.isEmpty(this.get('activityId')) ||
-        _.isEmpty(this.get('model')) ||
-        _.isEmpty(this.get('model').get('_type')) ||
-        _.isEmpty(this.get('model').get('_id'))
-      ) {
+      var validProps = StatementModel.prototype.requiredPropertiesAvailable([
+        this.get('activityId'),
+        this.get('model'),
+        this.get('model').get('_type'),
+        this.get('model').get('_id')
+      ]);
+      
+      if (!validProps) {
         return null;
       }
 

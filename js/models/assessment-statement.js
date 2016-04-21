@@ -20,13 +20,10 @@ define(function(require) {
       var object = this.getObject();
       var context = this.getContext();
       var result = this.getResult();
+      
+      var validProps = StatementModel.prototype.requiredPropertiesAvailable([verb, object, context, result]);
 
-      if (
-        _.isEmpty(verb) ||
-        _.isEmpty(object) ||
-        _.isEmpty(context) ||
-        _.isEmpty(result)
-      ) {
+      if (!validProps) {
         return null;
       }
 

@@ -4,6 +4,7 @@ define(function(require) {
   var _ = require('underscore');
   var Backbone = require('backbone');
   var QuestionComponentStatementModel = require('./question-component-statement');
+  var StatementModel = require('./statement');
 
   var OpenTextInputComponentStatementModel = QuestionComponentStatementModel.extend({
 
@@ -33,24 +34,12 @@ define(function(require) {
 
       object.definition.interactionType = "long-fill-in";
       var defaultLang = Adapt.config.get('_defaultLanguage');
-      var responsePatternString = '{case_matters=false}{lang='+defaultLang+'}' + this.cleanHtml(item.modelAnswer);
-
-      object.definition.correctResponsePattern = [responsePatternString];
-
-      return object;
-    },
-
-  });
-
-  return OpenTextInputComponentStatementModel;
-
-});
       var responsePatternString = '{case_matters=false}{lang='+defaultLang+'}' + item.modelAnswer;
 
       object.definition.correctResponsePattern = [responsePatternString];
 
       return object;
-    }
+    },
 
   });
 

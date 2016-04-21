@@ -6,6 +6,7 @@ define(function(require) {
   var _ = require('underscore');
   var Backbone = require('backbone');
   var QuestionComponentStatementModel = require('./question-component-statement');
+  var StatementModel = require('./statement');
 
   var MCQComponentStatementModel = QuestionComponentStatementModel.extend({
 
@@ -21,12 +22,9 @@ define(function(require) {
       var context = this.getContext();
       var result = this.getResult();
 
-      if (
-        _.isEmpty(verb) ||
-        _.isEmpty(object) ||
-        _.isEmpty(context) ||
-        _.isEmpty(result)
-      ) {
+      var validProps = StatementModel.prototype.requiredPropertiesAvailable([verb, object, context, result]);
+
+      if (!validProps) {
         return null;
       }
 
@@ -45,9 +43,7 @@ define(function(require) {
     getObject: function() {
       var object = QuestionComponentStatementModel.prototype.getObject.call(this);
       
-      if (
-        _.isNull(object)
-      ) {
+      if (_.isNull(object)) {
         return null;
       }
 
