@@ -46,7 +46,7 @@ define(function(require) {
       this.set('actor', this.getLRSAttribute('actor'));
 
       this.set('activityId', (this.getConfig('_activityID')) ?
-        this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
+      this.getConfig('_activityID') : this.getLRSAttribute('activity_id'));
       this.set('registration', this.getLRSAttribute('registration'));
 
       if (!this.validateParams()) {
@@ -365,6 +365,23 @@ define(function(require) {
       } catch (e) {
         return null;
       }
+    },
+    
+    getLRSExtendedAttribute: function(key) {
+      var extended = this.getLRSAttribute('extended');
+      if (extended == null) {
+      	return null;
+      }
+            
+	  try {
+        if (key === 'definition') {
+          return JSON.parse(extended.definition);
+        }
+
+        return extended[key];
+      } catch (e) {
+        return null;
+      }
 
       return null;
     },
@@ -403,6 +420,17 @@ define(function(require) {
       xapiWrapper.sendStatement(statement, callback)
     },
 
+    getObjectDefinition: function() {
+      var definition = this.getLRSExtendedAttribute('definition') || {};
+
+      if (!definition.name) {
+        definition.name = {};
+        definition.name[Adapt.config.attributes._defaultLanguage] = Adapt.course.attributes.title;
+      }
+
+      return definition;
+    },
+
     getObjectForActivity: function() {
       var object = {};
 
@@ -411,6 +439,7 @@ define(function(require) {
         return null;
       }
 
+      object.definition = this.getObjectDefinition();
       object.id = iri;
       object.objectType = "Activity";
 
