@@ -1,68 +1,253 @@
 {
-  "type":"object",
+  "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema",
   "id": "http://jsonschema.net",
-  "required":false,
-  "properties":{
+  "required": false,
+  "properties": {
     "pluginLocations": {
-      "type":"object",
-      "required":true,
-      "properties":{
+      "type": "object",
+      "required": true,
+      "properties": {
         "config": {
-          "type":"object",
-          "properties":{
+          "type": "object",
+          "properties": {
             "_xapi": {
-              "type":"object",
-              "required":false,
+              "type": "object",
+              "required": false,
               "legend": "xAPI",
-              "properties":{
+              "properties": {
                 "_isEnabled": {
-                  "type":"boolean",
-                  "required":true,
+                  "type": "boolean",
+                  "required": true,
                   "default": true,
-                  "title":"Is Enabled",
-                  "inputType": {"type": "Boolean", "options": [true, false]},
+                  "title": "Is Enabled",
+                  "inputType": "Checkbox",
                   "validators": [],
                   "help": "If set to 'true', this course will be tracked by xAPI"
                 },
                 "_activityID": {
-                  "type":"string",
-                  "required":true,
-                  "title":"Activity ID",
+                  "type": "string",
+                  "required": true,
+                  "title": "Activity ID",
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
-                  "help": "Unique identifier for this xAPI activity. (Usually the URL to the course.)"
+                  "help": "Unique identifier for this xAPI activity, i.e. usually the URL to the course."
+                },
+                "_endpoint": {
+                  "type": "string",
+                  "required": true,
+                  "title": "Endpoint",
+                  "default": "",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "Endpoint"
+                },
+                "_user": {
+                  "type": "string",
+                  "required": true,
+                  "title": "User",
+                  "default": "",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "User"
+                },
+                "_password": {
+                  "type": "string",
+                  "required": true,
+                  "title": "Password",
+                  "default": "",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "Password"
+                },
+                "_lang": {
+                  "type": "string",
+                  "required": false,
+                  "enum": ["de-DE", "en-US", "fr-FR", "es-ES"],
+                  "default": "en-US",
+                  "title": "Verb language",
+                  "inputType": {"type": "Select", "options": ["de-DE", "en-US", "fr-FR", "es-ES"]},
+                  "validators": [],
+                  "help": "Select the language for verbs to be sent to the LRS."
+                },
+                "_coreEvents": {
+                  "type": "object",
+                  "required": false,
+                  "title": "Core Events",
+                  "properties": {
+                    "Adapt": {
+                      "type": "object",
+                      "required": false,
+                      "title": "Adapt",
+                      "properties": {
+                        "router:menu": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "router:menu",
+                          "validators": [],
+                          "help": ""
+                        },
+                        "router:page": {
+                          "type": "boolean",
+                          "required": true,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "router:page",
+                          "validators": [],
+                          "help": ""
+                        },
+                        "questionView:recordInteraction": {
+                          "type": "boolean",
+                          "required": true,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "questionView:recordInteraction",
+                          "validators": [],
+                          "help": ""
+                        },
+                        "assessment:complete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "assessment:complete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    },
+                    "course": {
+                      "type": "object",
+                      "required": false,
+                      "title": "course",
+                      "properties": {
+                        "change:_isComplete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "change:_isComplete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    },
+                    "contentobjects": {
+                      "type": "object",
+                      "required": false,
+                      "title": "contentobjects",
+                      "properties": {
+                        "change:_isComplete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "change:_isComplete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    },
+                    "articles": {
+                      "type": "object",
+                      "required": false,
+                      "title": "articles",
+                      "properties": {
+                        "change:_isComplete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "change:_isComplete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    },
+                    "blocks": {
+                      "type": "object",
+                      "required": false,
+                      "title": "blocks",
+                      "properties": {
+                        "change:_isComplete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "change:_isComplete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    },
+                    "components": {
+                      "type": "object",
+                      "required": false,
+                      "title": "components",
+                      "properties": {
+                        "change:_isComplete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "change:_isComplete",
+                          "validators": [],
+                          "help": ""
+                        }
+                      }
+                    }
+                  }
                 },
                 "_tracking": {
-                  "type":"object",
-                  "required":false,
+                  "type": "object",
+                  "required": false,
                   "title": "Tracking",
-                  "properties":{
+                  "properties": {
                     "_requireAssessmentPassed": {
-                      "type":"boolean",
-                      "required":false,
+                      "type": "boolean",
+                      "required": false,
                       "default": false,
-                      "title":"Assessment pass required",
-                      "inputType": {"type": "Boolean", "options": [true, false]},
+                      "title": "Assessment pass required",
+                      "inputType": {
+                        "type": "Boolean",
+                        "options": [
+                          true,
+                          false
+                        ]
+                      },
                       "validators": [],
                       "help": ""
                     },
                     "_requireCourseCompleted": {
-                      "type":"boolean",
-                      "required":false,
-                      "default":true,
-                      "title":"Course completion required",
-                      "inputType": {"type": "Boolean", "options": [true, false]},
+                      "type": "boolean",
+                      "required": false,
+                      "default": true,
+                      "title": "Course completion required",
+                      "inputType": {
+                        "type": "Boolean",
+                        "options": [
+                          true,
+                          false
+                        ]
+                      },
                       "validators": [],
                       "help": ""
                     },
                     "_shouldSubmitScore": {
-                      "type":"boolean",
-                      "required":false,
+                      "type": "boolean",
+                      "required": false,
                       "default": false,
-                      "title":"Submit score",
-                      "inputType": {"type": "Boolean", "options": [true, false]},
+                      "title": "Submit score",
+                      "inputType": {
+                        "type": "Boolean",
+                        "options": [
+                          true,
+                          false
+                        ]
+                      },
                       "validators": [],
                       "help": ""
                     }
@@ -73,19 +258,19 @@
           }
         },
         "course": {
-          "type":"object"
+          "type": "object"
         },
         "contentobject": {
-          "type":"object"
+          "type": "object"
         },
         "article": {
-          "type":"object"
+          "type": "object"
         },
         "block": {
-          "type":"object"
+          "type": "object"
         },
         "component": {
-          "type":"object"
+          "type": "object"
         }
       }
     }
