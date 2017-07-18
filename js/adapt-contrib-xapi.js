@@ -32,7 +32,7 @@ define([
       'router:page': true,
       'router:menu': true,
       'assessment:complete': true,
-      'questionView:interactionComplete': true,
+      'questionView:recordInteraction': true,
       'course': {
         _isComplete: true
       },
