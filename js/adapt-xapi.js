@@ -13,6 +13,7 @@ define(function(require) {
   var xapi = require('./xapiwrapper.min');
   var AssessmentStatementModel = require('./models/assessment-statement');
   var ComponentStatementModel = require('./models/component-statement');
+  var ContentObjectStatementModel = require('./models/content-object-statement');
 
   var xapiWrapper;
   var STATE_PROGRESS = 'adapt-course-progress';
@@ -73,6 +74,7 @@ define(function(require) {
     },
 
     setupListeners: function() {
+      this.listenTo(Adapt.contentObjects, "change:_isComplete", this.onContentObjectsComplete);
       this.listenTo(Adapt.components, "change:_isComplete", this.onComponentComplete);
       this.listenTo(Adapt.blocks, "change:_isComplete", this.onBlockComplete);
       this.listenTo(Adapt.course, "change:_isComplete", this.onCourseComplete);
@@ -126,6 +128,29 @@ define(function(require) {
 
         Adapt.trigger('xapi:stateChanged');
       }
+    },
+
+    onContentObjectsComplete: function(contentObject) {
+      if (contentObject.get('_recordInteraction') !== true) {
+        return;
+      }
+
+      var statementModel = new ContentObjectStatementModel({
+        activityId: this.get('activityId'),
+        actor: this.get('actor'),
+        registration: this.get('registration'),
+        model: contentObject
+      });
+
+      if (!statementModel) {
+        return;
+      }
+
+      var statement = statementModel.getStatementObject();
+
+      this.sendStatement(
+        statement
+      );
     },
 
     onCourseComplete: function() {
