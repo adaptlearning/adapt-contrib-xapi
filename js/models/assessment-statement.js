@@ -110,6 +110,10 @@ define(function(require) {
         return null;
       }
 
+      if(Adapt.config.get("_xapi")._tracking._activityIdForIri===true) {
+        return [this.get('activityId'), '#', 'id', this.get('model').pageId].join('/');
+      }
+      
       return [this.get('activityId'), 'assessment', this.get('model').id].join('/');
     },
 
