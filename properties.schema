@@ -71,6 +71,15 @@
                   "validators": [],
                   "help": "Select the language for verbs to be sent to the LRS."
                 },
+                "_generateIds" : {
+                  "type": "boolean",
+                  "required": false,
+                  "default": false,
+                  "title": "Auto-generate ID for statements",
+                  "inputType": "Checkbox",
+                  "validators": [],
+                  "help": "When enabled, this will append an auto-generated 'id' value for all xAPI statements."
+                },
                 "_coreEvents": {
                   "type": "object",
                   "required": false,

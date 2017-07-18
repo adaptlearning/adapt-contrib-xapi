@@ -21,6 +21,7 @@ define([
     defaults: {
       lang: 'en-US',
       displayLang: 'en-US',
+      generateIds: false,
       activityId: null,
       actor: null,
       state: null
@@ -76,13 +77,15 @@ define([
           registration: this.getLRSAttribute('registration'),
           actor: this.getLRSAttribute('actor'),
           displayLang: Adapt.config.get('_defaultLanguage'),
-          lang: this.getConfig('_lang')
+          lang: this.getConfig('_lang'),
+          generateIds: this.getConfig('_generateIds')
         });
 
-        // if (!this.validateProps()) {
-        //   // Required properties are missing, so exit.
-        //   return;
-        // }
+        if (!this.validateProps()) {
+          // Required properties are missing, so exit.
+          Adapt.trigger('plugin:endWait');
+          return;
+        }
 
         // // We need to listen for stateLoad before we load state.
         // this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
@@ -202,12 +205,8 @@ define([
     sendCourseStatement: function(verb, callback) {
       var title = Adapt.course.get('displayTitle') || Adapt.course.get('title');
       var description = Adapt.course.get('description') || '';
-
-      var statement = new ADL.XAPIStatement(
-        new ADL.XAPIStatement.Agent(this.get('actor')),
-        new ADL.XAPIStatement.Verb(this.getVerb(verb)),
-        new ADL.XAPIStatement.Activity(this.get('activityId'), title, description)
-      );
+      var object = new ADL.XAPIStatement.Activity(this.get('activityId'), title, description);
+      var statement = this.getStatement(this.getVerb(verb), object);
 
       this.sendStatement(statement, callback);
     },
@@ -606,35 +605,17 @@ define([
     },
 
     /**
-     * Generate a statement object for the xAPI wrapper method @sendStatement
-     * @param {object} verb - The ADL verb
+     * Generate an XAPIstatement object for the xAPI wrapper sendStatement methods.
+     * @param {object} verb - A valid ADL.verbs object.
      * @param {object} object - 
      * @param {object} [result] - optional
      * @param {object} [context] - optional
+     * @return {ADL.XAPIStatement} A formatted xAPI statement object.
      */
     getStatement: function(verb, object, result, context) {
-      var statement = {};
-
-      if (!verb) {
-        return null;
-      }
-
-      statement.verb = verb;
-
-      if (!this.get('actor')) {
-        return null;
-      }
-
-      statement.actor = this.get('actor');
-
-      if (
-        !object || !object.id
-      ) {
-        return null;
-      }
-
-      statement.object = object;
-
+      
+      var statement = new ADL.XAPIStatement(this.get('actor'), verb, object);
+      
       if (result) {
         statement.result = result;
       }
@@ -643,27 +624,25 @@ define([
         statement.context = context;
       }
 
-      var statement = new ADL.XAPIStatement(this.get('actor'), verb, object);
-      // stmt.generateId();
-      statement.result = result;
+      if (this.get('_generateIds')) {
+        statement.generateId();
+      }
 
       return statement;
     },
 
     /**
-     * Set the extension config
-     *
-     * @param {object} key - the data attribute to fetch
+     * Set the extension configuration.
+     * @param {object} conf - The _xAPI configuration attribute (from config.json).
      */
     setConfig: function(conf) {
       this.configData = conf;
     },
 
     /**
-     * Retrieve a config item for the current course, e.g. '_activityID'
-     *
-     * @param {string} key - the data attribute to fetch
-     * @return {object|boolean} the attribute value, or false if not found
+     * Retrieve a config item for the current course, e.g. '_activityID'.
+     * @param {string} key - The data attribute to fetch.
+     * @return {object|boolean} The attribute value, or false if not found.
      */
     getConfig: function(key) {
       if (!this.configData || key === '' || typeof this.configData[key] === 'undefined') {
@@ -674,10 +653,9 @@ define([
     },
 
     /**
-     * Retrieve an LRS attribute for the current session, e.g. 'actor'
-     *
-     * @param {string} key - the attribute to fetch
-     * @return {object|null} the attribute value, or null if not found
+     * Retrieve an LRS attribute for the current session, e.g. 'actor'.
+     * @param {string} key - The attribute to fetch.
+     * @return {object|null} the attribute value, or null if not found.
      */
     getLRSAttribute: function(key) {
       if (!this.xapiWrapper || !this.xapiWrapper.lrs || undefined === this.xapiWrapper.lrs[key]) {
@@ -722,10 +700,15 @@ define([
       }, this);
     },
 
+    /**
+     * Checks that the required properties -- actor, activityId and registration -- are defined, and
+     * logs a warning if any of them are not.
+     * @return {boolean} true if the properties are valid, false otherwise.
+     */
     validateProps: function() {
       var errorCount = 0;
 
-      if (!this.get('actor') || typeof this.get('actor') != 'object' || !this.get('actor').objectType) {
+      if (!this.get('actor') || typeof this.get('actor') != 'object') {
         Adapt.log.warn('"actor" attribute not found!');
         errorCount++;
       }
@@ -737,7 +720,7 @@ define([
 
       if (!this.get('registration')) {
         Adapt.log.warn('"registration" attribute not found!');
-        errorCount++;
+        // errorCount++;
       }
 
       if (errorCount > 0) {
@@ -747,6 +730,11 @@ define([
       return true;
     },
 
+    /**
+     * Sends a single xAPI statement to the LRS.
+     * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
+     * @param {function} callback - Optional callback function.
+     */
     sendStatement: function(statement, callback) {
       if (!statement) {
         return;
@@ -755,6 +743,11 @@ define([
       this.xapiWrapper.sendStatement(statement, callback)
     },
 
+    /**
+     * Sends multiple xAPI statements to the LRS.
+     * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
+     * @param {function} callback - Optional callback function.
+     */
     sendStatements: function(statements, callback) {
       if (!statements || statements.length === 0) {
         return;
@@ -794,10 +787,13 @@ define([
   Adapt.once('app:dataReady', function() {
     xAPI = new xAPI();
     
-    Adapt.on('app:languageChanged', function(newLanguage) {
-      // Update the language.
+    Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
+      // Update the language.      
       xAPI.set({ displayLang: newLanguage });
-    });
+
+      // Send a statement to track the (new) course.
+      this.sendCourseStatement(ADL.verbs.launched);
+    }, this));
   });
 
   Adapt.on('adapt:initialize', function() {
