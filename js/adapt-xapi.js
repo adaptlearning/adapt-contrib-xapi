@@ -416,8 +416,9 @@ define(function(require) {
       if (!statement) {
         return;
       }
-
+      Adapt.trigger("xapi:willSendStatement", statement);
       xapiWrapper.sendStatement(statement, callback)
+      Adapt.trigger("xapi:didSendStatement", statement);
     },
 
     getObjectDefinition: function() {
