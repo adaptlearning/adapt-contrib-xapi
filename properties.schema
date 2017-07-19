@@ -97,7 +97,7 @@
                           "default": true,
                           "title": "router:menu",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a menu item is displayed."
                         },
                         "router:page": {
                           "type": "boolean",
@@ -106,7 +106,7 @@
                           "default": true,
                           "title": "router:page",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a page is displayed."
                         },
                         "questionView:recordInteraction": {
                           "type": "boolean",
@@ -115,7 +115,16 @@
                           "default": true,
                           "title": "questionView:recordInteraction",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a user interacts with a question component."
+                        },
+                        "assessments:complete": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "assessments:complete",
+                          "validators": [],
+                          "help": "Triggered when an individual assessment is completed."
                         },
                         "assessment:complete": {
                           "type": "boolean",
@@ -124,7 +133,7 @@
                           "default": true,
                           "title": "assessment:complete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when all assessments are completed."
                         }
                       }
                     },
@@ -140,7 +149,7 @@
                           "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when the course is completed."
                         }
                       }
                     },
@@ -156,7 +165,7 @@
                           "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a contentobject, i.e. a page or menu item, is completed."
                         }
                       }
                     },
@@ -172,7 +181,7 @@
                           "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when an article is completed."
                         }
                       }
                     },
@@ -188,7 +197,7 @@
                           "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a block is completed."
                         }
                       }
                     },
@@ -204,7 +213,7 @@
                           "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
-                          "help": ""
+                          "help": "Triggered when a component is completed."
                         }
                       }
                     }

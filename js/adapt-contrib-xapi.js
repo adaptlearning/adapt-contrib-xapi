@@ -32,6 +32,7 @@ define([
       'router:page': true,
       'router:menu': true,
       'assessment:complete': true,
+      'assessments:complete': true,
       'questionView:recordInteraction': true,
       'course': {
         _isComplete: true
@@ -166,7 +167,7 @@ define([
       // Use the config to specify the core events.
       this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
 
-      // TODO: Define the events we care about.
+      // Conditionally listen to the events.
       if (this.coreEvents['router:menu']) {
         this.listenTo(Adapt, 'router:menu', this.onItemExperience);
       } 
@@ -179,9 +180,12 @@ define([
         this.listenTo(Adapt, 'questionView:recordInteraction', this.onQuestionInteraction);
       }
 
+      if (this.coreEvents['assessments:complete']) {
+        this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
+      }
+
       if (this.coreEvents['assessment:complete']) {
-        // this.listenTo(Adapt, "assessments:complete", this.onAssessmentComplete);
-        this.listenTo(Adapt, 'assessment:complete', this.onAssessmentComplete);
+        this.listenTo(Adapt, 'assessments:complete', this.onAllAssessmentsComplete);
       }
 
       // Standard completion events for the various collection types, i.e.
@@ -199,14 +203,23 @@ define([
 
     /**
      * Send an xAPI statement related to the Adapt.course object.
-     * @param {string|object} verb - A valid ADL.verbs object or key
+     * @param {string|object} verb - A valid ADL.verbs object or key.
+     * @param {object} result - An optional result.
      * @param {function} callback - Optional callback function which will be passed to xapiWrapper.sendStatement().
      */
-    sendCourseStatement: function(verb, callback) {
+    sendCourseStatement: function(verb, result, callback) {
+      // Parameter shuffling.
+      if (typeof result === 'undefined') {
+        result = {};
+      } else if (typeof result === 'function') {
+        callback = result;
+        result = {};
+      }
+
       var title = Adapt.course.get('displayTitle') || Adapt.course.get('title');
       var description = Adapt.course.get('description') || '';
       var object = new ADL.XAPIStatement.Activity(this.get('activityId'), title, description);
-      var statement = this.getStatement(this.getVerb(verb), object);
+      var statement = this.getStatement(this.getVerb(verb), object, result);
 
       this.sendStatement(statement, callback);
     },
@@ -266,7 +279,8 @@ define([
     },
 
     /**
-     * 
+     * Sends an 'answered' or 'attempted'.
+     * @param {ComponentView} view - An instance of Adapt.ComponentView. 
      */
     onQuestionInteraction: function(view) {
       if (!view.model || view.model.get('_type') !== 'component' && !view.model.get('_isQuestionType')) {
@@ -325,6 +339,13 @@ define([
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
      */
     onItemComplete: function(model) {
+      var result = {completion: true};
+
+      if (model.get('_type') === 'course') {
+        this.sendCourseStatement(ADL.verbs.completed, result);
+        return;
+      }
+
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
       var statement;
 
@@ -333,7 +354,6 @@ define([
       };
 
       // Completed.
-      var result = {completion: true};
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
     
       this.sendStatement(statement);
@@ -341,31 +361,21 @@ define([
 
     /**
      * Sends an xAPI statement when an assessment has been completed.
+     * @param {object} assessment - Object representing the state of the assessment.
      */
     onAssessmentComplete: function(assessment) {
-      /**
-       * assessments
-       * assessmentsComplete
-       * isComplete
-       * isPass
-       * isPercentageBased
-       * maxScore
-       * score
-       * scoreAsPercent
-       */
-
-      // TODO - Get ID of assessment/ articleId?
+      // Instantiate a Model so it can be used to obtain an IRI.
       var fakeModel = new Backbone.Model({
-        _id: '1',
-        _type: 'assessment', 
+        _id: assessment.articleId || assessment.id, // TODO - Use the articleId here?
+        _type: assessment.type, 
+        pageId: assessment.pageId
       });
 
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
       var name = {};
       var statement;
 
-      // Hard-coded for now.
-      name[this.get('displayLang')] = 'Assessment'; 
+      name[this.get('displayLang')] = assessment.id || 'Assessment'; 
             
       object.definition = {
         name: name
@@ -479,6 +489,16 @@ define([
     },
 
     onAllAssessmentsComplete: function() {
+      /**
+       * assessments
+       * assessmentsComplete
+       * isComplete
+       * isPass
+       * isPercentageBased
+       * maxScore
+       * score
+       * scoreAsPercent
+       */
       _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
