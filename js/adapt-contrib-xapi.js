@@ -29,25 +29,27 @@ define([
 
     // Default events to send statements for.
     coreEvents: {
-      'router:page': true,
-      'router:menu': true,
-      'assessment:complete': true,
-      'assessments:complete': true,
-      'questionView:recordInteraction': true,
+      'Adapt': {
+        'router:page': true,
+        'router:menu': true,
+        'assessment:complete': true,
+        'assessments:complete': true,
+        'questionView:recordInteraction': true
+      },
       'course': {
-        _isComplete: true
+        'change:_isComplete': true
       },
       'contentobjects': {
-        _isComplete: true
+        'change:_isComplete': true
       },
       'articles': {
-        _isComplete: true
+        'change:_isComplete': true
       },
       'blocks': {
-        _isComplete: true
+        'change:_isComplete': true
       },
       'components': {
-        _isComplete: true
+        'change:_isComplete': true
       },
     },
 
@@ -168,34 +170,38 @@ define([
       this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
 
       // Conditionally listen to the events.
-      if (this.coreEvents['router:menu']) {
+      if (this.coreEvents['Adapt']['router:menu']) {
         this.listenTo(Adapt, 'router:menu', this.onItemExperience);
       } 
 
-      if (this.coreEvents['router:page']) {
+      if (this.coreEvents['Adapt']['router:page']) {
         this.listenTo(Adapt, 'router:page', this.onItemExperience);
       }
       
-      if (this.coreEvents['questionView:recordInteraction']) {
+      if (this.coreEvents['Adapt']['questionView:recordInteraction']) {
         this.listenTo(Adapt, 'questionView:recordInteraction', this.onQuestionInteraction);
       }
 
-      if (this.coreEvents['assessments:complete']) {
+      if (this.coreEvents['Adapt']['assessments:complete']) {
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
       }
 
-      if (this.coreEvents['assessment:complete']) {
+      if (this.coreEvents['Adapt']['assessment:complete']) {
         this.listenTo(Adapt, 'assessments:complete', this.onAllAssessmentsComplete);
       }
 
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.
       _.each(_.keys(this.coreEvents), function(key) {
-        var val = this.coreEvents[key];
+        
+        if (key !== 'Adapt') {
+          var val = this.coreEvents[key];
 
-        if (typeof val === 'object' && val._isComplete === true) {
-          this.listenTo(Adapt[key], 'change:_isComplete', this.onItemComplete);
+          if (typeof val === 'object' && val['change:_isComplete'] === true) {
+            this.listenTo(Adapt[key], 'change:_isComplete', this.onItemComplete);
+          }
         }
+        
       }, this);
 
       this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
@@ -549,9 +555,7 @@ define([
      */
     saveState: function() {
       if (this.get('state')) {
-        this.xapiWrapper.sendState(
-          this.get('activityId'),
-          this.get('actor'),
+        this.xapiWrapper.sendState(this.get('activityId'), this.get('actor'),
           STATE_PROGRESS,
           this.get('registration'),
           this.get('state')
@@ -721,7 +725,7 @@ define([
     },
 
     /**
-     * Checks that the required properties -- actor, activityId and registration -- are defined, and
+     * Checks that the required properties -- actor and activityId -- are defined, and
      * logs a warning if any of them are not.
      * @return {boolean} true if the properties are valid, false otherwise.
      */
@@ -740,7 +744,6 @@ define([
 
       if (!this.get('registration')) {
         Adapt.log.warn('"registration" attribute not found!');
-        // errorCount++;
       }
 
       if (errorCount > 0) {
