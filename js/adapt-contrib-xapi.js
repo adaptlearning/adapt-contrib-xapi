@@ -8,8 +8,9 @@
  */
 define([
   'core/js/adapt',
-  'libraries/xapiwrapper.min'
-], function(Adapt) {
+  'libraries/async.min',
+  'libraries/xapiwrapper.min',
+], function(Adapt, Async) {
 
   'use strict';
 
@@ -24,7 +25,8 @@ define([
       generateIds: false,
       activityId: null,
       actor: null,
-      state: null
+      shouldTrackState: true,
+      state: {}
     },
 
     // Default events to send statements for.
@@ -50,7 +52,15 @@ define([
       },
       'components': {
         'change:_isComplete': true
-      },
+      }
+    },
+
+    coreObjects: {
+      course: 'course',
+      contentObjects: ['menu', 'page'],
+      articles: 'article',
+      blocks: 'block',
+      components: 'component'
     },
 
     initialize: function() {
@@ -81,7 +91,8 @@ define([
           actor: this.getLRSAttribute('actor'),
           displayLang: Adapt.config.get('_defaultLanguage'),
           lang: this.getConfig('_lang'),
-          generateIds: this.getConfig('_generateIds')
+          generateIds: this.getConfig('_generateIds'),
+          shouldTrackState: this.getConfig('_shouldTrackState')
         });
 
         if (!this.validateProps()) {
@@ -89,11 +100,7 @@ define([
           Adapt.trigger('plugin:endWait');
           return;
         }
-
-        // // We need to listen for stateLoad before we load state.
-        // this.listenTo(Adapt, "xapi:stateLoaded", this.restoreState);
-        // // this.loadState();
- 
+        
         this.sendCourseStatement(ADL.verbs.initialized, _.bind(function() {
           this.sendCourseStatement(ADL.verbs.launched);
         }, this));
@@ -101,10 +108,21 @@ define([
         this._onWindowOnload = _.bind(this.onWindowUnload, this);
 
         $(window).on('beforeunload unload', this._onWindowOnload);
+
+        if (this.get('shouldTrackState')) {
+
+          this.getState(_.bind(function() {
+            this.restoreState();
+            Adapt.trigger('plugin:endWait');
+          }, this));
+
+        }
       } catch (e) {
         Adapt.log.error(e);
       } finally {
-        Adapt.trigger('plugin:endWait');
+        if (!this.get('shouldTrackState')) {
+          Adapt.trigger('plugin:endWait');
+        }
       }
     },
 
@@ -204,7 +222,7 @@ define([
         
       }, this);
 
-      this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
+      // this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
     },
 
     /**
@@ -348,7 +366,7 @@ define([
       var result = {completion: true};
 
       if (model.get('_type') === 'course') {
-        this.sendCourseStatement(ADL.verbs.completed, result);
+        this.sendCourseStatement(ADL.verbs.completed, result, this.sendCompletionState);
         return;
       }
 
@@ -362,7 +380,13 @@ define([
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
     
-      this.sendStatement(statement);
+      this.sendStatement(statement, this.sendCompletionState);
+    },
+
+    sendCompletionState: function(model) {
+      if (this.get('shouldTrackState')) {
+        this.sendState(model);
+      }
     },
 
     /**
@@ -370,9 +394,10 @@ define([
      * @param {object} assessment - Object representing the state of the assessment.
      */
     onAssessmentComplete: function(assessment) {
+      var self = this;
       // Instantiate a Model so it can be used to obtain an IRI.
       var fakeModel = new Backbone.Model({
-        _id: assessment.articleId || assessment.id, // TODO - Use the articleId here?
+        _id: assessment.articleId || assessment.id,
         _type: assessment.type, 
         pageId: assessment.pageId
       });
@@ -406,7 +431,10 @@ define([
         statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
       }
 
-      this.sendStatement(statement);
+      // Delay so that component completion can be recorded before assessment completion.
+      _.delay(function() {
+        self.sendStatement(statement);
+      }, 500);
     },
 
     /**
@@ -462,30 +490,6 @@ define([
       return iri; 
     },
 
-    onBlockComplete: function(block) {
-      var state = this.get('state') || {};
-
-      if (!state.blocks) {
-        state.blocks = [];
-      }
-
-      var blockStateRecorded = _.find(state.blocks, function findBlock(b) {
-        return b._id == block.get('_id');
-      });
-
-      if (!blockStateRecorded) {
-        state.blocks.push({
-          _id: block.get('_id'),
-          _trackingId: block.get('_trackingId'),
-          _isComplete: block.get('_isComplete'),
-        });
-
-        this.set('state', state);
-
-        Adapt.trigger('xapi:stateChanged');
-      }
-    },
-
     onCourseComplete: function() {
       if (Adapt.course.get('_isComplete') === true) {
         this.set('_attempts', this.get('_attempts') + 1);
@@ -508,9 +512,9 @@ define([
       _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
     },
 
-    onStateChanged: function(event) {
-      this.saveState();
-    },
+    // onStateChanged: function(event) {
+    //   this.saveState();
+    // },
 
     /**
      * Check if course tracking criteria have been met
@@ -543,29 +547,14 @@ define([
      * Check if course tracking criteria have been met, and send an xAPI
      * statement if appropriate
      */
-    checkIfCourseIsReallyComplete: function() {
-      if (this.checkTrackingCriteriaMet()) {
-        this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
-      }
-    },
+    // checkIfCourseIsReallyComplete: function() {
+    //   if (this.checkTrackingCriteriaMet()) {
+    //     this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
+    //   }
+    // },
 
     /**
-     * Send the current state of the course (completed blocks, duration, etc)
-     * to the LRS
-     */
-    saveState: function() {
-      if (this.get('state')) {
-        this.xapiWrapper.sendState(this.get('activityId'), this.get('actor'),
-          STATE_PROGRESS,
-          this.get('registration'),
-          this.get('state')
-        );
-      }
-    },
-
-    /**
-     * Refresh course progress from loaded state
-     *
+     * Refresh course progress from loaded state.
      */
     restoreState: function() {
       var state = this.get('state');
@@ -574,13 +563,19 @@ define([
         return;
       }
 
-      state.blocks && _.each(state.blocks, function(block) {
-        if (block._isComplete) {
-          this.markBlockAsComplete(Adapt.blocks.findWhere({
-            _trackingId: block._trackingId
-          }));
-        }
-      }, this);
+      var Adapt = require('core/js/adapt');
+
+      if (state.components) {
+        _.each(state.components, function(component) {
+            Adapt.components.findWhere({_id: component._id}).set({_isComplete: true});
+        });
+      }
+
+      if (state.blocks) {
+        _.each(state.blocks, function(block) {
+            Adapt.blocks.findWhere({_id: block._id}).set({_isComplete: true});
+        });
+      }
     },
 
     /**
@@ -661,6 +656,129 @@ define([
      */
     setConfig: function(conf) {
       this.configData = conf;
+    },
+
+    /**
+     * Sends the state to the or the given model to the configured LRS.
+     * @param {AdaptModel} model - The AdaptModel whose state has changed.
+     * @param {function|null} clalback - Optional callback function.
+     */
+    sendState: function(model, callback) {
+      var activityId = this.get('activityId');
+      var actor = this.get('actor');
+      var type = model.get('_type');
+      var state;
+
+      var collectionName = _.findKey(this.coreObjects, function(o) {
+        return o === type || o.indexOf(type) > -1
+      });
+
+      var stateId = [activityId, collectionName].join('/');
+
+      if (collectionName !== 'course') {
+        // The collection contains an array of models.
+        state = require('core/js/adapt')[collectionName].models.map(function(item) {
+          var returnObject = {
+            _id: item.get('_id'),
+            _isComplete: item.get('_isComplete')            
+          }
+
+          if (collectionName === 'block' && item._trackingId) {
+            returnObject._trackingId = item._trackingId;
+          }
+
+          return returnObject;
+        });
+      } else {
+        state = {
+          _isComplete: model.get('_isComplete')
+        }
+      }
+
+      if (this.get('shouldTrackState')) {
+        this.xapiWrapper.sendState(activityId, actor, stateId, null, state);
+      }
+    },
+
+    /**
+     * Retrieves the state information for the current course.
+     * @param {function|null} callback - Optional callback function.
+     */
+    getState: function(callback) {
+      var self = this;
+      var activityId = this.get('activityId');
+      var actor = this.get('actor');
+      var state = {};
+
+      Async.each(_.keys(this.coreObjects), function(type, cb) {
+
+        var stateId = [activityId, type].join('/');
+
+        self.xapiWrapper.getState(activityId, actor, stateId, null, null, function(xmlHttpRequest) {
+          
+          _.defer(function() {
+            switch (xmlHttpRequest.status) {
+              case 200: {
+                state[type] = JSON.parse(xmlHttpRequest.response);
+                break;
+              }
+              case 404: {
+                // State not found.
+                Adapt.log.warn('Unable to getState() for stateId: ' + stateId);
+                break;
+              }
+            }
+
+            cb();
+          });
+        });
+      }, function(e) {
+        if (e) {
+          Adapt.log.error(e);
+        }
+
+        if (!_.isEmpty(state)) {
+          self.set({state: state});
+        }
+        
+        Adapt.trigger('xapi:stateLoaded');
+
+        if (callback) {
+          callback();
+        }
+      });      
+    },
+
+    /**
+     * Deletes all state information for the current course.
+     * @param {function|null} callback - Optional callback function.
+     */
+    deleteState: function(callback) {
+      var self = this;
+      var activityId = this.get('activityId');
+      var actor = this.get('actor');
+
+      Async.each(_.keys(this.coreObjects), function(type, cb) {
+
+        var stateId = [activityId, type].join('/');
+
+        self.xapiWrapper.deleteState(activityId, actor, stateId, null, null, null, function(xmlHttpRequest) {
+          if (xmlHttpRequest.status === 204) {
+            // State deleted.
+            return cb();
+          }
+
+          cb(new Error('Unable to delete stateId: ' + stateId));
+        });
+      }, function(e) {
+        if (e) {
+          Adapt.log.error(e);
+        } 
+      });
+
+      if (callback) {
+        callback();
+      }
     },
 
     /**
@@ -777,34 +895,7 @@ define([
       }
 
       this.xapiWrapper.sendStatements(statements, callback);
-    },
-
-    getObjectDefinition: function() {
-      var definition = this.getLRSExtendedAttribute('definition') || {};
-
-      if (!definition.name) {
-        definition.name = {};
-        definition.name[Adapt.config.get('_defaultLanguage')] = Adapt.course.get('title');
-      }
-
-      return definition;
-    },
-
-    getObjectForActivity: function() {
-      var iri = this.get('activityId');
-      
-      if (!iri) {
-        return null;
-      }
-
-      var object = {
-        definition: this.getObjectDefinition(),
-        id: iri,
-        objectType: 'Activity'
-      };
-
-      return object;
-    },
+    }
   });
 
   Adapt.once('app:dataReady', function() {
@@ -814,12 +905,17 @@ define([
       // Update the language.      
       xAPI.set({ displayLang: newLanguage });
 
-      // Send a statement to track the (new) course.
-      this.sendCourseStatement(ADL.verbs.launched);
+      // TODO - Reset the state?
+      xAPI.deleteState(function() {
+        // Send a statement to track the (new) course.
+        this.sendCourseStatement(ADL.verbs.launched);
+      });
+
     }, this));
   });
 
   Adapt.on('adapt:initialize', function() {
+    console.log('initialize fired');
     xAPI.setupListeners();
   });
 });

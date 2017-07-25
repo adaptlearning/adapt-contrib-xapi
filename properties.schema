@@ -80,6 +80,15 @@
                   "validators": [],
                   "help": "When enabled, this will append an auto-generated 'id' value for all xAPI statements."
                 },
+                "_shouldTrackState": {
+                  "type": "boolean",
+                  "required": false,
+                  "default": false,
+                  "title": "Track state",
+                  "inputType": "Checkbox",
+                  "validators": [],
+                  "help": "When enabled, the associated LRS be used to track state via the State API."                  
+                },
                 "_coreEvents": {
                   "type": "object",
                   "required": false,
