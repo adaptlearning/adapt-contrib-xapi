@@ -589,13 +589,17 @@ define([
 
       if (state.components) {
         _.each(state.components, function(component) {
-            Adapt.components.findWhere({_id: component._id}).set({_isComplete: true});
+            if (component._isComplete) {
+              Adapt.components.findWhere({_id: component._id}).set({_isComplete: true});
+            }
         });
       }
 
       if (state.blocks) {
         _.each(state.blocks, function(block) {
+          if (block._isComplete) {
             Adapt.blocks.findWhere({_id: block._id}).set({_isComplete: true});
+          }
         });
       }
     },
@@ -654,8 +658,11 @@ define([
      * @return {ADL.XAPIStatement} A formatted xAPI statement object.
      */
     getStatement: function(verb, object, result, context) {
-      
-      var statement = new ADL.XAPIStatement(this.get('actor'), verb, object);
+      var statement = new ADL.XAPIStatement(
+        new ADL.XAPIStatement.Agent(this.get('actor')),
+        verb,
+        object
+      );
       
       if (result) {
         statement.result = result;
@@ -829,7 +836,39 @@ define([
 
       try {
         if (key === 'actor') {
-          return JSON.parse(this.xapiWrapper.lrs[key]);
+          var actor = JSON.parse(this.xapiWrapper.lrs[key]);
+
+          if (_.isArray(actor.name)) {
+            // Convert the name from an array to a string.
+            actor.name = actor.name[0];
+          }
+
+          // If the account is an array, some work will be required.
+          if (_.isArray(actor.account)) {
+            var account = {};
+
+            // Convert 'accountServiceHomePage' to 'homePage'.
+            if (typeof actor.account[0].accountServiceHomePage !== 'undefined') {
+              account.homePage = actor.account[0].accountServiceHomePage;
+            } else if (actor.account[0].homePage !== 'undefined') {
+              account.homePage = actor.account[0].homePage;
+            }
+
+            // Convert 'accountName' to 'name'.
+            if (typeof actor.account[0].accountName !== 'undefined') {
+              account.name = actor.account[0].accountName;
+            } else if (typeof actor.account[0].name !== 'undefined') {
+              account.name = actor.account[0].name;
+            }
+
+            // Out with the old array.
+            delete actor.account;
+
+            // In with the new object.
+            actor.account = account;
+          }
+
+          return actor;
         }
 
         return this.xapiWrapper.lrs[key];
@@ -904,7 +943,7 @@ define([
         return;
       }
 
-      this.xapiWrapper.sendStatement(statement, callback)
+      this.xapiWrapper.sendStatement(statement, callback);
     },
 
     /**
