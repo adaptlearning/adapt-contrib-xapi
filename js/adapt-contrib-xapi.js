@@ -26,6 +26,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
+      isInitialzed: false,
       state: {}
     },
 
@@ -77,6 +78,13 @@ define([
         // Initialise the xAPI wrapper
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
 
+        // Override the global error handler on the xapiWrapper.
+        // This will prevent a stuck 'Loading...' screen when the LRS in inaccessible.
+        ADL.xhrRequestOnError = _.bind(function(xhr, method, url) {
+          Adapt.log.error(xhr, method, url);
+          this.onInitialized();
+        }, this);
+
         // Absorb the config object.
         this.setConfig(config);
 
@@ -97,7 +105,7 @@ define([
 
         if (!this.validateProps()) {
           // Required properties are missing, so exit.
-          Adapt.trigger('plugin:endWait');
+          this.onInitialized();
           return;
         }
         
@@ -113,7 +121,7 @@ define([
 
           this.getState(_.bind(function() {
             this.restoreState();
-            Adapt.trigger('plugin:endWait');
+            this.onInitialized();
           }, this));
 
         }
@@ -121,8 +129,17 @@ define([
         Adapt.log.error(e);
       } finally {
         if (!this.get('shouldTrackState')) {
-          Adapt.trigger('plugin:endWait');
+          this.onInitialized();
         }
+      }
+    },
+
+    onInitialized: function() {
+      if (!this.get('isInitialized')) {
+        
+        Adapt.trigger('plugin:endWait');
+
+        this.set({ isInitialised: true });
       }
     },
 
@@ -719,8 +736,7 @@ define([
 
         var stateId = [activityId, type].join('/');
 
-        self.xapiWrapper.getState(activityId, actor, stateId, null, null, function(xmlHttpRequest) {
-          
+        self.xapiWrapper.getState(activityId, actor, stateId, null, null, function(xmlHttpRequest) {          
           _.defer(function() {
             switch (xmlHttpRequest.status) {
               case 200: {
@@ -737,6 +753,7 @@ define([
             cb();
           });
         });
+        
       }, function(e) {
         if (e) {
           Adapt.log.error(e);
@@ -751,7 +768,8 @@ define([
         if (callback) {
           callback();
         }
-      });      
+      });   
+
     },
 
     /**
@@ -910,7 +928,7 @@ define([
       // Update the language.      
       xAPI.set({ displayLang: newLanguage });
 
-      // TODO - Reset the state?
+      // Since a language change counts as a new attempt, reset the state.
       xAPI.deleteState(function() {
         // Send a statement to track the (new) course.
         this.sendCourseStatement(ADL.verbs.launched);
@@ -920,7 +938,6 @@ define([
   });
 
   Adapt.on('adapt:initialize', function() {
-    console.log('initialize fired');
     xAPI.setupListeners();
   });
 });
