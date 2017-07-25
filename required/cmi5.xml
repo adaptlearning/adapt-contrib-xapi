@@ -1,19 +1,20 @@
-<courseStructure xmlns="http://www.adlnet.gov/cmi5/CourseStructure.xsd">
-    <course id="@@config._xapi._activityID">
-        <title>
-            <langstring lang="en-US">@@course.title</langstring>
-        </title>
-        <description>
-            <langstring lang="en-US">@@course.description</langstring>
-        </description>
-    </course>
-    <au id="@@config._xapi._activityID">
-        <title>
-            <langstring lang="en-US">@@course.title</langstring>
-        </title>
-        <description>
-            <langstring lang="en-US">@@course.description</langstring>
-        </description>
-        <url></url>
-    </au>
+<?xml version="1.0" encoding="utf-8"?>
+<courseStructure xmlns="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
+  <course id="@@config._xapi._activityID">
+    <title>
+      <langstring lang="en-US">@@course.title</langstring>
+    </title>
+    <description>
+      <langstring lang="en-US">@@course.description</langstring>
+    </description>
+  </course>
+  <au id="@@config._xapi._activityID">
+    <title>
+      <langstring lang="en-US">@@course.title</langstring>
+    </title>
+    <description>
+      <langstring lang="en-US">@@course.description</langstring>
+    </description>
+    <url>./index.html</url>
+  </au>
 </courseStructure>
