@@ -366,7 +366,10 @@ define([
       var result = {completion: true};
 
       if (model.get('_type') === 'course') {
-        this.sendCourseStatement(ADL.verbs.completed, result, this.sendCompletionState);
+        this.sendCourseStatement(ADL.verbs.completed, result, _.bind(function() {
+          this.sendCompletionState(model);
+        }));
+
         return;
       }
 
@@ -380,7 +383,9 @@ define([
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
     
-      this.sendStatement(statement, this.sendCompletionState);
+      this.sendStatement(statement, _.bind(function() {
+        this.sendCompletionState(model);
+      }, this));
     },
 
     sendCompletionState: function(model) {
