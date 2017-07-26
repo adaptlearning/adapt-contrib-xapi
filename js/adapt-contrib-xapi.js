@@ -109,8 +109,8 @@ define([
           return;
         }
         
-        this.sendCourseStatement(ADL.verbs.initialized, _.bind(function() {
-          this.sendCourseStatement(ADL.verbs.launched);
+        this.sendCourseStatement(ADL.verbs.launched, _.bind(function() {
+          this.sendCourseStatement(ADL.verbs.initialized);
         }, this));
         
         this._onWindowOnload = _.bind(this.onWindowUnload, this);
@@ -362,6 +362,12 @@ define([
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
      */
     onItemExperience: function(model) {
+
+      if (model.get('_id') === 'course') {
+        // We don't really want to track actions on the home menu.
+        return;
+      }
+
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
       var statement;
 
