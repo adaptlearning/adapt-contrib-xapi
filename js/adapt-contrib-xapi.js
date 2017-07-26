@@ -385,7 +385,7 @@ define([
       if (model.get('_type') === 'course') {
         this.sendCourseStatement(ADL.verbs.completed, result, _.bind(function() {
           this.sendCompletionState(model);
-        }));
+        }, this));
 
         return;
       }
@@ -912,7 +912,7 @@ define([
     validateProps: function() {
       var errorCount = 0;
 
-      if (!this.get('actor') || typeof this.get('actor') != 'object') {
+      if (!this.get('actor') || typeof this.get('actor') !== 'object') {
         Adapt.log.warn('"actor" attribute not found!');
         errorCount++;
       }
