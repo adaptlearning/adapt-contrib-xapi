@@ -55,25 +55,6 @@ define([
       }
     },
 
-    // A constant for the xAPI activity types.
-    activities: Object.freeze({
-      assessment: 'http://adlnet.gov/expapi/activities/assessment',
-      attempt: 'http://adlnet.gov/expapi/activities/attempt',
-      course: 'http://adlnet.gov/expapi/activities/course',
-      file: 'http://adlnet.gov/expapi/activities/file',
-      interaction: 'http://adlnet.gov/expapi/activities/interaction',
-      lesson: 'http://adlnet.gov/expapi/activities/lesson',
-      link: 'http://adlnet.gov/expapi/activities/link',
-      media: 'http://adlnet.gov/expapi/activities/media',
-      meeting: 'http://adlnet.gov/expapi/activities/meeting',
-      module: 'http://adlnet.gov/expapi/activities/module',
-      objective: 'http://adlnet.gov/expapi/activities/objective',
-      performance: 'http://adlnet.gov/expapi/activities/performance',
-      profile: 'http://adlnet.gov/expapi/activities/profile',
-      question: 'http://adlnet.gov/expapi/activities/question',
-      simulation: 'http://adlnet.gov/expapi/activities/simulation'
-    }),
-
     // An object describing the core Adapt framework collections.
     coreObjects: {
       course: 'course',
@@ -283,7 +264,7 @@ define([
       var object = new ADL.XAPIStatement.Activity(this.get('activityId'), title, description);
       
       object.definition = {
-        type: this.activities.course
+        type: ADL.activityTypes.course
       };
 
       var statement = this.getStatement(this.getVerb(verb), object, result);
@@ -356,25 +337,25 @@ define([
       switch (model.get('_type')) {
         case 'component': {
           if (model.get('_isQuestionType')) {
-            type = this.activities.question;
+            type = ADL.activityTypes.question;
           } else if (_.indexOf(['graphic', 'media', 'text'], model.get('_component')) > -1) {
-            type = this.activities.media;
+            type = ADL.activityTypes.media;
           } else {
-            type = this.activities.interaction;
+            type = ADL.activityTypes.interaction;
           }
           break;
         }
         case 'block':
         case 'article': {
-          type = this.activities.interaction;
+          type = ADL.activityTypes.interaction;
           break;
         }
         case 'contentobject': {
-          type = this.activities.interaction;
+          type = ADL.activityTypes.interaction;
           break;
         }
         case 'course': {
-          type = this.activities.course;
+          type = ADL.activityTypes.course;
           break;
         }
       }
@@ -397,7 +378,8 @@ define([
 
       object.definition = {
         name: this.getNameObject(view.model),
-        type: this.activities.question
+        type: ADL.activityTypes.question,
+        interactionType: view.getResponseType()
       };
 
       var result = {
@@ -409,7 +391,6 @@ define([
         response: this.getQuestionComponentResponse(view.model)
       };
 
-      // TODO - Extend object.definition?
       if (isComplete) {
         // Answered
         statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
@@ -507,7 +488,7 @@ define([
             
       object.definition = {
         name: name,
-        type: this.activities.assessment
+        type: ADL.activityTypes.assessment
       };
 
       var result = {
