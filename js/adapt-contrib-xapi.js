@@ -14,10 +14,9 @@ define([
 
   'use strict';
 
-  var STATE_PROGRESS = 'adapt-course-progress';
-
   var xAPI = Backbone.Model.extend({  
   
+    /** Declare defaults and model properties */
     // Default model properties.
     defaults: {
       lang: 'en-US',
@@ -56,6 +55,26 @@ define([
       }
     },
 
+    // A constant for the xAPI activity types.
+    activities: Object.freeze({
+      assessment: 'http://adlnet.gov/expapi/activities/assessment',
+      attempt: 'http://adlnet.gov/expapi/activities/attempt',
+      course: 'http://adlnet.gov/expapi/activities/course',
+      file: 'http://adlnet.gov/expapi/activities/file',
+      interaction: 'http://adlnet.gov/expapi/activities/interaction',
+      lesson: 'http://adlnet.gov/expapi/activities/lesson',
+      link: 'http://adlnet.gov/expapi/activities/link',
+      media: 'http://adlnet.gov/expapi/activities/media',
+      meeting: 'http://adlnet.gov/expapi/activities/meeting',
+      module: 'http://adlnet.gov/expapi/activities/module',
+      objective: 'http://adlnet.gov/expapi/activities/objective',
+      performance: 'http://adlnet.gov/expapi/activities/performance',
+      profile: 'http://adlnet.gov/expapi/activities/profile',
+      question: 'http://adlnet.gov/expapi/activities/question',
+      simulation: 'http://adlnet.gov/expapi/activities/simulation'
+    }),
+
+    // An object describing the core Adapt framework collections.
     coreObjects: {
       course: 'course',
       contentObjects: ['menu', 'page'],
@@ -63,6 +82,8 @@ define([
       blocks: 'block',
       components: 'component'
     },
+
+    /** Implementation starts here */
 
     initialize: function() {
       
@@ -260,6 +281,11 @@ define([
       var title = Adapt.course.get('displayTitle') || Adapt.course.get('title');
       var description = Adapt.course.get('description') || '';
       var object = new ADL.XAPIStatement.Activity(this.get('activityId'), title, description);
+      
+      object.definition = {
+        type: this.activities.course
+      };
+
       var statement = this.getStatement(this.getVerb(verb), object, result);
 
       this.sendStatement(statement, callback);
@@ -320,6 +346,43 @@ define([
     },
 
     /**
+     * Gets the activity type for a given model.  
+     * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
+     * @return {string} A URL to the current activity type.
+     */
+    getActivityType: function(model) {
+      var type = '';
+      
+      switch (model.get('_type')) {
+        case 'component': {
+          if (model.get('_isQuestionType')) {
+            type = this.activities.question;
+          } else if (_.indexOf(['graphic', 'media', 'text'], model.get('_component')) > -1) {
+            type = this.activities.media;
+          } else {
+            type = this.activities.interaction;
+          }
+          break;
+        }
+        case 'block':
+        case 'article': {
+          type = this.activities.interaction;
+          break;
+        }
+        case 'contentobject': {
+          type = this.activities.interaction;
+          break;
+        }
+        case 'course': {
+          type = this.activities.course;
+          break;
+        }
+      }
+
+      return type;
+    },
+
+    /**
      * Sends an 'answered' or 'attempted'.
      * @param {ComponentView} view - An instance of Adapt.ComponentView. 
      */
@@ -333,7 +396,8 @@ define([
       var statement;
 
       object.definition = {
-        name: this.getNameObject(view.model)
+        name: this.getNameObject(view.model),
+        type: this.activities.question
       };
 
       var result = {
@@ -400,7 +464,8 @@ define([
       var statement;
 
       object.definition = {
-        name: this.getNameObject(model)
+        name: this.getNameObject(model),
+        type: this.getActivityType(model)
       };
 
       // Completed.
@@ -411,6 +476,10 @@ define([
       }, this));
     },
 
+    /**
+     * Updates the state in the LRS.
+     * @param {Adapt.Model} model - Instance of the model which was completed.
+     */
     sendCompletionState: function(model) {
       if (this.get('shouldTrackState')) {
         this.sendState(model);
@@ -437,7 +506,8 @@ define([
       name[this.get('displayLang')] = assessment.id || 'Assessment'; 
             
       object.definition = {
-        name: name
+        name: name,
+        type: this.activities.assessment
       };
 
       var result = {
@@ -607,51 +677,6 @@ define([
             Adapt.blocks.findWhere({_id: block._id}).set({_isComplete: true});
           }
         });
-      }
-    },
-
-    /**
-     * Loads the last saved state of the course from the LRS, if a state exists
-     *
-     * @param {boolean} async - whether to load asynchronously, default is false
-     * @fires xapi:loadStateFailed or xapi:stateLoaded
-     */
-    loadState: function(async) {
-      if (async) {
-        this.xapiWrapper.getState(
-          this.get('activityId'),
-          this.get('actor'),
-          STATE_PROGRESS,
-          this.get('registration'),
-          function success(result) {
-            if ('undefined' === typeof result || 404 === result.status) {
-              Adapt.trigger('xapi:loadStateFailed');
-              return;
-            }
-
-            try {
-              this.set('state', JSON.parse(result.response));
-              Adapt.trigger('xapi:stateLoaded');
-            } catch (ex) {
-              Adapt.trigger('xapi:loadStateFailed');
-            }
-          }
-        );
-      } else {
-        this.set(
-          'state',
-          this.xapiWrapper.getState(
-            this.get('activityId'),
-            this.get('actor'),
-            STATE_PROGRESS
-          )
-        );
-
-        if (!this.get('state')) {
-          Adapt.trigger('xapi:loadStateFailed');
-        } else {
-          Adapt.trigger('xapi:stateLoaded');
-        }
       }
     },
 
@@ -966,6 +991,7 @@ define([
     }
   });
 
+  /** Adapt event listeners begin here */
   Adapt.once('app:dataReady', function() {
     xAPI = new xAPI();
     
