@@ -76,7 +76,18 @@
           "type":"object"
         },
         "contentobject": {
-          "type":"object"
+          "type":"object",
+          "properties": {
+            "_recordInteraction": {
+              "type":"boolean",
+              "required":true,
+              "default": false,
+              "title":"Record interaction",
+              "inputType": {"type": "Boolean", "options": [true, false]},
+              "validators": [],
+              "help": "Allows individual content objects to trigger completion"
+            },
+          }
         },
         "article": {
           "type":"object"
