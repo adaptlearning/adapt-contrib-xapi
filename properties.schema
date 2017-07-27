@@ -65,7 +65,16 @@
                       "inputType": {"type": "Boolean", "options": [true, false]},
                       "validators": [],
                       "help": ""
-                    }
+                    },
+                    "_activityIdForIri": {
+                      "type":"boolean",
+                      "required":false,
+                      "default": false,
+                      "title":"Based IRI on the course’s activity ID",
+                      "inputType": {"type": "Boolean", "options": [true, false]},
+                      "validators": [],
+                      "help": "Allow for completion statements to optionally be reported for any contentObject"
+                    }            
                   }
                 }
               }
