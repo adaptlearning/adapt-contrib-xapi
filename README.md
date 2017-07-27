@@ -1,3 +1,7 @@
+NOTE: The `master` branch contains a pre-alpha version of the extension.  The `develop` branch, while still a work in progress, is moving closer to what will become the first beta release. 
+
+**As of July 2017 all pull requests should be pointed to`develop`**.
+
 adapt-xapi
 ===============
 
