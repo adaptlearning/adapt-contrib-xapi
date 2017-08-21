@@ -25,6 +25,15 @@
                   "validators": [],
                   "help": "If set to 'true', this course will be tracked by xAPI"
                 },
+                "_specification": {
+                  "type": "string",
+                  "enum": ["xAPI", "cmi5"],
+                  "default": "xAPI",
+                  "title": "Specification",
+                  "inputType": {"type": "Select", "options":["xAPI", "cmi5"]},
+                  "validators": [],
+                  "help": "Indicates whether the plugin should use standard xAPI or the cmi5 profile"
+                },
                 "_activityID": {
                   "type": "string",
                   "required": true,

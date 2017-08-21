@@ -17,6 +17,7 @@ define([
   var xAPI = Backbone.Model.extend({  
   
     /** Declare defaults and model properties */
+
     // Default model properties.
     defaults: {
       lang: 'en-US',
@@ -25,9 +26,16 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
-      isInitialzed: false,
+      isInitialised: false,
       state: {}
     },
+
+    startAttemptDuration: 0,
+    startTimeStamp: null,
+    courseName: '',
+    courseDescription: '',
+    defaultLang: 'en-US',
+    isComplete: false,
 
     // Default events to send statements for.
     coreEvents: {
@@ -82,10 +90,10 @@ define([
 
         // Override the global error handler on the xapiWrapper.
         // This will prevent a stuck 'Loading...' screen when the LRS in inaccessible.
-        ADL.xhrRequestOnError = _.bind(function(xhr, method, url) {
-          Adapt.log.error(xhr, method, url);
-          this.onInitialized();
-        }, this);
+        // ADL.xhrRequestOnError = _.bind(function(xhr, method, url) {
+        //   Adapt.log.error(xhr, method, url);
+        //   this.onInitialised(false);
+        // }, this);
 
         // Absorb the config object.
         this.setConfig(config);
@@ -107,14 +115,27 @@ define([
 
         if (!this.validateProps()) {
           // Required properties are missing, so exit.
-          this.onInitialized();
+          this.onInitialised(false);
           return;
         }
         
-        this.sendCourseStatement(ADL.verbs.launched, _.bind(function() {
-          this.sendCourseStatement(ADL.verbs.initialized);
-        }, this));
+        // Adapt.offlineStorage.get();
+
+        // if (Adapt.offlineStorage.setReadyStatus) {
+        //     Adapt.offlineStorage.setReadyStatus();
+        // }
+
+        this.startTimeStamp = new Date();
+        this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
+        this.courseDescription = Adapt.course.get('description') || '';
+
+        var statements = [];
+
+        statements.push(this.getCourseStatement(ADL.verbs.launched));
+        statements.push(this.getCourseStatement(ADL.verbs.initialized));
         
+        this.sendStatements(statements);
+
         this._onWindowOnload = _.bind(this.onWindowUnload, this);
 
         $(window).on('beforeunload unload', this._onWindowOnload);
@@ -122,8 +143,16 @@ define([
         if (this.get('shouldTrackState')) {
 
           this.getState(_.bind(function() {
+            if (_.isEmpty(this.get('state'))) {
+              // This is a new attempt.
+              this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
+            } else {
+              // This is a continuation of an existing attempt.
+              this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+            }
+
             this.restoreState();
-            this.onInitialized();
+            this.onInitialised(true);
           }, this));
 
         }
@@ -131,24 +160,38 @@ define([
         Adapt.log.error(e);
       } finally {
         if (!this.get('shouldTrackState')) {
-          this.onInitialized();
+          this.onInitialised(true);
         }
       }
     },
 
-    onInitialized: function() {
-      if (!this.get('isInitialized')) {
+    /**
+     * Triggers 'plugin:endWait' event (if required).
+     */
+    onInitialised: function(isInitialised) {
+      if (!this.get('isInitialised')) {
         
-        Adapt.trigger('plugin:endWait');
+        this.set({ isInitialised: isInitialised });
 
-        this.set({ isInitialised: true });
+        Adapt.trigger('plugin:endWait');
       }
     },
 
+    /**
+     * Sends a 'terminated' statement to the LRS when the window is closed.
+     */
     onWindowUnload: function() {
       $(window).off('beforeunload unload', this._onWindowOnload);
 
-      this.sendCourseStatement(ADL.verbs.terminated);
+      var statements = [];
+
+      if (!this.isComplete) {
+        statements.push(this.getCourseStatement(ADL.verbs.suspended));
+      }
+
+      statements.push(this.getCourseStatement(ADL.verbs.terminated));
+
+      this.sendStatements(statements);
     },
 
     /**
@@ -187,21 +230,60 @@ define([
       return url;
     },
 
-    // xapiEnd: function() {
-    //   // if (!this.validateProps()) {
-    //   //   return;
-    //   // }
+    getAttemptDuration: function() {
+      return this.startAttemptDuration + this.getSessionDuration();
+    },
 
-    //   this.sendCourseStatement(ADL.verbs.terminated);
+    getSessionDuration: function() {
+      return Math.abs ((new Date()) - this.startTimeStamp);
+    },
 
-    //   // this.sendStatement(
-    //   //   (!this.checkTrackingCriteriaMet()) ?
-    //   //     this.getStatement(ADL.verbs.suspended, this.getObjectForActivity()) :
-    //   //     this.getStatement(ADL.verbs.terminated, this.getObjectForActivity())
-    //   // );
-    // },
+    /**
+      @method convertMillisecondsToISO8601Duration
+      @static
+      @param {Int} inputMilliseconds Duration in milliseconds
+      @return {String} Duration in ISO8601 format
+    */
+    convertMillisecondsToISO8601Duration: function(inputMilliseconds) {
+      var hours;
+      var minutes;
+      var seconds;
+      var i_inputMilliseconds = parseInt(inputMilliseconds, 10);
+      var i_inputCentiseconds;
+      var inputIsNegative = '';
+      var rtnStr = '';
+
+      // Round to nearest 0.01 seconds.
+      i_inputCentiseconds = Math.round(i_inputMilliseconds / 10);
+
+      if (i_inputCentiseconds < 0) {
+        inputIsNegative = '-';
+        i_inputCentiseconds = i_inputCentiseconds * -1;
+      }
+
+      hours = parseInt(((i_inputCentiseconds) / 360000), 10);
+      minutes = parseInt((((i_inputCentiseconds) % 360000) / 6000), 10);
+      seconds = (((i_inputCentiseconds) % 360000) % 6000) / 100;
+
+      rtnStr = inputIsNegative + 'PT';
+      if (hours > 0) {
+        rtnStr += hours + 'H';
+      }
+
+      if (minutes > 0) {
+        rtnStr += minutes + 'M';
+      }
+
+      rtnStr += seconds + 'S';
+
+      return rtnStr;
+    },
 
     setupListeners: function() {
+      if (!this.get('isInitialised')) {
+        Adapt.log.warn('Unable to setup listeners for xAPI');
+        return;
+      }
 
       // Use the config to specify the core events.
       this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
@@ -240,77 +322,55 @@ define([
         }
         
       }, this);
-
-      // this.listenTo(Adapt, "xapi:stateChanged", this.onStateChanged);
     },
 
     /**
-     * Send an xAPI statement related to the Adapt.course object.
-     * @param {string|object} verb - A valid ADL.verbs object or key.
-     * @param {object} result - An optional result.
-     * @param {function} callback - Optional callback function which will be passed to xapiWrapper.sendStatement().
+     * Creates an xAPI statement related to the Adapt.course object.
+     * @param {object | string} verb - A valid ADL.verbs object or key.
+     * @param {object} result - An optional result object.
+     * @return A valid ADL statement object.
      */
-    sendCourseStatement: function(verb, result, callback) {
-      // Parameter shuffling.
+    getCourseStatement: function(verb, result) {
       if (typeof result === 'undefined') {
         result = {};
-      } else if (typeof result === 'function') {
-        callback = result;
-        result = {};
       }
 
-      var title = Adapt.course.get('displayTitle') || Adapt.course.get('title');
-      var description = Adapt.course.get('description') || '';
-      var object = new ADL.XAPIStatement.Activity(this.get('activityId'), title, description);
+      var object = new ADL.XAPIStatement.Activity(this.get('activityId')); 
+      var name = {};
+      var description = {};
+
+      name[this.get('displayLang')] = this.courseName;
+      description[this.get('displayLang')] = this.courseDescription;
       
       object.definition = {
-        type: ADL.activityTypes.course
+        type: ADL.activityTypes.course,
+        name: name,
+        description: description
       };
 
-      var statement = this.getStatement(this.getVerb(verb), object, result);
-
-      this.sendStatement(statement, callback);
-    },
-
-    /**
-     * Get the user's response to a given question component, e.g. the item which was selected.
-     * @param {object} component - A Backbone Model representation of a component.
-     * @return {string} The response to the question, or an empty string.
-     */
-    getQuestionComponentResponse: function(component) {
-      if (_.isEmpty(component) || !component.get('_isQuestionType')) {
-        return '';
-      }
-
-      // TODO: The response should be available as a function or single property on the component.
-      // MCQ, GMCQ, Matching, TextInput, Slider
-      var response = [];
-
-      switch (component.get('_component')) {
-        case 'matching': 
-          response = component.get('_items').map(function(item) {
-            return item._selected.text;
-          });
+      // Append the duration.
+      switch (verb) {
+        case ADL.verbs.launched:
+        case ADL.verbs.initialized:
+        case ADL.verbs.attempted: {
+          result.duration = 'PT0S';
           break;
-        case 'textinput': 
-          response = component.get('_items').map(function(item) {
-            return item.userAnswer;
-          });
+        }
+
+        case ADL.verbs.failed:
+        case ADL.verbs.passed:
+        case ADL.verbs.suspended: {
+          result.duration = this.convertMillisecondsToISO8601Duration(this.getAttemptDuration());
           break;
-        case 'mcq':
-        case 'gmcq': 
-          response = component.get('_selectedItems').map(function(item) {
-            return item.text;
-          });
+        }
+        
+        case ADL.verbs.terminated: {
+          result.duration = this.convertMillisecondsToISO8601Duration(this.getSessionDuration());
           break;
-        case 'slider': 
-          response.push(component.get('_selectedItem').value.toString());
-          break;
-        default:
-          response.push('');
+        }
       }
       
-      return (response.length === 1) ? response[0] : response.join(',');
+      return this.getStatement(this.getVerb(verb), object, result);
     },
 
     /**
@@ -336,22 +396,13 @@ define([
       
       switch (model.get('_type')) {
         case 'component': {
-          if (model.get('_isQuestionType')) {
-            type = ADL.activityTypes.question;
-          } else if (_.indexOf(['graphic', 'media', 'text'], model.get('_component')) > -1) {
-            type = ADL.activityTypes.media;
-          } else {
-            type = ADL.activityTypes.interaction;
-          }
+          type = model.get('_isQuestionType') ? ADL.activityTypes.interaction : ADL.activityTypes.media;
           break;
         }
         case 'block':
-        case 'article': {
-          type = ADL.activityTypes.interaction;
-          break;
-        }
+        case 'article':
         case 'contentobject': {
-          type = ADL.activityTypes.interaction;
+          type = ADL.activityTypes.interaction; //??
           break;
         }
         case 'course': {
@@ -364,7 +415,7 @@ define([
     },
 
     /**
-     * Sends an 'answered' or 'attempted'.
+     * Sends an 'answered' statement to the LRS.
      * @param {ComponentView} view - An instance of Adapt.ComponentView. 
      */
     onQuestionInteraction: function(view) {
@@ -374,13 +425,41 @@ define([
       
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
       var isComplete = view.model.get('_isComplete');
+      var lang = this.get('displayLang');
       var statement;
+      var description = {};
+
+      description[this.get('displayLang')] = view.model.get('instruction');
 
       object.definition = {
         name: this.getNameObject(view.model),
-        type: ADL.activityTypes.question,
+        description: description, 
+        type: ADL.activityTypes.interaction,
         interactionType: view.getResponseType()
       };
+
+      if (typeof view.getInteractionObject == 'function') {
+        // Get any extra interactions.
+        _.extend(object.definition, view.getInteractionObject());
+
+        // Ensure any 'description' properties are objects with the language map.
+        _.each(_.keys(object.definition), function(key) {
+          if (_.isArray(object.definition[key]) && object.definition[key].length !== 0) {
+            for (var i = 0; i < object.definition[key].length; i++) {
+              if (!object.definition[key][i].hasOwnProperty('description')) {
+                break;
+              }
+
+              if (typeof object.definition[key][i].description === 'string') {
+                var description = {};
+                description[lang] = object.definition[key][i].description;
+
+                object.definition[key][i].description = description;
+              }
+            }
+          }
+        });
+      }
 
       var result = {
         score: {
@@ -388,18 +467,38 @@ define([
         },
         success: view.model.get('_isCorrect'),
         completion: isComplete,
-        response: this.getQuestionComponentResponse(view.model)
+        response: this.processInteractionResponse(object.definition.interactionType, view.getResponse())
       };
 
-      if (isComplete) {
-        // Answered
-        statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
-      } else {
-        // Attempted
-        statement = this.getStatement(this.getVerb(ADL.verbs.attempted), object, result);
-      }
+      // Answered
+      statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
       
       this.sendStatement(statement);
+    },
+
+    /**
+     * In order to support SCORM 1.2 and SCORM 2004, some of the components return a non-standard
+     * response.
+     * @param {string} responseType - The type of the response.
+     * @param {string} response - The unprocessed response string.
+     * @returns {string} A response formatted for xAPI compatibility.
+     */
+    processInteractionResponse: function(responseType, response) {
+      switch (responseType) {
+        case 'choice': {
+          response = response.replace(/,|#/g, '[,]');
+
+          break;
+        }
+        case 'matching': {
+          response = response.replace(/#/g, "[,]");
+          response = response.replace(/\./g, "[.]");
+
+          break;
+        }
+      }
+
+      return response;
     },
 
     /**
@@ -434,13 +533,35 @@ define([
       var result = {completion: true};
 
       if (model.get('_type') === 'course') {
-        this.sendCourseStatement(ADL.verbs.completed, result, _.bind(function() {
+        // TODO - Check if this is a pass or a fail.
+        _.extend(result, {
+          success: true,
+          score: {
+            scaled: 1,
+            raw: 100,
+            min: 0,
+            max: 100
+          }
+        });
+        
+        this.isComplete = true;
+
+        this.sendStatement(this.getCourseStatement(ADL.verbs.passed, result), _.bind(function() {
           this.sendCompletionState(model);
+
         }, this));
 
         return;
       }
 
+      // If this is a question component (interaction), do not record multiple statements.
+      if (model.get('_type') === 'component' && model.get('_isQuestionType') === true 
+        && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
+        && this.coreEvents['components']['change:_isComplete'] === true) {
+          // Return because 'Answered' will already have been passed.
+          return;
+      }
+      
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
       var statement;
 
@@ -493,7 +614,7 @@ define([
 
       var result = {
         score: {
-          scaled: (assessment.score / assessment.maxScore),
+          scaled: (assessment.scoreAsPercent / 100),
           raw: assessment.score,
           min: 0,
           max: assessment.maxScore
@@ -532,11 +653,10 @@ define([
       }
 
       if (typeof verb !== 'object') {
-        throw new Error('Unrecognised verb');
+        throw new Error('Unrecognised verb: ' + verb);
       }
 
-      var defaultLang = 'en-US';
-      var lang = this.get('lang') || defaultLang;
+      var lang = this.get('lang') || this.defaultLang;
 
       var singleLanguageVerb = {
         id: verb.id,
@@ -548,7 +668,8 @@ define([
       if (description) {
         singleLanguageVerb.display[lang] = description;
       } else {
-        singleLanguageVerb.display[defaultLang] = verb.display[defaultLang];
+        // Fallback in case the verb translation doesn't exist.
+        singleLanguageVerb.display[this.defaultLang] = verb.display[this.defaultLang];
       }
 
       return singleLanguageVerb;
@@ -638,7 +759,7 @@ define([
     restoreState: function() {
       var state = this.get('state');
 
-      if (!state) {
+      if (_.isEmpty(state)) {
         return;
       }
 
@@ -983,7 +1104,7 @@ define([
       // Since a language change counts as a new attempt, reset the state.
       xAPI.deleteState(function() {
         // Send a statement to track the (new) course.
-        this.sendCourseStatement(ADL.verbs.launched);
+        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
       });
 
     }, this));
