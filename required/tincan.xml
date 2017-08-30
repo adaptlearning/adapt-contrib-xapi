@@ -4,7 +4,7 @@
         <activity id="@@config._xapi._activityID" type="http://adlnet.gov/expapi/activities/course">
             <name>@@course.title</name>
             <description lang="en-US">@@course.description</description>
-            <launch lang="en-us">index.html</launch>
+            <launch lang="en-US">index.html</launch>
         </activity>
     </activities>
 </tincan>

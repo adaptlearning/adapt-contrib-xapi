@@ -533,22 +533,8 @@ define([
       var result = {completion: true};
 
       if (model.get('_type') === 'course') {
-        // TODO - Check if this is a pass or a fail.
-        _.extend(result, {
-          success: true,
-          score: {
-            scaled: 1,
-            raw: 100,
-            min: 0,
-            max: 100
-          }
-        });
-        
-        this.isComplete = true;
-
-        this.sendStatement(this.getCourseStatement(ADL.verbs.passed, result), _.bind(function() {
+        this.evaluateCourseCompletion(_.bind(function() {
           this.sendCompletionState(model);
-
         }, this));
 
         return;
@@ -588,6 +574,22 @@ define([
       }
     },
 
+
+    getAssessmentResultObject: function(assessment) {
+      var result = {
+        score: {
+          scaled: (assessment.scoreAsPercent / 100),
+          raw: assessment.score,
+          min: 0,
+          max: assessment.maxScore
+        },
+        success: assessment.isPass,
+        completion: assessment.isComplete
+      };
+
+      return result;
+    },
+
     /**
      * Sends an xAPI statement when an assessment has been completed.
      * @param {object} assessment - Object representing the state of the assessment.
@@ -612,16 +614,7 @@ define([
         type: ADL.activityTypes.assessment
       };
 
-      var result = {
-        score: {
-          scaled: (assessment.scoreAsPercent / 100),
-          raw: assessment.score,
-          min: 0,
-          max: assessment.maxScore
-        },
-        success: assessment.isPass,
-        completion: assessment.isComplete
-      };
+      var result = this.getAssessmentResultObject(assessment);
 
       if (assessment.isPass) {
         // Passed.
@@ -682,76 +675,78 @@ define([
      */
     getUniqueIri: function(model) {
       var iri = this.get('activityId');
+      var type = model.get('_type');
 
-      if (model && model.get('_type') != 'course') {
-        iri = iri + ['#id', model.get('_type'), model.get('_id')].join('/');
-      } 
-
-      return iri; 
-    },
-
-    onCourseComplete: function() {
-      if (Adapt.course.get('_isComplete') === true) {
-        this.set('_attempts', this.get('_attempts') + 1);
+      if (type !== 'course') {
+        if (type === 'article-assessment') {
+          iri = iri + ['#', 'assessment', model.get('_id')].join('/');
+        } else {
+          iri = iri + ['#/id', model.get('_id')].join('/');
+        }
       }
 
-      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
+      return iri;
     },
 
-    onAllAssessmentsComplete: function() {
-      /**
-       * assessments
-       * assessmentsComplete
-       * isComplete
-       * isPass
-       * isPercentageBased
-       * maxScore
-       * score
-       * scoreAsPercent
-       */
-      _.defer(_.bind(this.checkIfCourseIsReallyComplete, this));
-    },
+    onAllAssessmentsComplete: function(stateModel) {
+       this.set('assessmentModel', stateModel);
 
-    // onStateChanged: function(event) {
-    //   this.saveState();
-    // },
+       this.evaluateCourseCompletion(); 
+    },
 
     /**
      * Check if course tracking criteria have been met
      * @return {boolean} - true, if criteria have been met; otherwise false
      */
-    checkTrackingCriteriaMet: function() {
-      var criteriaMet = false;
-      var tracking = this.getConfig('_tracking');
+    evaluateCourseCompletion: function(callback) {
+      var self = this;
+      var assessment = this.get('assessmentModel') || false;
 
-      if (!tracking) {
-        return criteriaMet;
-      }
+      // TODO - Read this from config.json (in V3 of the Framework)
+      var tracking = {
+        _requireAssessmentPassed: true,
+        _requireCourseCompleted: true
+      };
 
+      var result = {};
+      var wasCourseCompleted = Adapt.course.get('_isComplete');
+      
       if (tracking._requireCourseCompleted && tracking._requireAssessmentPassed) {
-        // user must complete all blocks AND pass the assessment
-        criteriaMet = (Adapt.course.get('_isComplete') &&
-        Adapt.course.get('_isAssessmentPassed'));
-      } else if (tracking._requireCourseCompleted) {
-        // user only needs to complete all blocks
-        criteriaMet = Adapt.course.get('_isComplete');
-      } else if (tracking._requireAssessmentPassed) {
-        // user only needs to pass the assessment
-        criteriaMet = Adapt.course.get('_isAssessmentPassed');
+        // Completion of all content and an assessment pass is required.
+        if (wasCourseCompleted && assessment) {
+          result = this.getAssessmentResultObject(assessment);
+
+          this.isComplete = true;
+
+          var completionVerb = assessment.isPass ? ADL.verbs.passed : ADL.verbs.failed;
+
+          _.delay(function() {
+            self.sendStatement(self.getCourseStatement(completionVerb, result), callback);
+          }, 500);
+        }
+      } else if (tracking._requireCourseCompleted && wasCourseCompleted) {
+        // Only course completion matters.
+        result.completion = true;
+
+        this.isComplete = true;
+
+        _.delay(function() {
+          self.sendStatement(self.getCourseStatement(ADL.verbs.completed, result), callback);
+        }, 500);
+      } else if (tracking._requireAssessmentPassed && assessment) {
+        // Only the assesment matters.
+        result = this.getAssessmentResultObject(assessment);
+        result.completion = true;
+
+        this.isComplete = true;
+
+        var completionVerb = assessment.isPass ? ADL.verbs.passed : ADL.verbs.failed;
+
+        _.delay(function() {
+          self.sendStatement(self.getCourseStatement(completionVerb, result), callback);
+        }, 500)
       }
-
-      return criteriaMet;
     },
-
-    /**
-     * Check if course tracking criteria have been met, and send an xAPI
-     * statement if appropriate
-     */
-    // checkIfCourseIsReallyComplete: function() {
-    //   if (this.checkTrackingCriteriaMet()) {
-    //     this.sendStatement(this.getStatement(ADL.verbs.completed, this.getObjectForActivity()));
-    //   }
-    // },
 
     /**
      * Refresh course progress from loaded state.
@@ -908,8 +903,7 @@ define([
         if (callback) {
           callback();
         }
-      });   
-
+      });
     },
 
     /**
@@ -1025,16 +1019,6 @@ define([
       } catch (e) {
         return null;
       }
-    },
-
-    markBlockAsComplete: function(block) {
-      if (!block || block.get('_isComplete')) {
-        return;
-      }
-
-      block.getChildren().each(function(child) {
-        child.set('_isComplete', true);
-      }, this);
     },
 
     /**
