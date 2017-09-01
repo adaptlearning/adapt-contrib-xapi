@@ -1063,6 +1063,8 @@ define([
         return;
       }
 
+      Adapt.trigger('xapi:preSendStatement', statement);
+
       this.xapiWrapper.sendStatement(statement, callback);
     },
 
@@ -1075,6 +1077,8 @@ define([
       if (!statements || statements.length === 0) {
         return;
       }
+
+      Adapt.trigger('xapi:preSendStatements', statements);
 
       this.xapiWrapper.sendStatements(statements, callback);
     }
