@@ -27,12 +27,12 @@
                 },
                 "_specification": {
                   "type": "string",
-                  "enum": ["xAPI", "cmi5"],
+                  "enum": ["xAPI"],
                   "default": "xAPI",
                   "title": "Specification",
-                  "inputType": {"type": "Select", "options":["xAPI", "cmi5"]},
+                  "inputType": {"type": "Select", "options":["xAPI"]},
                   "validators": [],
-                  "help": "Indicates whether the plugin should use standard xAPI or the cmi5 profile"
+                  "help": "Indicates whether the plugin should use standard xAPI or the cmi5 profile  -- coming soon!"
                 },
                 "_activityID": {
                   "type": "string",
