@@ -42,7 +42,6 @@ define([
       'Adapt': {
         'router:page': true,
         'router:menu': true,
-        'assessment:complete': true,
         'assessments:complete': true,
         'questionView:recordInteraction': true
       },
@@ -305,9 +304,8 @@ define([
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
       }
 
-      if (this.coreEvents['Adapt']['assessment:complete']) {
-        this.listenTo(Adapt, 'assessments:complete', this.onAllAssessmentsComplete);
-      }
+      // Always listen out for completion of *all* assessments, as this can indicate course completion.
+      this.listenTo(Adapt, 'assessment:complete', this.onAllAssessmentsComplete);
 
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.

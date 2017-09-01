@@ -143,15 +143,6 @@
                           "title": "assessments:complete",
                           "validators": [],
                           "help": "Triggered when an individual assessment is completed."
-                        },
-                        "assessment:complete": {
-                          "type": "boolean",
-                          "required": false,
-                          "inputType": "Checkbox",
-                          "default": true,
-                          "title": "assessment:complete",
-                          "validators": [],
-                          "help": "Triggered when all assessments are completed."
                         }
                       }
                     },
