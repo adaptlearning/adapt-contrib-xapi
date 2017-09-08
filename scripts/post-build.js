@@ -20,7 +20,7 @@ module.exports = function(fs, path, log, options, done) {
     function(callback) {
       if (!configJson._xapi || !configJson._xapi._isEnabled) {
         log('xAPI settings not found or not enabled');
-        callback();
+        return callback();
       }
 
       // xAPI has been enabled, check if the activityID has been set.
@@ -31,8 +31,10 @@ module.exports = function(fs, path, log, options, done) {
       // cmi5 is a profile of the xAPI specification and some systems, e.g. SCORM Cloud
       // do not work well with both manifest types, so remove the one which is not being used.
       if (!configJson._xapi.hasOwnProperty('_specification') || configJson._xapi._specification === 'xAPI') {
+        // TODO - This will change once cmi5 is supported.
         // Remove the cmi5.xml file (default behaviour).
-        fs.unlink(path.join(options.outputdir, 'cmi5.xml'), callback);
+        // fs.unlink(path.join(options.outputdir, 'cmi5.xml'), callback);
+        callback();
       } else if (configJson._xapi._specification === 'cmi5') {
         // Remove the tincan.xml file.
         fs.unlink(path.join(options.outputdir, 'tincan.xml'), callback);
