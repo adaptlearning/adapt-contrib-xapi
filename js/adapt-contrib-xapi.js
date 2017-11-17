@@ -679,18 +679,18 @@ define([
       var completionVerb;
 
       switch (completionData.status) {
-        case COMPLETION_STATE.PASS: {
+        case COMPLETION_STATE.PASSED: {
           completionVerb = ADL.verbs.passed;
           break;
         }
           
-        case COMPLETION_STATE.FAIL: {
+        case COMPLETION_STATE.FAILED: {
           completionVerb = ADL.verbs.failed;
           break;
         }
           
         default: {
-          completionVerb: ADL.verbs.completed;          
+          completionVerb = ADL.verbs.completed;          
         }
       }
 
