@@ -227,58 +227,6 @@
                       }
                     }
                   }
-                },
-                "_tracking": {
-                  "type": "object",
-                  "required": false,
-                  "title": "Tracking",
-                  "properties": {
-                    "_requireAssessmentPassed": {
-                      "type": "boolean",
-                      "required": false,
-                      "default": false,
-                      "title": "Assessment pass required",
-                      "inputType": {
-                        "type": "Boolean",
-                        "options": [
-                          true,
-                          false
-                        ]
-                      },
-                      "validators": [],
-                      "help": ""
-                    },
-                    "_requireCourseCompleted": {
-                      "type": "boolean",
-                      "required": false,
-                      "default": true,
-                      "title": "Course completion required",
-                      "inputType": {
-                        "type": "Boolean",
-                        "options": [
-                          true,
-                          false
-                        ]
-                      },
-                      "validators": [],
-                      "help": ""
-                    },
-                    "_shouldSubmitScore": {
-                      "type": "boolean",
-                      "required": false,
-                      "default": false,
-                      "title": "Submit score",
-                      "inputType": {
-                        "type": "Boolean",
-                        "options": [
-                          true,
-                          false
-                        ]
-                      },
-                      "validators": [],
-                      "help": ""
-                    }
-                  }
                 }
               }
             }
