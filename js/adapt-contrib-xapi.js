@@ -1,9 +1,8 @@
 /*
  * adapt-contrib-xapi
- * License - http://github.com/adaptlearning/adapt_framework/LICENSE
+ * License      - http://github.com/adaptlearning/adapt_framework/LICENSE
  * Maintainers  - Dennis Heaney <dennis@learningpool.com>
  *              - Barry McKay <barry@learningpool.com>
- *              - Andy Bell <andrewb@learningpool.com>
  *              - Brian Quinn <brian@learningpool.com>
  */
 define([
@@ -73,95 +72,121 @@ define([
     },
 
     /** Implementation starts here */
-
     initialize: function() {
 
-      var config = Adapt.config.get('_xapi');
+      this.config = Adapt.config.get('_xapi');
 
-      if (!config || config._isEnabled !== true) {
+      if (!this.config || this.config._isEnabled !== true) {
         return;
       }
 
-      try {
-        Adapt.trigger('plugin:beginWait');
+      Adapt.trigger('plugin:beginWait');
 
-        // Initialise the xAPI wrapper
+      // Initialize the xAPIWrapper.
+      this.initializeWrapper(_.bind(function(error) {
+        try {
+          if (error) {
+            throw error;
+          }
+
+          this.set({
+            activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
+            displayLang: Adapt.config.get('_defaultLanguage'),
+            lang: this.getConfig('_lang'),
+            generateIds: this.getConfig('_generateIds'),
+            shouldTrackState: this.getConfig('_shouldTrackState')
+          });
+  
+          if (!this.validateProps()) {
+            // Required properties are missing, so exit.
+            this.onInitialised(false);
+            return;
+          }
+  
+          this.startTimeStamp = new Date();
+          this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
+          this.courseDescription = Adapt.course.get('description') || '';
+  
+          var statements = [];
+  
+          // Send the 'launched' and 'initialized' statements.
+          statements.push(this.getCourseStatement(ADL.verbs.launched));
+          statements.push(this.getCourseStatement(ADL.verbs.initialized));
+  
+          this.sendStatements(statements);
+   
+          this._onWindowOnload = _.bind(this.onWindowUnload, this);
+  
+          $(window).on('beforeunload unload', this._onWindowOnload);
+  
+          if (this.get('shouldTrackState')) {
+  
+            // Retrieve the course state.
+            this.getState(_.bind(function(error) {
+
+              var hasErrors = !_.isNull(error);
+
+              if (_.isEmpty(this.get('state'))) {
+                // This is a new attempt, send 'attempted'.
+                this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
+              } else {
+                // This is a continuation of an existing attempt, send 'resumed'.
+                this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+              }
+  
+              this.restoreState();
+              this.onInitialised(true);
+            }, this));
+  
+          }
+        } catch (e) {
+          Adapt.log.error(e);
+        } finally {
+          if (!this.get('shouldTrackState')) {
+            this.onInitialised(true);
+          }
+        }
+      }, this));
+    },
+
+    /**
+     * Intializes the ADL xapiWrapper code.
+     * @param {function} callback - Error-first callback function
+     */
+    initializeWrapper: function(callback) {
+      // If no endpoint has been configured, assume the ADL Launch method.
+      if (!this.config._endpoint) {
+        // If no endpoint is configured, assume this is using the ADL launch method.
+        ADL.launch(_.bind(function(error, launchData, xapiWrapper) {
+          if (error) {
+            Adapt.log.error('ADL.launch(): ', error);
+            return callback(error);
+          }
+
+          // Initialise the xAPI wrapper.
+          this.xapiWrapper = xapiWrapper;
+          
+          this.set({
+            actor: launchData.actor
+          });
+
+          callback();
+        }, this), true, true);
+      } else {
+        // The endpoint has been defined in the config, so use the static values.
+        // Initialise the xAPI wrapper.
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
-
-        // Override the global error handler on the xapiWrapper.
-        // This will prevent a stuck 'Loading...' screen when the LRS in inaccessible.
-        // ADL.xhrRequestOnError = _.bind(function(xhr, method, url) {
-        //   Adapt.log.error(xhr, method, url);
-        //   this.onInitialised(false);
-        // }, this);
-
-        // Absorb the config object.
-        this.setConfig(config);
 
         // Set any attributes on the xAPIWrapper.
         this.setWrapperConfig();
 
-        // Setup: An _activityID in the config takes precidence over the LRS attribute.
-        // Also get the LRS specific properties.
+        // Set the LRS specific properties.
         this.set({
-          activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
           registration: this.getLRSAttribute('registration'),
-          actor: this.getLRSAttribute('actor'),
-          displayLang: Adapt.config.get('_defaultLanguage'),
-          lang: this.getConfig('_lang'),
-          generateIds: this.getConfig('_generateIds'),
-          shouldTrackState: this.getConfig('_shouldTrackState')
+          actor: this.getLRSAttribute('actor')
         });
 
-        if (!this.validateProps()) {
-          // Required properties are missing, so exit.
-          this.onInitialised(false);
-          return;
-        }
-
-        // Adapt.offlineStorage.get();
-
-        // if (Adapt.offlineStorage.setReadyStatus) {
-        //     Adapt.offlineStorage.setReadyStatus();
-        // }
-
-        this.startTimeStamp = new Date();
-        this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
-        this.courseDescription = Adapt.course.get('description') || '';
-
-        var statements = [];
-
-        statements.push(this.getCourseStatement(ADL.verbs.launched));
-        statements.push(this.getCourseStatement(ADL.verbs.initialized));
-
-        this.sendStatements(statements);
- 
-        this._onWindowOnload = _.bind(this.onWindowUnload, this);
-
-        $(window).on('beforeunload unload', this._onWindowOnload);
-
-        if (this.get('shouldTrackState')) {
-
-          this.getState(_.bind(function() {
-            if (_.isEmpty(this.get('state'))) {
-              // This is a new attempt.
-              this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
-            } else {
-              // This is a continuation of an existing attempt.
-              this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
-            }
-
-            this.restoreState();
-            this.onInitialised(true);
-          }, this));
-
-        }
-      } catch (e) {
-        Adapt.log.error(e);
-      } finally {
-        if (!this.get('shouldTrackState')) {
-          this.onInitialised(true);
-        }
+        callback();
       }
     },
 
@@ -170,11 +195,11 @@ define([
      */
     onInitialised: function(isInitialised) {
       if (!this.get('isInitialised')) {
-
         this.set({ isInitialised: isInitialised });
-
-        Adapt.trigger('plugin:endWait');
       }
+
+      // End waiting so the page renders.
+      Adapt.trigger('plugin:endWait');
     },
 
     /**
@@ -186,9 +211,11 @@ define([
       var statements = [];
 
       if (!this.isComplete) {
+        // If the course is still in progress, send the 'suspended' verb.
         statements.push(this.getCourseStatement(ADL.verbs.suspended));
       }
 
+      // Always send the 'terminated' verb.
       statements.push(this.getCourseStatement(ADL.verbs.terminated));
 
       this.sendStatements(statements);
@@ -239,11 +266,10 @@ define([
     },
 
     /**
-      @method convertMillisecondsToISO8601Duration
-      @static
-      @param {Int} inputMilliseconds Duration in milliseconds
-      @return {String} Duration in ISO8601 format
-    */
+     * Converts milliseconds to an ISO8601 duration
+     * @param {int} inputMilliseconds - Duration in milliseconds
+     * @return {string} - Duration in ISO8601 format
+     */
     convertMillisecondsToISO8601Duration: function(inputMilliseconds) {
       var hours;
       var minutes;
@@ -279,6 +305,9 @@ define([
       return rtnStr;
     },
 
+    /**
+     * 
+     */
     setupListeners: function() {
       if (!this.get('isInitialised')) {
         Adapt.log.warn('Unable to setup listeners for xAPI');
@@ -296,18 +325,22 @@ define([
       this.listenTo(Adapt, 'tracking:complete', this.onTrackingComplete);
 
       // Conditionally listen to the events.
+      // Visits to the menu.
       if (this.coreEvents['Adapt']['router:menu']) {
         this.listenTo(Adapt, 'router:menu', this.onItemExperience);
       } 
 
+      // Visits to a page.
       if (this.coreEvents['Adapt']['router:page']) {
         this.listenTo(Adapt, 'router:page', this.onItemExperience);
       }
 
+      // When an interaction takes place on a question.
       if (this.coreEvents['Adapt']['questionView:recordInteraction']) {
         this.listenTo(Adapt, 'questionView:recordInteraction', this.onQuestionInteraction);
       }
 
+      // When an assessment is completed.
       if (this.coreEvents['Adapt']['assessments:complete']) {
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
       }
@@ -673,11 +706,16 @@ define([
       return iri;
     },
 
+    /**
+     * Handler for the Adapt Framework's 'tracking:complete' event.
+     * @param {object} completionData - 
+     */
     onTrackingComplete: function(completionData) {
       var self = this;
       var result = {};
       var completionVerb;
 
+      // Check the completion status.
       switch (completionData.status) {
         case COMPLETION_STATE.PASSED: {
           completionVerb = ADL.verbs.passed;
@@ -697,10 +735,12 @@ define([
       if (completionVerb === ADL.verbs.completed) {
         result = { completion: true };
       } else {
+        // The assessment(s) play a part in completion, so use their result.
         result = this.getAssessmentResultObject(completionData.assessment);
       }
 
       _.defer(function() {
+        // Send the completion status.
         self.sendStatement(self.getCourseStatement(completionVerb, result));
       });
     },
@@ -773,14 +813,6 @@ define([
     },
 
     /**
-     * Set the extension configuration.
-     * @param {object} conf - The _xAPI configuration attribute (from config.json).
-     */
-    setConfig: function(conf) {
-      this.configData = conf;
-    },
-
-    /**
      * Sends the state to the or the given model to the configured LRS.
      * @param {AdaptModel} model - The AdaptModel whose state has changed.
      * @param {function|null} clalback - Optional callback function.
@@ -829,10 +861,13 @@ define([
 
       Async.each(_.keys(this.coreObjects), function(type, cb) {
 
-        // var stateId = [activityId, type].join('/');
-
         self.xapiWrapper.getState(activityId, actor, type, null, null, function(xmlHttpRequest) {          
           _.defer(function() {
+            if (!xmlHttpRequest) {
+              Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+              return cb();
+            }
+
             switch (xmlHttpRequest.status) {
               case 200: {
                 state[type] = JSON.parse(xmlHttpRequest.response);
@@ -840,7 +875,7 @@ define([
               }
               case 404: {
                 // State not found.
-                Adapt.log.warn('Unable to getState() for stateId: ' + type);
+                Adapt.log.warn('Unable to getState() for ' + activityId + ' (' + type + ')');
                 break;
               }
             }
@@ -852,6 +887,10 @@ define([
       }, function(e) {
         if (e) {
           Adapt.log.error(e);
+
+          if (callback) {
+            return callback(e);
+          }
         }
 
         if (!_.isEmpty(state)) {
@@ -904,11 +943,11 @@ define([
      * @return {object|boolean} The attribute value, or false if not found.
      */
     getConfig: function(key) {
-      if (!this.configData || key === '' || typeof this.configData[key] === 'undefined') {
+      if (!this.config || key === '' || typeof this.config[key] === 'undefined') {
         return false;
       }
 
-      return this.configData[key];
+      return this.config[key];
     },
 
     /**
@@ -999,9 +1038,9 @@ define([
         errorCount++;
       }
 
-      if (!this.get('registration')) {
-        Adapt.log.warn('"registration" attribute not found!');
-      }
+      // if (!this.get('registration')) {
+      //   Adapt.log.warn('"registration" attribute not found!');
+      // }
 
       if (errorCount > 0) {
         return false;
@@ -1028,16 +1067,30 @@ define([
     /**
      * Sends multiple xAPI statements to the LRS.
      * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
-     * @param {function} callback - Optional callback function.
+     * @param {function} callback - Optional error-first callback function.
      */
     sendStatements: function(statements, callback) {
       if (!statements || statements.length === 0) {
         return;
       }
 
+      var self = this;
+
       Adapt.trigger('xapi:preSendStatements', statements);
 
-      this.xapiWrapper.sendStatements(statements, callback);
+      // Rather than calling the wrapper's sendStatements() function, iterate
+      // over each statement and call sendStatement().
+      Async.each(statements, function(statement, cb) {
+        self.xapiWrapper.sendStatement(statement, cb);
+      }, function(err) {
+        if (err) {
+          Adapt.log.error(err);
+        }
+
+        if (callback) {
+          callback(err);
+        }
+      });
     }
   });
 

@@ -87,7 +87,7 @@
                   "title": "Auto-generate ID for statements",
                   "inputType": "Checkbox",
                   "validators": [],
-                  "help": "When enabled, this will append an auto-generated 'id' value for all xAPI statements."
+                  "help": "When enabled, this will append an auto-generated 'id' value for all xAPI statements.  NOTE: It is recommended this is left off so that the LRS will generate the IDs."
                 },
                 "_shouldTrackState": {
                   "type": "boolean",
