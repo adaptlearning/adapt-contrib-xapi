@@ -86,6 +86,7 @@ define([
       this.initializeWrapper(_.bind(function(error) {
         try {
           if (error) {
+            this.onInitialised(false);
             throw error;
           }
 
@@ -119,33 +120,34 @@ define([
   
           $(window).on('beforeunload unload', this._onWindowOnload);
   
-          if (this.get('shouldTrackState')) {
-  
-            // Retrieve the course state.
-            this.getState(_.bind(function(error) {
-
-              var hasErrors = !_.isNull(error);
-
-              if (_.isEmpty(this.get('state'))) {
-                // This is a new attempt, send 'attempted'.
-                this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
-              } else {
-                // This is a continuation of an existing attempt, send 'resumed'.
-                this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
-              }
-  
-              this.restoreState();
-              this.onInitialised(true);
-            }, this));
-  
+          if (!this.get('shouldTrackState')) {
+            // xAPI is not managing the state.
+            this.onInitialised(true);
+            return;
           }
+
+          // Retrieve the course state.
+          this.getState(_.bind(function(error) {
+
+            var hasErrors = !_.isNull(error);
+
+            if (_.isEmpty(this.get('state'))) {
+              // This is a new attempt, send 'attempted'.
+              this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
+            } else {
+              // This is a continuation of an existing attempt, send 'resumed'.
+              this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+            }
+
+            this.restoreState();
+            this.onInitialised(true);
+          }, this));
+
         } catch (e) {
           Adapt.log.error(e);
-        } finally {
-          if (!this.get('shouldTrackState')) {
-            this.onInitialised(true);
-          }
-        }
+          // Something has gone wrong during the xAPI bootstrapping.
+          this.onInitialised(false);
+        } 
       }, this));
     },
 
