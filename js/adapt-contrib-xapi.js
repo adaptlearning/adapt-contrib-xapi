@@ -848,6 +848,11 @@ define([
         newState = modelState;
       }
 
+      // Update the locally held state.
+      state[collectionName] = newState;
+      this.set('state', state);
+
+      // Pass the new state to the LRS.
       this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState);
     },
 
