@@ -738,6 +738,9 @@ define([
         result = this.getAssessmentResultObject(completionData.assessment);
       }
 
+      // Store a reference that the course has actually been completed.
+      this.isComplete = true;
+
       _.defer(function() {
         // Send the completion status.
         self.sendStatement(self.getCourseStatement(completionVerb, result));
