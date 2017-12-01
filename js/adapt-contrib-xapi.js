@@ -45,9 +45,6 @@ define([
         'assessments:complete': true,
         'questionView:recordInteraction': true
       },
-      course: {
-        'change:_isComplete': true
-      },
       contentobjects: {
         'change:_isComplete': true
       },

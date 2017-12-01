@@ -146,22 +146,6 @@
                         }
                       }
                     },
-                    "course": {
-                      "type": "object",
-                      "required": false,
-                      "title": "course",
-                      "properties": {
-                        "change:_isComplete": {
-                          "type": "boolean",
-                          "required": false,
-                          "inputType": "Checkbox",
-                          "default": true,
-                          "title": "change:_isComplete",
-                          "validators": [],
-                          "help": "Triggered when the course is completed."
-                        }
-                      }
-                    },
                     "contentobjects": {
                       "type": "object",
                       "required": false,
