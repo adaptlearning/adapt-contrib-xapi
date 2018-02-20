@@ -14,6 +14,11 @@ define([
 
   'use strict';
 
+  /**
+   * @callback ErrorOnlyCallback
+   * @param {?Error} error
+   */
+
   var xAPI = Backbone.Model.extend({
 
     /** Declare defaults and model properties */
@@ -94,29 +99,29 @@ define([
             generateIds: this.getConfig('_generateIds'),
             shouldTrackState: this.getConfig('_shouldTrackState')
           });
-  
+
           if (!this.validateProps()) {
             // Required properties are missing, so exit.
             this.onInitialised(false);
             return;
           }
-  
+
           this.startTimeStamp = new Date();
           this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
           this.courseDescription = Adapt.course.get('description') || '';
-  
+
           var statements = [];
-  
+
           // Send the 'launched' and 'initialized' statements.
           statements.push(this.getCourseStatement(ADL.verbs.launched));
           statements.push(this.getCourseStatement(ADL.verbs.initialized));
-  
+
           this.sendStatements(statements);
-   
+
           this._onWindowOnload = _.bind(this.onWindowUnload, this);
-  
+
           $(window).on('beforeunload unload', this._onWindowOnload);
-  
+
           if (!this.get('shouldTrackState')) {
             // xAPI is not managing the state.
             this.onInitialised(true);
@@ -144,13 +149,13 @@ define([
           Adapt.log.error(e);
           // Something has gone wrong during the xAPI bootstrapping.
           this.onInitialised(false);
-        } 
+        }
       }, this));
     },
 
     /**
      * Intializes the ADL xapiWrapper code.
-     * @param {function} callback - Error-first callback function
+     * @param {ErrorOnlyCallback} callback
      */
     initializeWrapper: function(callback) {
       // If no endpoint has been configured, assume the ADL Launch method.
@@ -164,7 +169,7 @@ define([
 
           // Initialise the xAPI wrapper.
           this.xapiWrapper = xapiWrapper;
-          
+
           this.set({
             actor: launchData.actor
           });
@@ -261,7 +266,7 @@ define([
     },
 
     getSessionDuration: function() {
-      return Math.abs ((new Date()) - this.startTimeStamp);
+      return Math.abs((new Date()) - this.startTimeStamp);
     },
 
     /**
@@ -304,9 +309,6 @@ define([
       return rtnStr;
     },
 
-    /**
-     * 
-     */
     setupListeners: function() {
       if (!this.get('isInitialised')) {
         Adapt.log.warn('Unable to setup listeners for xAPI');
@@ -327,7 +329,7 @@ define([
       // Visits to the menu.
       if (this.coreEvents['Adapt']['router:menu']) {
         this.listenTo(Adapt, 'router:menu', this.onItemExperience);
-      } 
+      }
 
       // Visits to a page.
       if (this.coreEvents['Adapt']['router:page']) {
@@ -368,7 +370,7 @@ define([
         result = {};
       }
 
-      var object = new ADL.XAPIStatement.Activity(this.get('activityId')); 
+      var object = new ADL.XAPIStatement.Activity(this.get('activityId'));
       var name = {};
       var description = {};
 
@@ -414,7 +416,7 @@ define([
     getNameObject: function(model) {
       var name = {};
 
-      name[this.get('displayLang')] = model.get('displayTitle') || model.get('title'); 
+      name[this.get('displayLang')] = model.get('displayTitle') || model.get('title');
 
       return name;
     },
@@ -466,7 +468,7 @@ define([
 
       object.definition = {
         name: this.getNameObject(view.model),
-        description: description, 
+        description: description,
         type: ADL.activityTypes.interaction,
         interactionType: view.getResponseType()
       };
@@ -566,11 +568,11 @@ define([
       var result = { completion: true };
 
       // If this is a question component (interaction), do not record multiple statements.
-      if (model.get('_type') === 'component' && model.get('_isQuestionType') === true 
+      if (model.get('_type') === 'component' && model.get('_isQuestionType') === true
         && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
         && this.coreEvents['components']['change:_isComplete'] === true) {
-          // Return because 'Answered' will already have been passed.
-          return;
+        // Return because 'Answered' will already have been passed.
+        return;
       }
 
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
@@ -616,7 +618,7 @@ define([
       // Instantiate a Model so it can be used to obtain an IRI.
       var fakeModel = new Backbone.Model({
         _id: assessment.articleId || assessment.id,
-        _type: assessment.type, 
+        _type: assessment.type,
         pageId: assessment.pageId
       });
 
@@ -624,7 +626,7 @@ define([
       var name = {};
       var statement;
 
-      name[this.get('displayLang')] = assessment.id || 'Assessment'; 
+      name[this.get('displayLang')] = assessment.id || 'Assessment';
 
       object.definition = {
         name: name,
@@ -653,7 +655,7 @@ define([
      * @return {object} An ADL verb object with 'id' and language specific 'display' properties.
      */
     getVerb: function(verb) {
-       if (typeof verb === 'string') {
+      if (typeof verb === 'string') {
         var key = verb.toLowerCase();
         verb = ADL.verbs[key];
 
@@ -707,7 +709,7 @@ define([
 
     /**
      * Handler for the Adapt Framework's 'tracking:complete' event.
-     * @param {object} completionData - 
+     * @param {object} completionData
      */
     onTrackingComplete: function(completionData) {
       var self = this;
@@ -720,14 +722,14 @@ define([
           completionVerb = ADL.verbs.passed;
           break;
         }
-          
+
         case COMPLETION_STATE.FAILED: {
           completionVerb = ADL.verbs.failed;
           break;
         }
-          
+
         default: {
-          completionVerb = ADL.verbs.completed;          
+          completionVerb = ADL.verbs.completed;
         }
       }
 
@@ -762,9 +764,9 @@ define([
       if (state.components) {
         _.each(state.components, function(stateObject) {
           var restoreModel = Adapt.findById(stateObject._id);
-          
+
           if (restoreModel) {
-            restoreModel.setTrackableState(stateObject);  
+            restoreModel.setTrackableState(stateObject);
           } else {
             Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for component: ' + stateObject._id);
           }
@@ -776,7 +778,7 @@ define([
           var restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
-            restoreModel.setTrackableState(stateObject);  
+            restoreModel.setTrackableState(stateObject);
           } else {
             Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
           }
@@ -798,7 +800,7 @@ define([
         verb,
         object
       );
-      
+
       if (result && !_.isEmpty(result)) {
         statement.result = result;
       }
@@ -817,9 +819,8 @@ define([
     /**
      * Sends the state to the or the given model to the configured LRS.
      * @param {AdaptModel} model - The AdaptModel whose state has changed.
-     * @param {function|null} clalback - Optional callback function.
      */
-    sendState: function(model, modelState, callback) {
+    sendState: function(model, modelState) {
       if (this.get('shouldTrackState') !== true) {
         return;
       }
@@ -836,7 +837,7 @@ define([
 
       if (collectionName !== 'course') {
         var index = _.findIndex(stateCollection, { _id: model.get('_id') });
-        
+
         if (index !== -1) {
           stateCollection.splice(index, 1, modelState);
         } else {
@@ -858,7 +859,7 @@ define([
 
     /**
      * Retrieves the state information for the current course.
-     * @param {function|null} callback - Optional callback function.
+     * @param {ErrorOnlyCallback} [callback]
      */
     getState: function(callback) {
       var self = this;
@@ -866,44 +867,41 @@ define([
       var actor = this.get('actor');
       var state = {};
 
-      Async.each(_.keys(this.coreObjects), function(type, cb) {
-
-        self.xapiWrapper.getState(activityId, actor, type, null, null, function(xmlHttpRequest) {          
+      Async.each(_.keys(this.coreObjects), function(type, nextType) {
+        self.xapiWrapper.getState(activityId, actor, type, null, null, function(error, xhr) {
           _.defer(function() {
-            if (!xmlHttpRequest) {
+            if (error) {
               Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
-              return cb();
+              return nextType(error);
             }
 
-            switch (xmlHttpRequest.status) {
-              case 200: {
-                state[type] = JSON.parse(xmlHttpRequest.response);
-                break;
-              }
-              case 404: {
-                // State not found.
-                Adapt.log.warn('Unable to getState() for ' + activityId + ' (' + type + ')');
-                break;
-              }
+            if (!xhr) {
+              Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+              return nextType(new Error('\'xhr\' parameter is missing from callback'));
             }
 
-            cb();
+            if (xhr.status !== 200) {
+              Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+              return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
+            }
+
+            state[type] = JSON.parse(xhr.response);
+            return nextType();
           });
         });
-        
-      }, function(e) {
-        if (e) {
-          Adapt.log.error(e);
+      }, function(error) {
+        if (error) {
+          Adapt.log.error(error);
 
           if (callback) {
-            return callback(e);
+            return callback(error);
           }
         }
 
         if (!_.isEmpty(state)) {
           self.set({ state: state });
         }
-        
+
         Adapt.trigger('xapi:stateLoaded');
 
         if (callback) {
@@ -914,7 +912,7 @@ define([
 
     /**
      * Deletes all state information for the current course.
-     * @param {function|null} callback - Optional callback function.
+     * @param {ErrorOnlyCallback} [callback]
      */
     deleteState: function(callback) {
       var self = this;
@@ -936,7 +934,7 @@ define([
       }, function(e) {
         if (e) {
           Adapt.log.error(e);
-        } 
+        }
       });
 
       if (callback) {
@@ -1009,14 +1007,14 @@ define([
         return null;
       }
     },
-    
+
     getLRSExtendedAttribute: function(key) {
       var extended = this.getLRSAttribute('extended');
       if (extended == null) {
-      	return null;
+        return null;
       }
-            
-	    try {
+
+      try {
         if (key === 'definition') {
           return JSON.parse(extended.definition);
         }
@@ -1059,7 +1057,7 @@ define([
     /**
      * Sends a single xAPI statement to the LRS.
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-     * @param {function} callback - Optional callback function.
+     * @param {ADLCallback} [callback]
      */
     sendStatement: function(statement, callback) {
       if (!statement) {
@@ -1074,7 +1072,7 @@ define([
     /**
      * Sends multiple xAPI statements to the LRS.
      * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
-     * @param {function} callback - Optional error-first callback function.
+     * @param {ErrorOnlyCallback} [callback]
      */
     sendStatements: function(statements, callback) {
       if (!statements || statements.length === 0) {
@@ -1104,7 +1102,7 @@ define([
   /** Adapt event listeners begin here */
   Adapt.once('app:dataReady', function() {
     xAPI = new xAPI();
-    
+
     Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
       // Update the language.      
       xAPI.set({ displayLang: newLanguage });
