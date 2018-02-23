@@ -1,0 +1,11 @@
+<div class="xapi-error-inner">
+  <div class="icon icon-warning"></div>
+  <div class="heading">{{_globals.lrsConnectionErrorTitle}}</div>
+  <div class="text">{{_globals.lrsConnectionErrorMessage}}</div>
+  <div class="buttons">
+    <button class="exit">{{_globals.exitCourse}}</button>
+    {{#if_value_equals _lrsFailureBehaviour "warn"}}
+    <button class="continue">{{_globals.continue}}</button>
+    {{/if_value_equals}}
+  </div>
+</div>
