@@ -340,7 +340,7 @@ define([
       }
 
       if (this.get('shouldTrackState')) {
-        this.listenTo(Adapt, 'state:change', this.sendState)
+        this.listenTo(Adapt, 'state:change', this.sendState);
       }
 
       // Use the config to specify the core events.
@@ -880,7 +880,13 @@ define([
       });
 
       // Pass the new state to the LRS.
-      this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState);
+      this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState, null, null, function(error, xhr) {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendState:error', error);
+        }
+
+        Adapt.trigger('xapi:lrs:sendState:success', newState);
+      });
     },
 
     /**
@@ -1116,14 +1122,6 @@ define([
         return;
       }
 
-      if (!_.isArray(this.pendingStatements)) {
-        this.pendingStatements = [];
-      }
-
-      if (!_.contains(this.pendingStatements, statement)) {
-        this.pendingStatements.push(statement);
-      }
-
       Adapt.trigger('xapi:preSendStatement', statement);
 
       this.xapiWrapper.sendStatement(statement, function(error) {
@@ -1165,24 +1163,8 @@ define([
       });
     },
 
-    /**
-     * Sends any pending/unsent statements to the LRS
-     * @param {ErrorOnlyCallback} [callback]
-     */
-    sendPendingStatements: function(callback) {
-      if (!_.isFunction(callback)) {
-        callback = function() { };
-      }
-
-      if (!this.pendingStatements || !this.pendingStatements.length) {
-        return callback();
-      }
-
-      this.sendStatements(this.pendingStatements, callback);
-    },
-
     showErrorView: function() {
-      if (this.config._lrsFailureBehaviour === 'ignore' || Adapt.get('_ignoreLRSWarning')) {
+      if (this.getConfig('_lrsFailureBehaviour') === 'ignore') {
         return;
       }
 
@@ -1198,12 +1180,18 @@ define([
       });
 
       $('body').append(this.errorView.$el);
-      $('html').addClass('no-scroll');
+      $('html').css({
+        'overflow-y': 'hidden'
+      });
     },
 
     hideErrorView: function() {
       this.errorView && this.errorView.remove();
-      $('html').removeClass('no-scroll');
+      this.errorView = null;
+
+      $('html').css({
+        'overflow-y': 'scroll'
+      });
     }
   });
 
@@ -1237,24 +1225,10 @@ define([
 
     Adapt.on('xapi:lrs:sendStatement:error', function(error) {
       xAPI.showErrorView();
-
-      clearInterval(xAPI.sendPendingStatementsInterval);
-
-      if (xAPI.pendingStatements && xAPI.pendingStatements.length) {
-        xAPI.sendPendingStatementsInterval = setTimeout(function() {
-          xAPI.sendPendingStatements();
-        }, 5000);
-      }
     });
 
-    Adapt.on('xapi:lrs:sendStatement:success', function(statement) {
-      if (xAPI.pendingStatements && xAPI.pendingStatements.length) {
-        xAPI.pendingStatements = xAPI.pendingStatements.filter(function(pendingStatement) {
-          return pendingStatement !== statement;
-        });
-      }
-
-      xAPI.hideErrorView();
+    Adapt.on('xapi:lrs:sendState:error', function(error) {
+      xAPI.showErrorView();
     });
   });
 });
