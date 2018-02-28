@@ -3,6 +3,52 @@
   "$schema": "http://json-schema.org/draft-04/schema",
   "id": "http://jsonschema.net",
   "required": false,
+  "globals": {
+    "lrsConnectionErrorTitle": {
+      "title": "LRS connection error title",
+      "type": "string",
+      "required": true,
+      "default": "LRS not available",
+      "inputType": "Text",
+      "validators": [
+        "required"
+      ],
+      "translatable": true
+    },
+    "lrsConnectionErrorMessage": {
+      "title": "LRS connection error message",
+      "type": "string",
+      "required": true,
+      "default": "We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.",
+      "inputType": "Text",
+      "validators": [
+        "required"
+      ],
+      "translatable": true
+    },
+    "exitCourse": {
+      "title": "Exit course",
+      "type": "string",
+      "required": true,
+      "default": "Exit course",
+      "inputType": "Text",
+      "validators": [
+        "required"
+      ],
+      "translatable": true
+    },
+    "continue": {
+      "title": "Continue",
+      "type": "string",
+      "required": true,
+      "default": "Continue",
+      "inputType": "Text",
+      "validators": [
+        "required"
+      ],
+      "translatable": true
+    }
+  },
   "properties": {
     "pluginLocations": {
       "type": "object",
@@ -27,10 +73,17 @@
                 },
                 "_specification": {
                   "type": "string",
-                  "enum": ["xAPI"],
+                  "enum": [
+                    "xAPI"
+                  ],
                   "default": "xAPI",
                   "title": "Specification",
-                  "inputType": {"type": "Select", "options":["xAPI"]},
+                  "inputType": {
+                    "type": "Select",
+                    "options": [
+                      "xAPI"
+                    ]
+                  },
                   "validators": [],
                   "help": "Indicates whether the plugin should use standard xAPI or the cmi5 profile  -- coming soon!"
                 },
@@ -73,14 +126,27 @@
                 "_lang": {
                   "type": "string",
                   "required": false,
-                  "enum": ["de-DE", "en-US", "fr-FR", "es-ES"],
+                  "enum": [
+                    "de-DE",
+                    "en-US",
+                    "fr-FR",
+                    "es-ES"
+                  ],
                   "default": "en-US",
                   "title": "Verb language",
-                  "inputType": {"type": "Select", "options": ["de-DE", "en-US", "fr-FR", "es-ES"]},
+                  "inputType": {
+                    "type": "Select",
+                    "options": [
+                      "de-DE",
+                      "en-US",
+                      "fr-FR",
+                      "es-ES"
+                    ]
+                  },
                   "validators": [],
                   "help": "Select the language for verbs to be sent to the LRS."
                 },
-                "_generateIds" : {
+                "_generateIds": {
                   "type": "boolean",
                   "required": false,
                   "default": false,
@@ -96,7 +162,7 @@
                   "title": "Track state",
                   "inputType": "Checkbox",
                   "validators": [],
-                  "help": "When enabled, the associated LRS be used to track state via the State API."                  
+                  "help": "When enabled, the associated LRS be used to track state via the State API."
                 },
                 "_coreEvents": {
                   "type": "object",
@@ -211,6 +277,35 @@
                       }
                     }
                   }
+                },
+                "_lrsFailureBehaviour": {
+                  "type": "string",
+                  "enum": [
+                    "ignore",
+                    "warn",
+                    "block"
+                  ],
+                  "default": "block",
+                  "title": "LRS connection failure behaviour",
+                  "inputType": {
+                    "type": "Select",
+                    "options": [
+                      {
+                        "label": "Ignore errors",
+                        "val": "ignore"
+                      },
+                      {
+                        "label": "Warn user but allow them to continue",
+                        "val": "warn"
+                      },
+                      {
+                        "label": "Warn user and prevent them from using the course",
+                        "val": "block"
+                      }
+                    ]
+                  },
+                  "validators": [],
+                  "help": "Determines how the plugin should behave whenever it fails to successfully connect or send statements to the configured LRS"
                 }
               }
             }
