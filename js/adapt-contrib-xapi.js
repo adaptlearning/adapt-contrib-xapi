@@ -182,7 +182,7 @@ define([
         // Initialise the xAPI wrapper.
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
 
-        // Set any attributes on the xAPIWrapper
+        // Set any attributes on the xAPIWrapper.
         var configError;
         try {
           this.setWrapperConfig();
@@ -252,7 +252,7 @@ define([
         var val = this.getConfig('_' + key);
 
         if (val) {
-          // Note: xapiwrapper requires trailing slash and protocol to be present
+          // Note: xAPI wrapper requires a trailing slash and protocol to be present
           if (key === 'endpoint') {
             val = val.replace(/\/?$/, '/');
 
@@ -888,9 +888,7 @@ define([
      * @param {ErrorOnlyCallback} [callback]
      */
     getState: function(callback) {
-      if (!_.isFunction(callback)) {
-        callback = function() { };
-      }
+      callback = _.isFunction(callback) ? callback : function() { };
 
       var self = this;
       var activityId = this.get('activityId');
@@ -915,7 +913,6 @@ define([
             }
 
             if (xhr.status != 200) {
-
               Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
               return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
             }
@@ -951,7 +948,7 @@ define([
 
         Adapt.trigger('xapi:stateLoaded');
 
-        return callback();
+        callback();
       });
     },
 
@@ -960,9 +957,7 @@ define([
      * @param {ErrorOnlyCallback} [callback]
      */
     deleteState: function(callback) {
-      if (!_.isFunction(callback)) {
-        callback = function() { };
-      }
+      callback = _.isFunction(callback) ? callback : function() { };
 
       var self = this;
       var activityId = this.get('activityId');
@@ -976,12 +971,12 @@ define([
           }
 
           if (!xhr) {
-            Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+            Adapt.log.warn('deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(new Error('\'xhr\' parameter is missing from callback'));
           }
 
           if (xhr.status !== 204) {
-            Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+            Adapt.log.warn('deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
           }
 
@@ -990,9 +985,10 @@ define([
       }, function(error) {
         if (error) {
           Adapt.log.error(error);
+          return callback(error);
         }
 
-        return callback();
+        callback();
       });
     },
 
@@ -1114,9 +1110,7 @@ define([
      * @param {ADLCallback} [callback]
      */
     sendStatement: function(statement, callback) {
-      if (!_.isFunction(callback)) {
-        callback = function() { };
-      }
+      callback = _.isFunction(callback) ? callback : function() { };
 
       if (!statement) {
         return;
@@ -1149,9 +1143,7 @@ define([
      * @param {ErrorOnlyCallback} [callback]
      */
     sendStatements: function(statements, callback) {
-      if (!_.isFunction(callback)) {
-        callback = function() { };
-      }
+      callback = _.isFunction(callback) ? callback : function() { };
 
       if (!statements || statements.length === 0) {
         return;
@@ -1163,7 +1155,14 @@ define([
       // over each statement and call sendStatement().
       Async.each(statements, function(statement, nextStatement) {
         this.sendStatement(statement, nextStatement);
-      }.bind(this), callback);
+      }.bind(this), function(error) {
+        if (error) {
+          Adapt.log.error(error);
+          return callback(error);
+        }
+
+        callback();
+      });
     },
 
     /**
