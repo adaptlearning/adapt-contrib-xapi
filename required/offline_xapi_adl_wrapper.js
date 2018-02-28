@@ -11,10 +11,7 @@ window.xapiWrapper = Object.create(window.ADL.XAPIWrapper);
 
 Object.assign(window.xapiWrapper, {
   lrs: {
-    actor: JSON.stringify(actor),
-    activity_id: "http://www.example.com/LA1/001/intro",
-    endpoint: "",
-    registration: "760e3480-ba55-4991-94b0-01820dbd23a2"
+    actor: JSON.stringify(actor)
   },
 
   getState: function(activityid, agent, stateid, registration, since, callback) {
