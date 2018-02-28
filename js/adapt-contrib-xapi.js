@@ -75,14 +75,13 @@ define([
 
     /** Implementation starts here */
     initialize: function() {
-
       this.config = Adapt.config.get('_xapi');
 
-      if (!this.config || this.config._isEnabled !== true) {
+      if (!this.getConfig('_isEnabled')) {
         return;
       }
 
-      Adapt.trigger('plugin:beginWait');
+      Adapt.wait.begin();
 
       // Initialize the xAPIWrapper.
       this.initializeWrapper(_.bind(function(error) {
@@ -130,8 +129,9 @@ define([
 
           // Retrieve the course state.
           this.getState(_.bind(function(error) {
-
-            var hasErrors = !_.isNull(error);
+            if (error) {
+              throw error;
+            }
 
             if (_.isEmpty(this.get('state'))) {
               // This is a new attempt, send 'attempted'.
@@ -159,7 +159,7 @@ define([
      */
     initializeWrapper: function(callback) {
       // If no endpoint has been configured, assume the ADL Launch method.
-      if (!this.config._endpoint) {
+      if (!this.getConfig('_endpoint')) {
         // If no endpoint is configured, assume this is using the ADL launch method.
         ADL.launch(_.bind(function(error, launchData, xapiWrapper) {
           if (error) {
@@ -202,8 +202,8 @@ define([
         this.set({ isInitialised: isInitialised });
       }
 
-      // End waiting so the page renders.
-      Adapt.trigger('plugin:endWait');
+      // End waiting so the page renders
+      Adapt.wait.end();
     },
 
     /**
@@ -236,6 +236,15 @@ define([
         var val = this.getConfig('_' + key);
 
         if (val) {
+          // Note: xapiwrapper requires trailing slash and protocol to be present
+          if (key === 'endpoint') {
+            val = val.replace(/\/?$/, '/');
+
+            if (!/^https?:\/\//i.test(val)) {
+              val = 'http://' + val;
+            }
+          }
+
           newConfig[key] = val;
         }
       }, this);
@@ -880,13 +889,17 @@ define([
               return nextType(new Error('\'xhr\' parameter is missing from callback'));
             }
 
-            if (xhr.status !== 200) {
-              Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
-              return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
+            if (xhr.status == 200) {
+              state[type] = JSON.parse(xhr.response);
+              return nextType();
             }
 
-            state[type] = JSON.parse(xhr.response);
-            return nextType();
+            if (xhr.status == 404) {
+              return nextType();
+            }
+
+            Adapt.log.warn('getState() failed for ' + activityId + ' (' + type + ')');
+            return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
           });
         });
       }, function(error) {

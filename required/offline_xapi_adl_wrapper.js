@@ -51,3 +51,11 @@ Object.assign(window.xapiWrapper, {
     return true;
   }
 });
+
+window.ADL.launch = function(cb, terminate_on_unload, strict_callbacks) {
+  return cb(null, {
+    actor: actor
+  }, window.xapiWrapper);
+};
+
+Object.freeze(window.ADL);
