@@ -212,12 +212,14 @@ define([
 
       Adapt.wait.end();
 
-      if (error) {
-        Adapt.trigger('xapi:lrs:initialize:error', error);
-        return;
-      }
+      _.defer(function() {
+        if (error) {
+          Adapt.trigger('xapi:lrs:initialize:error', error);
+          return;
+        }
 
-      Adapt.trigger('xapi:lrs:initialize:success');
+        Adapt.trigger('xapi:lrs:initialize:success');
+      });
     },
 
     /**
@@ -334,7 +336,6 @@ define([
 
     setupListeners: function() {
       if (!this.get('isInitialised')) {
-        throw new Error('Unable to setup listeners for xAPI');
         return;
       }
 
@@ -1198,10 +1199,12 @@ define([
       });
 
       $('body').append(this.errorView.$el);
+      $('html').addClass('no-scroll');
     },
 
     hideErrorView: function() {
       this.errorView && this.errorView.remove();
+      $('html').removeClass('no-scroll');
     }
   });
 
@@ -1221,11 +1224,7 @@ define([
     }, this));
 
     Adapt.on('adapt:initialize', function() {
-      try {
-        xAPI.setupListeners();
-      } catch (error) {
-        Adapt.trigger('xapi:lrs:initialize:error', error);
-      }
+      xAPI.setupListeners();
     });
 
     Adapt.on('xapi:lrs:initialize:success', function() {

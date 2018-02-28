@@ -35,7 +35,7 @@ Object.assign(window.xapiWrapper, {
   sendStatement: function(stmt, callback) {
     console.log("xAPI statement sent:");
     console.log(JSON.stringify(stmt));
-    return true;
+    return callback();
   },
 
   sendState: function(activityid, agent, stateid, registration, stateval, matchHash, noneMatchHash, callback) {
