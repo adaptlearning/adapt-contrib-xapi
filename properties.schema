@@ -4,6 +4,17 @@
   "id": "http://jsonschema.net",
   "required": false,
   "globals": {
+    "confirm": {
+      "title": "Confirm",
+      "type": "string",
+      "required": true,
+      "default": "OK",
+      "inputType": "Text",
+      "validators": [
+        "required"
+      ],
+      "translatable": true
+    },
     "lrsConnectionErrorTitle": {
       "title": "LRS connection error title",
       "type": "string",
@@ -20,28 +31,6 @@
       "type": "string",
       "required": true,
       "default": "We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.",
-      "inputType": "Text",
-      "validators": [
-        "required"
-      ],
-      "translatable": true
-    },
-    "exitCourse": {
-      "title": "Exit course",
-      "type": "string",
-      "required": true,
-      "default": "Exit course",
-      "inputType": "Text",
-      "validators": [
-        "required"
-      ],
-      "translatable": true
-    },
-    "continue": {
-      "title": "Continue",
-      "type": "string",
-      "required": true,
-      "default": "Continue",
       "inputType": "Text",
       "validators": [
         "required"
@@ -282,10 +271,9 @@
                   "type": "string",
                   "enum": [
                     "ignore",
-                    "warn",
-                    "block"
+                    "show"
                   ],
-                  "default": "block",
+                  "default": "show",
                   "title": "LRS connection failure behaviour",
                   "inputType": {
                     "type": "Select",
@@ -295,12 +283,8 @@
                         "val": "ignore"
                       },
                       {
-                        "label": "Warn user but allow them to continue",
-                        "val": "warn"
-                      },
-                      {
-                        "label": "Warn user and prevent them from using the course",
-                        "val": "block"
+                        "label": "Show errors",
+                        "val": "show"
                       }
                     ]
                   },

@@ -9,9 +9,8 @@ define([
   'core/js/adapt',
   'core/js/enums/completionStateEnum',
   'libraries/async.min',
-  'libraries/xapiwrapper.min',
-  './views/errorView'
-], function(Adapt, COMPLETION_STATE, Async, XAPIWrapper, ErrorView) {
+  'libraries/xapiwrapper.min'
+], function(Adapt, COMPLETION_STATE, Async) {
 
   'use strict';
 
@@ -1166,35 +1165,21 @@ define([
       });
     },
 
-    showErrorView: function() {
+    getGlobals: function() {
+      return Adapt &&
+        Adapt.course &&
+        Adapt.course.get('_globals') &&
+        Adapt.course.get('_globals')._extensions &&
+        Adapt.course.get('_globals')._extensions._xapi
+        || {};
+    },
+
+    showError: function() {
       if (this.getConfig('_lrsFailureBehaviour') === 'ignore') {
         return;
       }
 
-      if (this.errorView) {
-        return;
-      }
-
-      this.errorView = new ErrorView({ model: new Backbone.Model(this.config) });
-
-      this.listenTo(this.errorView, 'continue', this.hideErrorView);
-      this.listenTo(this.errorView, 'exit', function() {
-        window.top.close();
-      });
-
-      $('body').append(this.errorView.$el);
-      $('html').css({
-        'overflow-y': 'hidden'
-      });
-    },
-
-    hideErrorView: function() {
-      this.errorView && this.errorView.remove();
-      this.errorView = null;
-
-      $('html').css({
-        'overflow-y': 'scroll'
-      });
+      Adapt.trigger('notify:alert', { title: this.getGlobals().lrsConnectionErrorTitle, body: this.getGlobals().lrsConnectionErrorMessage, confirmText: this.getGlobals().confirm });
     }
   });
 
@@ -1217,21 +1202,17 @@ define([
       xAPI.setupListeners();
     });
 
-    Adapt.on('xapi:lrs:initialize:success', function() {
-      xAPI.hideErrorView();
-    });
-
     Adapt.on('xapi:lrs:initialize:error', function(error) {
       Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-      xAPI.showErrorView();
+      xAPI.showError();
     });
 
     Adapt.on('xapi:lrs:sendStatement:error', function(error) {
-      xAPI.showErrorView();
+      xAPI.showError();
     });
 
     Adapt.on('xapi:lrs:sendState:error', function(error) {
-      xAPI.showErrorView();
+      xAPI.showError();
     });
   });
 });
