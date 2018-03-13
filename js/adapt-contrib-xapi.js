@@ -1166,12 +1166,20 @@ define([
     },
 
     getGlobals: function() {
-      return Adapt &&
-        Adapt.course &&
-        Adapt.course.get('_globals') &&
-        Adapt.course.get('_globals')._extensions &&
-        Adapt.course.get('_globals')._extensions._xapi
-        || {};
+      return _.defaults(
+        (
+          Adapt &&
+          Adapt.course &&
+          Adapt.course.get('_globals') &&
+          Adapt.course.get('_globals')._extensions &&
+          Adapt.course.get('_globals')._extensions._xapi
+        ) || {},
+        {
+          'confirm': 'OK',
+          'lrsConnectionErrorTitle': 'LRS not available',
+          'lrsConnectionErrorMessage': 'We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.'
+        }
+      );
     },
 
     showError: function() {
