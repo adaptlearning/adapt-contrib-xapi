@@ -1,8 +1,9 @@
 var actor = {
   "objectType": "Agent",
+  "name": "Testy McTestface",
   "account": {
-    "homePage": "http://www.example.com",
-    "name": "1625378"
+    "homePage": "http://www.example.com/users",
+    "name": "1234567890"
   }
 };
 
@@ -10,10 +11,7 @@ window.xapiWrapper = Object.create(window.ADL.XAPIWrapper);
 
 Object.assign(window.xapiWrapper, {
   lrs: {
-    actor: JSON.stringify(actor),
-    activity_id: "http://www.example.com/LA1/001/intro",
-    endpoint: "http://lrs.example.com/lrslistener/",
-    registration: "760e3480-ba55-4991-94b0-01820dbd23a2"
+    actor: JSON.stringify(actor)
   },
 
   getState: function(activityid, agent, stateid, registration, since, callback) {
@@ -51,3 +49,12 @@ Object.assign(window.xapiWrapper, {
     return true;
   }
 });
+
+window.ADL.launch = function(cb, terminate_on_unload, strict_callbacks) {
+  return cb(null, {
+    actor: actor,
+    endpoint: 'http://launch-server.example.com'
+  }, window.xapiWrapper);
+};
+
+window.ADL = Object.freeze(window.ADL);

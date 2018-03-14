@@ -9,7 +9,7 @@ define([
   'core/js/adapt',
   'core/js/enums/completionStateEnum',
   'libraries/async.min',
-  'libraries/xapiwrapper.min',
+  'libraries/xapiwrapper.min'
 ], function(Adapt, COMPLETION_STATE, Async) {
 
   'use strict';
@@ -75,7 +75,6 @@ define([
 
     /** Implementation starts here */
     initialize: function() {
-
       this.config = Adapt.config.get('_xapi');
 
       if (!this.getConfig('_isEnabled')) {
@@ -152,7 +151,6 @@ define([
             return this;
           }, this));
         }, this));
-
       }, this));
     },
 
@@ -344,7 +342,7 @@ define([
       }
 
       if (this.get('shouldTrackState')) {
-        this.listenTo(Adapt, 'state:change', this.sendState)
+        this.listenTo(Adapt, 'state:change', this.sendState);
       }
 
       // Use the config to specify the core events.
@@ -884,7 +882,13 @@ define([
       });
 
       // Pass the new state to the LRS.
-      this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState);
+      this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState, null, null, function(error, xhr) {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendState:error', error);
+        }
+
+        Adapt.trigger('xapi:lrs:sendState:success', newState);
+      });
     },
 
     /**
@@ -1122,7 +1126,15 @@ define([
 
       Adapt.trigger('xapi:preSendStatement', statement);
 
-      this.xapiWrapper.sendStatement(statement, callback);
+      this.xapiWrapper.sendStatement(statement, function(error) {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendStatement:error', error);
+          return callback(error);
+        }
+
+        Adapt.trigger('xapi:lrs:sendStatement:success', statement);
+        return callback();
+      });
     },
 
     /**
@@ -1137,15 +1149,13 @@ define([
         return;
       }
 
-      var self = this;
-
       Adapt.trigger('xapi:preSendStatements', statements);
 
       // Rather than calling the wrapper's sendStatements() function, iterate
       // over each statement and call sendStatement().
       Async.each(statements, function(statement, nextStatement) {
-        self.xapiWrapper.sendStatement(statement, nextStatement);
-      }, function(error) {
+        this.sendStatement(statement, nextStatement);
+      }.bind(this), function(error) {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
           return callback(error);
@@ -1153,6 +1163,31 @@ define([
 
         callback();
       });
+    },
+
+    getGlobals: function() {
+      return _.defaults(
+        (
+          Adapt &&
+          Adapt.course &&
+          Adapt.course.get('_globals') &&
+          Adapt.course.get('_globals')._extensions &&
+          Adapt.course.get('_globals')._extensions._xapi
+        ) || {},
+        {
+          'confirm': 'OK',
+          'lrsConnectionErrorTitle': 'LRS not available',
+          'lrsConnectionErrorMessage': 'We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.'
+        }
+      );
+    },
+
+    showError: function() {
+      if (this.getConfig('_lrsFailureBehaviour') === 'ignore') {
+        return;
+      }
+
+      Adapt.trigger('notify:alert', { title: this.getGlobals().lrsConnectionErrorTitle, body: this.getGlobals().lrsConnectionErrorMessage, confirmText: this.getGlobals().confirm });
     }
   });
 
@@ -1169,15 +1204,23 @@ define([
         // Send a statement to track the (new) course.
         this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
       });
-
     }, this));
-  });
 
-  Adapt.on('adapt:initialize', function() {
-    xAPI.setupListeners();
-  });
+    Adapt.on('adapt:initialize', function() {
+      xAPI.setupListeners();
+    });
 
-  Adapt.on('xapi:lrs:initialize:error', function(error) {
-    Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+    Adapt.on('xapi:lrs:initialize:error', function(error) {
+      Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+      xAPI.showError();
+    });
+
+    Adapt.on('xapi:lrs:sendStatement:error', function(error) {
+      xAPI.showError();
+    });
+
+    Adapt.on('xapi:lrs:sendState:error', function(error) {
+      xAPI.showError();
+    });
   });
 });
