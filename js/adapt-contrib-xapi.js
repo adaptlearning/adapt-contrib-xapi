@@ -171,6 +171,8 @@ define([
             actor: this.getLRSAttribute('actor')
           });
 
+          this.xapiWrapper.strictCallbacks = true;
+
           callback();
         } else {
           // If no endpoint is configured, assume this is using the ADL launch method.
@@ -186,6 +188,8 @@ define([
               actor: launchData.actor
             });
 
+            this.xapiWrapper.strictCallbacks = true;
+		  
             callback();
           }, this), true, true);
         }
@@ -212,6 +216,8 @@ define([
           actor: this.getLRSAttribute('actor')
         });
 
+        this.xapiWrapper.strictCallbacks = true;
+		  
         callback();
       }
     },
