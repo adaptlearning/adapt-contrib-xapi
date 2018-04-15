@@ -929,8 +929,8 @@ define([
             var parseError;
             try {
               response = JSON.parse(xhr.response);
-            } catch (error) {
-              parseError = error;
+            } catch (e) {
+              parseError = e;
             }
 
             if (parseError) {
