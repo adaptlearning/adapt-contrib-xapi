@@ -163,7 +163,7 @@ define([
       if (!this.getConfig('_endpoint')) {
         //check to see if configuration has been passed in URL
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
-        if(this.checkWrapperConfig()) {
+        if (this.checkWrapperConfig()) {
           //URL had all necessary configuration so we continue using it
           // Set the LRS specific properties.
           this.set({
@@ -263,7 +263,7 @@ define([
     * Check Wrapper to see if all parameters needed are set
     */
     checkWrapperConfig: function() {
-      if(this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
+      if (this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
         && this.xapiWrapper.lrs.auth && this.xapiWrapper.lrs.activity_id ) {
           return true;
         } else {
