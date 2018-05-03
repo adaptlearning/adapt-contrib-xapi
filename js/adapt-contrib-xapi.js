@@ -161,21 +161,38 @@ define([
     initializeWrapper: function(callback) {
       // If no endpoint has been configured, assume the ADL Launch method.
       if (!this.getConfig('_endpoint')) {
-        // If no endpoint is configured, assume this is using the ADL launch method.
-        ADL.launch(_.bind(function(error, launchData, xapiWrapper) {
-          if (error) {
-            return callback(error);
-          }
-
-          // Initialise the xAPI wrapper.
-          this.xapiWrapper = xapiWrapper;
-
+        //check to see if configuration has been passed in URL
+        this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
+        if (this.checkWrapperConfig()) {
+          //URL had all necessary configuration so we continue using it
+          // Set the LRS specific properties.
           this.set({
-            actor: launchData.actor
+            registration: this.getLRSAttribute('registration'),
+            actor: this.getLRSAttribute('actor')
           });
 
+          this.xapiWrapper.strictCallbacks = true;
+
           callback();
-        }, this), true, true);
+        } else {
+          // If no endpoint is configured, assume this is using the ADL launch method.
+          ADL.launch(_.bind(function(error, launchData, xapiWrapper) {
+            if (error) {
+              return callback(error);
+            }
+
+            // Initialise the xAPI wrapper.
+            this.xapiWrapper = xapiWrapper;
+
+            this.set({
+              actor: launchData.actor
+            });
+
+            this.xapiWrapper.strictCallbacks = true;
+		  
+            callback();
+          }, this), true, true);
+        }
       } else {
         // The endpoint has been defined in the config, so use the static values.
         // Initialise the xAPI wrapper.
@@ -199,6 +216,8 @@ define([
           actor: this.getLRSAttribute('actor')
         });
 
+        this.xapiWrapper.strictCallbacks = true;
+		  
         callback();
       }
     },
@@ -240,6 +259,18 @@ define([
       this.sendStatements(statements);
     },
 
+    /**
+    * Check Wrapper to see if all parameters needed are set
+    */
+    checkWrapperConfig: function() {
+      if (this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
+        && this.xapiWrapper.lrs.auth && this.xapiWrapper.lrs.activity_id ) {
+          return true;
+        } else {
+          return false;
+        }
+    },
+	
     /**
      * Attempt to extract endpoint, user and password from the config.json.
      */
