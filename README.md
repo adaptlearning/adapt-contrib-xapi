@@ -1,28 +1,57 @@
-adapt-contrib-xapi
-===============
+# adapt-contrib-xapi
 
-An extension to track learner activity via xAPI. Please note, this is a pre-alpha release and is not ready for production use.
+**xAPI** is an *extension* intended for use with the [Adapt framework](https://github.com/adaptlearning/adapt_framework) version 3.0 or greater to pass Experience API (xAPI) statements between the Adapt content and a Learning Record Store (LRS), such as [Learning Locker®](https://learninglocker.net/).  It is compatible with both the Adapt Framework and the Adapt Authoring Tool.
 
-# Requirements
+From this point on, the README assumes a certain level of familiarity with the xAPI and the philosophy behind it.  If the xAPI specification is new to you, please start with the documentation at [xapi.com](https://xapi.com/overview/) before continuing. 
 
-* A Learning Record Store (LRS) - [LearningLocker](https://github.com/LearningLocker/learninglocker/) is recommended.
+## Configuration
+By default the extension listens for the following events.  Those without an asterisk (*) can be toggled via configuration:
 
-# How to Install
+| Object |Event  |
+|--|--|
+| Adapt | `tracking:complete`* |
+| Adapt | `router:page` |
+| Adapt | `router:menu` |
+| Adapt | `assessments:complete` |
+| Adapt | `questionView:recordInteraction` |
+| contentobjects |`change:_isComplete` |
+| articles | `change:_isComplete` |
+| blocks | `change:_isComplete` |
+| components | `change:_isComplete` |
 
-This plugin is not yet officially supported by the Adapt project, and requires a couple of manual steps in order to use it effectively.
+## Statements
+In response to the course, the statements based on the following ADL verbs are sent:
+- launched
+- initialized
+- attempted
+- failed
+- passed
+- suspended
+- terminated
 
-1. From GitHub, click Download ZIP. This will download a file called adapt--contrib-xapi-master.zip file.
-2. From within your authoring tool interface, click the top-left drop-down menu and select 'Plugin Management'.
-3. Click 'Upload Plugin'.
-4. Choose the adapt-contrib-xapi-master.zip file downloaded earlier.
-5. Click 'Upload'.
+In response to activity on navigating via pages and menus:
+- experienced
 
+In response to completion of non-question components, blocks, articles or contentobjects:
+- completed
 
-# How to Use
+In response to completion of question components, along with details of the interaction the following verb will be sent:
+- answered
 
-1. Create a new course and click "Manage Extensions" and enable the xAPI extension
-2. The activityID for the module (if unspecified) defaults to the URL where the published content is running.
-    * You need to add this activity after enabling the extension on your authoring tool course by editing the xAPI section under Configuration Settings.
-3. Unzip your published course to a location on the web.
-4. Browse to the published course.
-5. View LRS for xAPI statements.
+Note that the xAPI extension works well with the core Assessment extension.  The Assessment is responsible fo defining pass or fail criteria, while the xAPI extension merely reports on it.
+
+## Events
+The following events are triggered by the xAPI extension:
+
+| Event | Description | Parameter(s) | 
+|--|--|--|
+|`xapi:lrs:initialize:error`|Triggered when the plugin fails to initialize| An `error` object|
+|`xapi:lrs:initialize:success`|Triggered when the plugin successfully establishes connectivity with the LRS | - |
+|`xapi:preSendStatement`|Triggered just prior to sending a single statement to the LRS | The `statement` as an object |
+|`xapi:lrs:sendStatement:error` | Triggered on an error with sending a statement to the LRS | The `error` object |
+|`xapi:lrs:sendStatement:success` | Triggered when a statement is successfully sent to the LRS | - |
+|`xapi:preSendStatements`| Triggered just prior to sending multiple statements ot the LRS | An array of `statement` objects |
+|`xapi:lrs:sendState:error`| Triggered when state cannot be saved to the LRS | The `error` object |
+|`xapi:lrs:sendState:success`| Triggered when state is successfully saved to the LRS | An object representing `newState` |
+|`xapi:stateLoaded`| Triggered when state has been successfully loaded from the LRS | - |
+
