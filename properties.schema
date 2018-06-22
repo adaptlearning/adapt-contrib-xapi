@@ -74,7 +74,7 @@
                     ]
                   },
                   "validators": [],
-                  "help": "Indicates whether the plugin should use standard xAPI or the cmi5 profile  -- coming soon!"
+                  "help": "Indicates whether the plugin should use standard xAPI or -- coming soon! -- cmi5 profile"
                 },
                 "_activityID": {
                   "type": "string",
@@ -92,25 +92,25 @@
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
-                  "help": "Endpoint"
+                  "help": "The Learning Record Store (LRS) URL where xAPI statements will be sent to."
                 },
                 "_user": {
                   "type": "string",
                   "required": true,
-                  "title": "User",
+                  "title": "User/Key",
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
-                  "help": "User"
+                  "help": "The 'user' or 'key' as defined in your Learning Record Store (LRS)."
                 },
                 "_password": {
                   "type": "string",
                   "required": true,
-                  "title": "Password",
+                  "title": "Password/Secret",
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
-                  "help": "Password"
+                  "help": "The 'password' or 'secret' as defined in your Learning Record Store (LRS)."
                 },
                 "_lang": {
                   "type": "string",
