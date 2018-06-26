@@ -5,7 +5,21 @@
 From this point on, the README assumes a certain level of familiarity with the xAPI and the philosophy behind it.  If the xAPI specification is new to you, please start with the documentation at [xapi.com](https://xapi.com/overview/) before continuing. 
 
 ## Configuration
-By default the extension listens for the following events.  Those without an asterisk (*) can be toggled via configuration:
+Some setup is required in order to configure the xAPI extension.  If using a standalone Adapt Framework, refer to  [example.json](https://github.com/adaptlearning/adapt-contrib-xapi/blob/master/example.json) for a JSON snipped which should be added to your course's config.json.  If using the Authoring tool you can configure the following attributes:
+
+|Setting|Default|Help|
+|--|--|--|
+|Is Enabled|  `false` | Set to `true` to enable the extension
+|Specification | `xApi` | This must be set
+|Endpoint| | URL to the LRS endpoint 
+|User (or Key)| | This can be configured in your LRS, or omit if using ADL Launch mechanism
+|Password (or Secret)| | (as above)
+|Verb language | `en-US`| Indicates the language of the verbs which will be passed to the LRS
+|Auto generate IDs for statements | `false` | It is recommended this is not enabled, so that the LRS will generate unique identifiers
+|Track state| `false` | Lets the LRS manage the course state via the State API
+|LRS connection failur behaviour | Show errors | Indicates what should happen when the course cannot connect to the LRS
+
+By default the xAPI extension listens for the following *core* events.  Those without an asterisk (*) can be toggled via configuration:
 
 | Object |Event  |
 |--|--|
@@ -18,6 +32,7 @@ By default the extension listens for the following events.  Those without an ast
 | articles | `change:_isComplete` |
 | blocks | `change:_isComplete` |
 | components | `change:_isComplete` |
+
 
 ## Statements
 In response to the course, the statements based on the following ADL verbs are sent:

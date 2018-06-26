@@ -58,7 +58,7 @@
                   "title": "Is Enabled",
                   "inputType": "Checkbox",
                   "validators": [],
-                  "help": "If set to 'true', this course will be tracked by xAPI"
+                  "help": "Indicates whether this course should send statements to a configured Learning Record Store (LRS)."
                 },
                 "_specification": {
                   "type": "string",
@@ -74,7 +74,7 @@
                     ]
                   },
                   "validators": [],
-                  "help": "Indicates whether the plugin should use standard xAPI or -- coming soon! -- cmi5 profile"
+                  "help": "Indicates whether the plugin should use standard xAPI or (comming soon) cmi5 profile"
                 },
                 "_activityID": {
                   "type": "string",
@@ -97,7 +97,7 @@
                 "_user": {
                   "type": "string",
                   "required": true,
-                  "title": "User/Key",
+                  "title": "User (or Key)",
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
@@ -106,7 +106,7 @@
                 "_password": {
                   "type": "string",
                   "required": true,
-                  "title": "Password/Secret",
+                  "title": "Password (or Secret)",
                   "default": "",
                   "inputType": "Text",
                   "validators": [],
