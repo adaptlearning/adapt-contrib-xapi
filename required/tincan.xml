@@ -2,8 +2,8 @@
 <tincan xmlns="http://projecttincan.com/tincan.xsd">
     <activities>
         <activity id="@@config._xapi._activityID" type="http://adlnet.gov/expapi/activities/course">
-            <name>@@course.title</name>
-            <description lang="en-US">@@course.description</description>
+            <name><![CDATA[@@course.title]]></name>
+            <description lang="en-US"><![CDATA[@@course.description]]></description>
             <launch lang="en-US">index.html</launch>
         </activity>
     </activities>
