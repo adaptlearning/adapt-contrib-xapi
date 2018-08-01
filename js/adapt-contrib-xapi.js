@@ -1063,6 +1063,11 @@ define([
             actor.name = actor.name[0];
           }
 
+          if (_.isArray(actor.mbox)) {
+            // Convert mbox from an array to a string.
+            actor.mbox = actor.mbox[0];
+          }
+
           // If the account is an array, some work will be required.
           if (_.isArray(actor.account)) {
             var account = {};
