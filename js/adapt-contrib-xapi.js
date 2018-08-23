@@ -9,7 +9,8 @@ define([
   'core/js/adapt',
   'core/js/enums/completionStateEnum',
   'libraries/async.min',
-  'libraries/xapiwrapper.min'
+  'libraries/xapiwrapper.min',
+  'libraries/url-polyfill.min'
 ], function(Adapt, COMPLETION_STATE, Async) {
 
   'use strict';
@@ -18,7 +19,6 @@ define([
    * @callback ErrorOnlyCallback
    * @param {?Error} error
    */
-
   var xAPI = Backbone.Model.extend({
 
     /** Declare defaults and model properties */
