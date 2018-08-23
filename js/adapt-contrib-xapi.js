@@ -189,7 +189,7 @@ define([
             });
 
             this.xapiWrapper.strictCallbacks = true;
-		  
+
             callback();
           }, this), true, true);
         }
@@ -1055,48 +1055,59 @@ define([
       }
 
       try {
-        if (key === 'actor') {
-          var actor = JSON.parse(this.xapiWrapper.lrs[key]);
+        switch(key) {
+          case 'actor': {
+            var actor = JSON.parse(this.xapiWrapper.lrs[key]);
 
-          if (_.isArray(actor.name)) {
-            // Convert the name from an array to a string.
-            actor.name = actor.name[0];
-          }
-
-          if (_.isArray(actor.mbox)) {
-            // Convert mbox from an array to a string.
-            actor.mbox = actor.mbox[0];
-          }
-
-          // If the account is an array, some work will be required.
-          if (_.isArray(actor.account)) {
-            var account = {};
-
-            // Convert 'accountServiceHomePage' to 'homePage'.
-            if (typeof actor.account[0].accountServiceHomePage !== 'undefined') {
-              account.homePage = actor.account[0].accountServiceHomePage;
-            } else if (actor.account[0].homePage !== 'undefined') {
-              account.homePage = actor.account[0].homePage;
+            if (_.isArray(actor.name)) {
+              // Convert the name from an array to a string.
+              actor.name = actor.name[0];
             }
 
-            // Convert 'accountName' to 'name'.
-            if (typeof actor.account[0].accountName !== 'undefined') {
-              account.name = actor.account[0].accountName;
-            } else if (typeof actor.account[0].name !== 'undefined') {
-              account.name = actor.account[0].name;
+            if (_.isArray(actor.mbox)) {
+              // Convert mbox from an array to a string.
+              actor.mbox = actor.mbox[0];
             }
 
-            // Out with the old array.
-            delete actor.account;
+            // If the account is an array, some work will be required.
+            if (_.isArray(actor.account)) {
+              var account = {};
 
-            // In with the new object.
-            actor.account = account;
+              // Convert 'accountServiceHomePage' to 'homePage'.
+              if (typeof actor.account[0].accountServiceHomePage !== 'undefined') {
+                account.homePage = actor.account[0].accountServiceHomePage;
+              } else if (actor.account[0].homePage !== 'undefined') {
+                account.homePage = actor.account[0].homePage;
+              }
+
+              // Convert 'accountName' to 'name'.
+              if (typeof actor.account[0].accountName !== 'undefined') {
+                account.name = actor.account[0].accountName;
+              } else if (typeof actor.account[0].name !== 'undefined') {
+                account.name = actor.account[0].name;
+              }
+
+              // Out with the old array.
+              delete actor.account;
+
+              // In with the new object.
+              actor.account = account;
+            }
+
+            return actor;
           }
-
-          return actor;
+          // case 'registration': {
+          //   var registration = this.xapiWrapper.lrs[key];
+          //   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(registration)) {
+          //     // The 'registration' isn't a valid UUID, generate one.
+          //     return ADL.ruuid();
+          //   } else {
+          //     return registration;
+          //   }
+          // }
+          default:
+            return this.xapiWrapper.lrs[key];
         }
-
-        return this.xapiWrapper.lrs[key];
       } catch (e) {
         return null;
       }

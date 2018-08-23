@@ -1,7 +1,9 @@
 
 module.exports = function(fs, path, log, options, done) {
   var async = require('async');
-  var pathToCourseFolder = path.join(process.cwd(), options.outputdir, 'course');
+  var pathToCourseFolder = options.outputdir
+    ? path.join(options.outputdir, 'course')
+    : path.join(process.cwd(), 'course');
   var configJson;
 
   async.series([
