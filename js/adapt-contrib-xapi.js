@@ -31,6 +31,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
+      componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
     },
@@ -95,8 +96,19 @@ define([
           displayLang: Adapt.config.get('_defaultLanguage'),
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
-          shouldTrackState: this.getConfig('_shouldTrackState')
+          shouldTrackState: this.getConfig('_shouldTrackState'),
+          componentBlacklist: this.getConfig('_componentBlacklist') || ''
         });
+
+        var componentBlacklist = this.get('componentBlacklist');
+
+        if (!componentBlacklist) {
+          componentBlacklist = [];
+        } else {
+          componentBlacklist = componentBlacklist.split(',');
+        }
+
+        this.set('componentBlacklist', componentBlacklist);
 
         if (!this.validateProps()) {
           var error = new Error('Missing required properties');
@@ -515,6 +527,11 @@ define([
         return;
       }
 
+      if (this.get('componentBlacklist').indexOf(view.model.get('_component')) !== -1) {
+        // This component is on the blacklist, so do not send a statement.
+        return;
+      }
+
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
       var isComplete = view.model.get('_isComplete');
       var lang = this.get('displayLang');
@@ -622,8 +639,6 @@ define([
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
      */
     onItemComplete: function(model) {
-      var result = { completion: true };
-
       // If this is a question component (interaction), do not record multiple statements.
       if (model.get('_type') === 'component' && model.get('_isQuestionType') === true
         && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
@@ -632,6 +647,12 @@ define([
         return;
       }
 
+      if (model.get('_type') === 'component' && this.get('componentBlacklist').indexOf(model.get('_component')) !== -1) {
+        // This component is on the blacklist, so do not send a statement.
+        return;
+      }
+
+      var result = { completion: true };
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
       var statement;
 
