@@ -74,7 +74,7 @@
                     ]
                   },
                   "validators": [],
-                  "help": "Indicates whether the plugin should use standard xAPI or (comming soon) cmi5 profile"
+                  "help": "Indicates whether the plugin should use standard xAPI or cmi5 profile (comming soon)."
                 },
                 "_activityID": {
                   "type": "string",
@@ -152,6 +152,15 @@
                   "inputType": "Checkbox",
                   "validators": [],
                   "help": "When enabled, the associated LRS be used to track state via the State API."
+                },
+                "_componentBlacklist": {
+                  "type": "string",
+                  "required": false,
+                  "default": "blank,graphic",
+                  "title": "Component blacklist",
+                  "inputType": "Text",
+                  "validators": [],
+                  "help": "Comma separated list of components which will not send statements."
                 },
                 "_coreEvents": {
                   "type": "object",
