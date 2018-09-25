@@ -97,15 +97,16 @@ define([
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
-          componentBlacklist: this.getConfig('_componentBlacklist') || ''
+          componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
         var componentBlacklist = this.get('componentBlacklist');
 
-        if (!componentBlacklist) {
-          componentBlacklist = [];
-        } else {
-          componentBlacklist = componentBlacklist.split(',');
+        if (!_.isArray(componentBlacklist)) {
+          // Create the blacklist array and force the items to lowercase.
+          componentBlacklist = componentBlacklist.split(/,\s?/).map(function(component) {
+            return component.toLowerCase();
+          });
         }
 
         this.set('componentBlacklist', componentBlacklist);
@@ -527,7 +528,7 @@ define([
         return;
       }
 
-      if (this.get('componentBlacklist').indexOf(view.model.get('_component')) !== -1) {
+      if (this.isComponentOnBlacklist(view.model.get('_component'))) {
         // This component is on the blacklist, so do not send a statement.
         return;
       }
@@ -635,6 +636,15 @@ define([
     },
 
     /**
+     * Checks if a given component is blacklisted from sending statements.
+     * @param {string} component - The name of the component.
+     * @returns {boolean} true if the component exists on the blacklist.
+     */
+    isComponentOnBlacklist: function(component) {
+      return this.get('componentBlacklist').indexOf(component) !== -1;
+    },
+
+    /**
      * Sends an xAPI statement when an item has been completed.
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
      */
@@ -647,7 +657,7 @@ define([
         return;
       }
 
-      if (model.get('_type') === 'component' && this.get('componentBlacklist').indexOf(model.get('_component')) !== -1) {
+      if (model.get('_type') === 'component' && this.isComponentOnBlacklist(model.get('_component'))) {
         // This component is on the blacklist, so do not send a statement.
         return;
       }
