@@ -389,6 +389,9 @@ define([
         this.listenTo(Adapt, 'state:change', this.sendState);
       }
 
+      // Allow different plugins to use the xAPI extension to send statements.
+      this.listenTo(Adapt, 'xapi:sendPluginStatement', this.sendStatement);
+
       // Use the config to specify the core events.
       this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
 
