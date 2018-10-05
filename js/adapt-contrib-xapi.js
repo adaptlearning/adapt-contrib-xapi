@@ -1194,8 +1194,9 @@ define([
      * Sends a single xAPI statement to the LRS.
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
      * @param {ADLCallback} [callback]
+     * @param {array} attachments - An array of attachments to pass to the LRS.
      */
-    sendStatement: function(statement, callback) {
+    sendStatement: function(statement, callback, attachments) {
       callback = _.isFunction(callback) ? callback : function() { };
 
       if (!statement) {
@@ -1203,6 +1204,14 @@ define([
       }
 
       Adapt.trigger('xapi:preSendStatement', statement);
+
+      // Allow the trigger above to augment attachments if the attachments
+      // parameter is not set.
+      if (_.isUndefined(attachments) && statement.attachments) {
+        attachments = statement.attachments;
+
+        delete statement.attachments;
+      }
 
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
@@ -1212,7 +1221,7 @@ define([
 
         Adapt.trigger('xapi:lrs:sendStatement:success', statement);
         return callback();
-      });
+      }, attachments);
     },
 
     /**
