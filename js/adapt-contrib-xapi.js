@@ -1247,7 +1247,6 @@ define([
 
         // First check the attachment for a value
         if (attachment.value) {
-          console.log(attachment);
           nextAttachment();
         } else if (attachment.url) {
           // If a url is specified then we need to obtain the string value
