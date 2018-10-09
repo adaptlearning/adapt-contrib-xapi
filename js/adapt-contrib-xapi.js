@@ -1210,18 +1210,34 @@ define([
       if (_.isUndefined(attachments) && statement.attachments) {
         attachments = statement.attachments;
 
-        delete statement.attachments;
+        Async.each(attachments,
+          function(attachment, nextAttachment) {
+            $.get(attachment.url, function(response) {
+              attachment.value = response;
+              delete attachment.url;
+              nextAttachment();
+            })
+          },
+          function() {
+            delete statement.attachments;
+            onStatementReady.call(this);
+          }.bind(this)
+        );
+      } else {
+        onStatementReady.call(this);
       }
 
-      this.xapiWrapper.sendStatement(statement, function(error) {
-        if (error) {
-          Adapt.trigger('xapi:lrs:sendStatement:error', error);
-          return callback(error);
-        }
+      function onStatementReady() {
+        this.xapiWrapper.sendStatement(statement, function(error) {
+          if (error) {
+            Adapt.trigger('xapi:lrs:sendStatement:error', error);
+            return callback(error);
+          }
 
-        Adapt.trigger('xapi:lrs:sendStatement:success', statement);
-        return callback();
-      }, attachments);
+          Adapt.trigger('xapi:lrs:sendStatement:success', statement);
+          return callback();
+        }, attachments);
+      }
     },
 
     /**
