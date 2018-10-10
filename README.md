@@ -54,7 +54,7 @@ In response to completion of non-question components, blocks, articles or conten
 In response to completion of question components, along with details of the interaction the following verb will be sent:
 - answered
 
-Note that the xAPI extension works well with the core Assessment extension.  The Assessment is responsible fo defining pass or fail criteria, while the xAPI extension merely reports on it.
+Note that the xAPI extension works well with the core Assessment extension.  The Assessment is responsible for defining pass or fail criteria, while the xAPI extension merely reports on it.
 
 ## Events
 The following events are triggered by the xAPI extension:
@@ -71,3 +71,52 @@ The following events are triggered by the xAPI extension:
 |`xapi:lrs:sendState:success`| Triggered when state is successfully saved to the LRS | An object representing `newState` |
 |`xapi:stateLoaded`| Triggered when state has been successfully loaded from the LRS | - |
 
+## Attachments
+Attachments can be added by plugins, by listening for the `xapi:preSendStatement` event. The statement is passed to the callback and can be augmented with an `attachments` array, where each item is an object with the following properties:
+
+**type** (object): The attachment's metadata, which contains values for **contentType**, **usageType**, **display** and **description**.
+
+>**contentType** (string): The mime type of the attachment e.g. `"application/pdf"`.
+
+>**usageType** (string): A URI (IRI) to describe why the file is being attached.
+
+>**display** (string): A language map giving a readable name for the attachment.
+
+>>**[language]** (string): A readable name for the attachment.
+
+>**description** (string): [optional] A language map similar to **display** but giving a more detailed description of the purpose of the attachment or other information about it.
+
+>>**[language]** (string): A readable description for the attachment.
+
+The attachment object *must* contain either a **value** or a **url** property.
+
+**value** (string): The correctly encoded string value of the attachment
+
+**url** (string): The url of the file to be attached. **adapt-contrib-xapi** will handle the string encoding.
+
+#### Example implementation:
+
+The following example attaches a certificate to the course completion statement
+
+```
+Adapt.on('xapi:preSendStatement', function(statement) {
+  // Only handle course completion
+  if (statement.object.definition.type !== ADL.activityTypes.course
+    || !(statement.verb.id === ADL.verbs.completed.id && statement.result.completion)) {
+    return;
+  }
+
+  var attachment = {
+    type: {
+      contentType: 'application/pdf',
+      usageType: 'http://id.tincanapi.com/attachment/certificate-of-completion',
+      display: {
+        'en-US': 'Completion of course: ' + Adapt.course.get('title');
+      }
+    },
+    value: '{{fileContentsAsString}}'
+  };
+
+   statement.attachments = [attachment];
+});
+```

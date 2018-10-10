@@ -1191,11 +1191,12 @@ define([
     },
 
     /**
-     * Sends a single xAPI statement to the LRS.
+     * Prepares to send a single xAPI statement to the LRS.
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
      * @param {ADLCallback} [callback]
+     * @param {array} [attachments] - An array of attachments to pass to the LRS.
      */
-    sendStatement: function(statement, callback) {
+    sendStatement: function(statement, callback, attachments) {
       callback = _.isFunction(callback) ? callback : function() { };
 
       if (!statement) {
@@ -1204,6 +1205,22 @@ define([
 
       Adapt.trigger('xapi:preSendStatement', statement);
 
+      // Allow the trigger above to augment attachments if the attachments
+      // parameter is not set.
+      if (_.isUndefined(attachments) && statement.attachments) {
+        return this.processAttachments(statement, callback);
+      } else {
+        this.onStatementReady(statement, callback, attachments);
+      }
+    },
+
+    /**
+     * Send an xAPI statement to the LRS once all async operations are complete
+     * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
+     * @param {ADLCallback} [callback]
+     * @param {array} [attachments] - An array of attachments to pass to the LRS.
+     */
+    onStatementReady: function(statement, callback, attachments) {
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
@@ -1212,7 +1229,55 @@ define([
 
         Adapt.trigger('xapi:lrs:sendStatement:success', statement);
         return callback();
-      });
+      }, attachments);
+    },
+
+    /**
+     * Process any attachments that have been added to the statement object by
+     * intercepting the send operation at the xapi:preSendStatement trigger
+     * If a url is specified for an attachment then retrieve the text content
+     * and store this instead
+     * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
+     * @param {ADLCallback} [callback]
+     */
+    processAttachments: function(statement, callback) {
+      var attachments = statement.attachments;
+
+      Async.each(attachments, function(attachment, nextAttachment) {
+
+        // First check the attachment for a value
+        if (attachment.value) {
+          nextAttachment();
+        } else if (attachment.url) {
+          // If a url is specified then we need to obtain the string value
+          // Use native xhr so we can set the responseType to 'blob'
+          var xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = function() {
+            if (this.readyState === 4 && this.status === 200) {
+
+              // Use FileReader to retrieve the blob contents as a string
+              var reader = new FileReader();
+              reader.onload = function() {
+
+                // Store the string value in the attachment object and
+                // delete the url property which is no longer needed
+                attachment.value = reader.result;
+                delete attachment.url;
+                nextAttachment()
+              };
+              reader.readAsBinaryString(this.response);
+            }
+          };
+          xhr.open('GET', attachment.url);
+          xhr.responseType = 'blob';
+          xhr.send();
+        } else {
+          Adapt.log.warn('Attachment object contained neither a value or url property.');
+        }
+      }, function() {
+        delete statement.attachments;
+        this.onStatementReady(statement, callback, attachments);
+      }.bind(this));
     },
 
     /**
