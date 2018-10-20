@@ -19,7 +19,7 @@ define([
    * @callback ErrorOnlyCallback
    * @param {?Error} error
    */
-  var xAPI = Backbone.Model.extend({
+  var XAPI = Backbone.Model.extend({
 
     /** Declare defaults and model properties */
 
@@ -230,7 +230,7 @@ define([
         });
 
         this.xapiWrapper.strictCallbacks = true;
-		  
+
         callback();
       }
     },
@@ -283,7 +283,7 @@ define([
           return false;
         }
     },
-	
+
     /**
      * Attempt to extract endpoint, user and password from the config.json.
      */
@@ -492,7 +492,7 @@ define([
     },
 
     /**
-     * Gets the activity type for a given model.  
+     * Gets the activity type for a given model.
      * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
      * @return {string} A URL to the current activity type.
      */
@@ -521,7 +521,7 @@ define([
 
     /**
      * Sends an 'answered' statement to the LRS.
-     * @param {ComponentView} view - An instance of Adapt.ComponentView. 
+     * @param {ComponentView} view - An instance of Adapt.ComponentView.
      */
     onQuestionInteraction: function(view) {
       if (!view.model || view.model.get('_type') !== 'component' && !view.model.get('_isQuestionType')) {
@@ -877,7 +877,7 @@ define([
     /**
      * Generate an XAPIstatement object for the xAPI wrapper sendStatement methods.
      * @param {object} verb - A valid ADL.verbs object.
-     * @param {object} object - 
+     * @param {object} object -
      * @param {object} [result] - optional
      * @param {object} [context] - optional
      * @return {ADL.XAPIStatement} A formatted xAPI statement object.
@@ -964,6 +964,8 @@ define([
       var activityId = this.get('activityId');
       var actor = this.get('actor');
       var state = {};
+
+      console.log("Get state");
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.getState(activityId, actor, type, null, null, function(error, xhr) {
@@ -1334,9 +1336,16 @@ define([
     }
   });
 
+  XAPI.getInstance = function() {
+    if (!XAPI.instance)
+      XAPI.instance = new XAPI();
+
+    return XAPI.instance;
+  };
+
   /** Adapt event listeners begin here */
   Adapt.once('app:dataReady', function() {
-    xAPI = new xAPI();
+    var xAPI = XAPI.getInstance();
 
     Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
       // Update the language.      
@@ -1366,4 +1375,6 @@ define([
       xAPI.showError();
     });
   });
+
+  return XAPI;
 });
