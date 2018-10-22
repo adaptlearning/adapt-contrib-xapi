@@ -1,11 +1,19 @@
 define([
   'core/js/adapt',
   './xapi'
-], function(Adapt, XAPI) {
+], function(Adapt, xAPI) {
 
   //xAPI handler for Adapt.offlineStorage interface.
 
-  var store = {};
+  // Use a lightweight fake model to pass into xAPI.sendState
+  var fakeModel = {
+    get: function() {
+      return 'offlineStorage';
+    }
+  };
+
+  var store = new Backbone.Model();
+  var isDataRestored = false;
 
   Adapt.offlineStorage.initialize({
 
@@ -18,28 +26,31 @@ define([
         return this.getLearnerInfo();
       }
 
-      return store[name];
+      return store.get(name);
     },
 
     getAll: function() {
-      //If not connected return just the store.
-      if (this.useTemporaryStore()) {
-        return store;
+      if (!isDataRestored) {
+        var state = xAPI.get('state') || {};
+        store.set(state.offlineStorage);
+        isDataRestored = true;
       }
 
-      return _.extend(_.clone(store), {
+      //If not connected return just the store.
+      if (this.useTemporaryStore()) {
+        return store.toJSON();
+      }
+
+      return _.extend(store.toJSON(), {
         learnerInfo: this.getLearnerInfo()
       });
     },
 
     set: function(name, value) {
-      if (typeof name === 'object') {
-        store = _.extend(store, value);
-      } else {
-        store[name] = value;
-      }
+      store.set(name, value);
 
-      return true;
+      // xAPI may not yet be initialised so use a soft trigger rather than hard calling xAPI.sendState
+      Adapt.trigger('state:change', fakeModel, store.toJSON());
     },
 
     useTemporaryStore: function() {
@@ -52,7 +63,7 @@ define([
      * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
      */
     getLearnerInfo: function() {
-      var name = XAPI.getInstance().getLRSAttribute('actor').name;
+      var name = xAPI.getLRSAttribute('actor').name;
       var lastname;
       var firstname;
 
