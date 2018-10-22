@@ -77,6 +77,10 @@ define([
 
     /** Implementation starts here */
     initialize: function() {
+      if (!Adapt.config) {
+        return;
+      }
+
       this.config = Adapt.config.get('_xapi');
 
       if (!this.getConfig('_isEnabled')) {
@@ -924,7 +928,7 @@ define([
       var stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
       var newState;
 
-      if (collectionName !== 'course') {
+      if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
         var index = _.findIndex(stateCollection, { _id: model.get('_id') });
 
         if (index !== -1) {
@@ -990,7 +994,6 @@ define([
 
             var response;
             var parseError;
-            console.log(type, xhr.response);
 
             try {
               response = JSON.parse(xhr.response);
@@ -1005,8 +1008,6 @@ define([
             if (!_.isEmpty(response)) {
               state[type] = response;
             }
-            
-            console.log(response);
 
             return nextType();
           });
@@ -1350,6 +1351,8 @@ define([
   Adapt.once('app:dataReady', function() {
     var xAPI = XAPI.getInstance();
 
+    xAPI.initialize();
+
     Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
       // Update the language.      
       xAPI.set({ displayLang: newLanguage });
@@ -1379,5 +1382,5 @@ define([
     });
   });
 
-  return XAPI;
+  return XAPI.getInstance();
 });
