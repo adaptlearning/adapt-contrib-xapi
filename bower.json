@@ -11,7 +11,7 @@
   "displayName" : "xAPI",
   "extension" : "xapi",
   "description": "An extension to track learner activity via xAPI",
-  "main": "/js/adapt-contrib-xapi.js",
+  "main": "/js/index.js",
   "scripts": {
     "adaptpostbuild": "/scripts/post-build.js"
   },

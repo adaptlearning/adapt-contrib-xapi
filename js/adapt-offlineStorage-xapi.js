@@ -1,6 +1,6 @@
 define([
   'core/js/adapt',
-  './xapi'
+  './adapt-contrib-xapi'
 ], function(Adapt, xAPI) {
 
   //xAPI handler for Adapt.offlineStorage interface.
