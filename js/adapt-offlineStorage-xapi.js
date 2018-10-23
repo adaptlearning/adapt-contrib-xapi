@@ -1,7 +1,7 @@
 define([
   'core/js/adapt',
   './adapt-contrib-xapi'
-], function(Adapt, xAPI) {
+], function(Adapt, xapi) {
 
   //xAPI handler for Adapt.offlineStorage interface.
 
@@ -31,7 +31,7 @@ define([
 
     getAll: function() {
       if (!isDataRestored) {
-        var state = xAPI.get('state') || {};
+        var state = xapi.get('state') || {};
         store.set(state.offlineStorage);
         isDataRestored = true;
       }
@@ -63,7 +63,7 @@ define([
      * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
      */
     getLearnerInfo: function() {
-      var name = xAPI.getLRSAttribute('actor').name;
+      var name = xapi.getLRSAttribute('actor').name;
       var lastname;
       var firstname;
 

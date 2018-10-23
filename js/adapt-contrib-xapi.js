@@ -19,7 +19,7 @@ define([
    * @callback ErrorOnlyCallback
    * @param {?Error} error
    */
-  var XAPI = Backbone.Model.extend({
+  var xAPI = Backbone.Model.extend({
 
     /** Declare defaults and model properties */
 
@@ -1340,47 +1340,48 @@ define([
     }
   });
 
-  XAPI.getInstance = function() {
-    if (!XAPI.instance)
-      XAPI.instance = new XAPI();
+  xAPI.getInstance = function() {
+    if (!xAPI.instance) {
+      xAPI.instance = new xAPI();
+    }
 
-    return XAPI.instance;
+    return xAPI.instance;
   };
 
   /** Adapt event listeners begin here */
   Adapt.once('app:dataReady', function() {
-    var xAPI = XAPI.getInstance();
+    var xapi = xAPI.getInstance();
 
-    xAPI.initialize();
+    xapi.initialize();
 
     Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
       // Update the language.      
-      xAPI.set({ displayLang: newLanguage });
+      xapi.set({ displayLang: newLanguage });
 
       // Since a language change counts as a new attempt, reset the state.
-      xAPI.deleteState(function() {
+      xapi.deleteState(function() {
         // Send a statement to track the (new) course.
         this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
       });
     }, this));
 
     Adapt.on('adapt:initialize', function() {
-      xAPI.setupListeners();
+      xapi.setupListeners();
     });
 
     Adapt.on('xapi:lrs:initialize:error', function(error) {
       Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-      xAPI.showError();
+      xapi.showError();
     });
 
     Adapt.on('xapi:lrs:sendStatement:error', function(error) {
-      xAPI.showError();
+      xapi.showError();
     });
 
     Adapt.on('xapi:lrs:sendState:error', function(error) {
-      xAPI.showError();
+      xapi.showError();
     });
   });
 
-  return XAPI.getInstance();
+  return xAPI.getInstance();
 });
