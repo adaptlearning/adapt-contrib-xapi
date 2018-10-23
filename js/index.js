@@ -9,11 +9,10 @@ define([
   function onPrepareOfflineStorage() {
     var config = Adapt.config.get('_xapi') || {};
 
-    if (!config._isEnabled) {
-      return Adapt.offlineStorage.setReadyStatus();
+    if (config._isEnabled) {
+      Adapt.offlineStorage.get();
     }
 
-    Adapt.offlineStorage.get();
     Adapt.offlineStorage.setReadyStatus();
   }
 
