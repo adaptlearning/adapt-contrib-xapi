@@ -63,17 +63,18 @@ define([
      * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
      */
     getLearnerInfo: function() {
-      var name = xapi.getLRSAttribute('actor').name;
+      var name = xapi.getLRSAttribute('actor').name || '';
       var lastname;
       var firstname;
+      var matches = name.match(/(\S+)\s(.+)/);
 
-      if (name && name !== 'undefined' && name.indexOf(' ') > -1) {
-        var nameSplit = name.split(' ');
-        lastname = $.trim(nameSplit[0]);
-        firstname = $.trim(nameSplit[1]);
+      if (matches && matches.length > 2) {
+        lastname = matches[2];
+        firstname = matches[1];
       } else {
         console.log('xAPI: actor name not in "firstname lastname" format');
       }
+
       return {
         name: name,
         lastname: lastname,
