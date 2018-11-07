@@ -258,6 +258,17 @@ define([
       });
     },
 
+    onLanguageChanged: function(newLanguage) {
+      // Update the language.
+      this.set({ displayLang: newLanguage });
+
+      // Since a language change counts as a new attempt, reset the state.
+      this.deleteState(function() {
+        // Send a statement to track the (new) course.
+        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
+      });
+    },
+
     /**
      * Sends a 'terminated' statement to the LRS when the window is closed.
      */
@@ -389,6 +400,8 @@ define([
         Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
         return;
       }
+
+      this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
       if (this.get('shouldTrackState')) {
         this.listenTo(Adapt, 'state:change', this.sendState);
@@ -1349,21 +1362,10 @@ define([
   };
 
   /** Adapt event listeners begin here */
-  Adapt.once('app:dataReady', function() {
+  Adapt.once('app:dataLoaded', function() {
     var xapi = xAPI.getInstance();
 
     xapi.initialize();
-
-    Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
-      // Update the language.      
-      xapi.set({ displayLang: newLanguage });
-
-      // Since a language change counts as a new attempt, reset the state.
-      xapi.deleteState(function() {
-        // Send a statement to track the (new) course.
-        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
-      });
-    }, this));
 
     Adapt.on('adapt:initialize', function() {
       xapi.setupListeners();

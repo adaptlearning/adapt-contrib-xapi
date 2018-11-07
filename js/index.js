@@ -4,16 +4,23 @@ define([
   './adapt-offlineStorage-xapi'
 ], function(Adapt) {
 
-  Adapt.once('xapi:stateLoaded', onPrepareOfflineStorage);
+  Adapt.on('app:dataLoaded', initialise);
 
-  function onPrepareOfflineStorage() {
+  function initialise() {
     var config = Adapt.config.get('_xapi') || {};
-
-    if (config._isEnabled) {
-      Adapt.offlineStorage.get();
+    
+    if (!config._isEnabled) {
+      return Adapt.offlineStorage.setReadyStatus();
     }
 
-    Adapt.offlineStorage.setReadyStatus();
+    Adapt.wait.begin();
+
+    Adapt.once('xapi:stateLoaded', function() {
+      Adapt.offlineStorage.get();
+      Adapt.offlineStorage.setReadyStatus();
+      Adapt.wait.end();
+    });
+
   }
 
 });
