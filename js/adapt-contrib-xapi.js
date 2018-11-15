@@ -71,11 +71,16 @@ define([
       contentObjects: ['menu', 'page'],
       articles: 'article',
       blocks: 'block',
-      components: 'component'
+      components: 'component',
+      offlineStorage: 'offlineStorage'
     },
 
     /** Implementation starts here */
     initialize: function() {
+      if (!Adapt.config) {
+        return;
+      }
+
       this.config = Adapt.config.get('_xapi');
 
       if (!this.getConfig('_isEnabled')) {
@@ -230,7 +235,7 @@ define([
         });
 
         this.xapiWrapper.strictCallbacks = true;
-		  
+
         callback();
       }
     },
@@ -250,6 +255,17 @@ define([
         }
 
         Adapt.trigger('xapi:lrs:initialize:success');
+      });
+    },
+
+    onLanguageChanged: function(newLanguage) {
+      // Update the language.
+      this.set({ displayLang: newLanguage });
+
+      // Since a language change counts as a new attempt, reset the state.
+      this.deleteState(function() {
+        // Send a statement to track the (new) course.
+        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
       });
     },
 
@@ -283,7 +299,7 @@ define([
           return false;
         }
     },
-	
+
     /**
      * Attempt to extract endpoint, user and password from the config.json.
      */
@@ -384,6 +400,8 @@ define([
         Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
         return;
       }
+
+      this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
       if (this.get('shouldTrackState')) {
         this.listenTo(Adapt, 'state:change', this.sendState);
@@ -492,7 +510,7 @@ define([
     },
 
     /**
-     * Gets the activity type for a given model.  
+     * Gets the activity type for a given model.
      * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
      * @return {string} A URL to the current activity type.
      */
@@ -521,7 +539,7 @@ define([
 
     /**
      * Sends an 'answered' statement to the LRS.
-     * @param {ComponentView} view - An instance of Adapt.ComponentView. 
+     * @param {ComponentView} view - An instance of Adapt.ComponentView.
      */
     onQuestionInteraction: function(view) {
       if (!view.model || view.model.get('_type') !== 'component' && !view.model.get('_isQuestionType')) {
@@ -877,7 +895,7 @@ define([
     /**
      * Generate an XAPIstatement object for the xAPI wrapper sendStatement methods.
      * @param {object} verb - A valid ADL.verbs object.
-     * @param {object} object - 
+     * @param {object} object -
      * @param {object} [result] - optional
      * @param {object} [context] - optional
      * @return {ADL.XAPIStatement} A formatted xAPI statement object.
@@ -923,7 +941,7 @@ define([
       var stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
       var newState;
 
-      if (collectionName !== 'course') {
+      if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
         var index = _.findIndex(stateCollection, { _id: model.get('_id') });
 
         if (index !== -1) {
@@ -989,6 +1007,7 @@ define([
 
             var response;
             var parseError;
+
             try {
               response = JSON.parse(xhr.response);
             } catch (e) {
@@ -1334,36 +1353,37 @@ define([
     }
   });
 
+  xAPI.getInstance = function() {
+    if (!xAPI.instance) {
+      xAPI.instance = new xAPI();
+    }
+
+    return xAPI.instance;
+  };
+
   /** Adapt event listeners begin here */
-  Adapt.once('app:dataReady', function() {
-    xAPI = new xAPI();
+  Adapt.once('app:dataLoaded', function() {
+    var xapi = xAPI.getInstance();
 
-    Adapt.on('app:languageChanged', _.bind(function(newLanguage) {
-      // Update the language.      
-      xAPI.set({ displayLang: newLanguage });
-
-      // Since a language change counts as a new attempt, reset the state.
-      xAPI.deleteState(function() {
-        // Send a statement to track the (new) course.
-        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
-      });
-    }, this));
+    xapi.initialize();
 
     Adapt.on('adapt:initialize', function() {
-      xAPI.setupListeners();
+      xapi.setupListeners();
     });
 
     Adapt.on('xapi:lrs:initialize:error', function(error) {
       Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-      xAPI.showError();
+      xapi.showError();
     });
 
     Adapt.on('xapi:lrs:sendStatement:error', function(error) {
-      xAPI.showError();
+      xapi.showError();
     });
 
     Adapt.on('xapi:lrs:sendState:error', function(error) {
-      xAPI.showError();
+      xapi.showError();
     });
   });
+
+  return xAPI.getInstance();
 });
