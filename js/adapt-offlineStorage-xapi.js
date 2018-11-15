@@ -63,7 +63,8 @@ define([
      * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
      */
     getLearnerInfo: function() {
-      var name = xapi.getLRSAttribute('actor').name || '';
+      var actor = xapi.get('actor') || {};
+      var name = actor.name || '';
       var lastname;
       var firstname;
       var matches = name.match(/(\S+)\s(.+)/);
