@@ -15,7 +15,7 @@ define([
 
     Adapt.wait.begin();
 
-    Adapt.once('xapi:stateLoaded', function() {
+    Adapt.once('xapi:stateLoaded xapi:lrs:initialize:error', function() {
       Adapt.offlineStorage.get();
       Adapt.offlineStorage.setReadyStatus();
       Adapt.wait.end();
