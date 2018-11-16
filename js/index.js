@@ -2,7 +2,7 @@ define([
   'core/js/adapt',
   './adapt-contrib-xapi',
   './adapt-offlineStorage-xapi'
-], function(Adapt, xapi) {
+], function(Adapt) {
 
   Adapt.on('app:dataLoaded', initialise);
 
