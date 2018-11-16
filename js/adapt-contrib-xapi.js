@@ -1359,7 +1359,7 @@ define([
       Adapt.wait.begin();
       Adapt.trigger('notify:alert', notifyObject);
       // Ensure notify appears on top of the loading screen
-      $(".notify").css({position: "relative", zIndex: 5001});
+      $('.notify').css({ position: 'relative', zIndex: 5001 });
       Adapt.once('notify:closed', Adapt.wait.end);
     }
   });
