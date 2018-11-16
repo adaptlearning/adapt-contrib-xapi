@@ -1349,7 +1349,18 @@ define([
         return;
       }
 
-      Adapt.trigger('notify:alert', { title: this.getGlobals().lrsConnectionErrorTitle, body: this.getGlobals().lrsConnectionErrorMessage, confirmText: this.getGlobals().confirm });
+      var notifyObject = {
+        title: this.getGlobals().lrsConnectionErrorTitle,
+        body: this.getGlobals().lrsConnectionErrorMessage,
+        confirmText: this.getGlobals().confirm
+      };
+
+      // Setup wait so that notify does not get dismissed when the page loads
+      Adapt.wait.begin();
+      Adapt.trigger('notify:alert', notifyObject);
+      // Ensure notify appears on top of the loading screen
+      $(".notify").css({position: "relative", zIndex: 5001});
+      Adapt.once('notify:closed', Adapt.wait.end);
     }
   });
 
