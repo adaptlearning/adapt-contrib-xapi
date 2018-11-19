@@ -54,7 +54,7 @@ define([
     },
 
     useTemporaryStore: function() {
-      return !xapi.get("isInitialised");
+      return !xapi.get('isInitialised');
     },
 
     /**
