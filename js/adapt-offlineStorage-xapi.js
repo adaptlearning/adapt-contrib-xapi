@@ -54,9 +54,7 @@ define([
     },
 
     useTemporaryStore: function() {
-      var config = Adapt.config.get('_xapi') || {};
-
-      return (!window.xapiWrapper || !config._isEnabled);
+      return !xapi.get("isInitialised");
     },
 
     /**
