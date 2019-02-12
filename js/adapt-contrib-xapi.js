@@ -688,6 +688,12 @@ define([
         name: this.getNameObject(model),
         type: this.getActivityType(model)
       };
+        
+      if (model.get('_component')) {
+        object.definition.extensions = {
+          'https://www.adaptlearning.org/xapi/extension/component-type': model.get('_component')
+        };
+      }
 
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
