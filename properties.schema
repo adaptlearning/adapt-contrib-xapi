@@ -210,10 +210,10 @@
                         }
                       }
                     },
-                    "contentobjects": {
+                    "contentObjects": {
                       "type": "object",
                       "required": false,
-                      "title": "contentobjects",
+                      "title": "contentObjects",
                       "properties": {
                         "change:_isComplete": {
                           "type": "boolean",
