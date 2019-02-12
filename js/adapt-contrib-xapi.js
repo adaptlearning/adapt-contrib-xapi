@@ -1040,6 +1040,36 @@ define([
         callback();
       });
     },
+      
+    getLocation: function()
+	{
+      if (!this.get('isInitialised')) {
+          return null;
+      }
+      
+      var activityId = this.get('activityId');
+      var actor = this.get('actor');
+	  
+	  var location = this.xapiWrapper.getState(activityId, actor, "location", null, null, null);
+	  return location;
+	},
+	
+	sendLocation: function(name, location) {
+      if (!this.get('isInitialised')) {
+          return;
+      }
+      
+      var activityId = this.get('activityId');
+      var actor = this.get('actor');
+	  this.xapiWrapper.sendState(activityId, actor, name, null, location, null, null, function(error, xhr) {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendState:error', error);
+        }
+
+        Adapt.trigger('xapi:lrs:sendState:success', location);
+      });
+	},
+
 
     /**
      * Deletes all state information for the current course.
@@ -1380,6 +1410,21 @@ define([
 
     Adapt.on('adapt:initialize', function() {
       xapi.setupListeners();
+      Adapt.offlineStorage.initialize({
+          get: function(name) {
+            if (name === "location")
+            {
+              return xapi.getLocation();
+            }
+              return null;
+          },
+          set: function(name, value) {
+              if (name === "location")
+              {
+                xapi.sendLocation(name, value);
+              }
+          }
+      });
     });
 
     Adapt.on('xapi:lrs:initialize:error', function(error) {
