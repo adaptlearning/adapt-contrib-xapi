@@ -649,8 +649,25 @@ define([
 
       // Experienced.
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
+      statement.addParentActivity(this.getParentActivity(model));
 
       this.sendStatement(statement);
+    },
+
+    /**
+     * Gets the parent activity for the given model.
+     * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
+     */
+    getParentActivity: function(model) {
+      var parent = model.getParent();
+      var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(parent));
+
+      object.definition = {
+        name: this.getNameObject(parent),
+        type: this.getActivityType(parent)
+      };
+
+      return object;
     },
 
     /**
@@ -691,6 +708,7 @@ define([
 
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
+      statement.addParentActivity(this.getParentActivity(model));
 
       this.sendStatement(statement);
     },
