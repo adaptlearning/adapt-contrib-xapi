@@ -523,8 +523,7 @@ define([
           break;
         }
         case 'block':
-        case 'article':
-        case 'contentobject': {
+        case 'article': {
           type = ADL.activityTypes.interaction; //??
           break;
         }
