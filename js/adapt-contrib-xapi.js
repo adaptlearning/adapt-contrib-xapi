@@ -523,13 +523,20 @@ define([
           break;
         }
         case 'block':
-        case 'article':
-        case 'contentobject': {
+        case 'article': {
           type = ADL.activityTypes.interaction; //??
           break;
         }
         case 'course': {
           type = ADL.activityTypes.course;
+          break;
+        }
+        case 'menu': {
+          type = ADL.activityTypes.module;
+          break;
+        }
+        case 'page': {
+          type = ADL.activityTypes.lesson;
           break;
         }
       }
@@ -562,7 +569,7 @@ define([
       object.definition = {
         name: this.getNameObject(view.model),
         description: description,
-        type: ADL.activityTypes.interaction,
+        type: ADL.activityTypes.question,
         interactionType: view.getResponseType()
       };
 
@@ -644,7 +651,8 @@ define([
       var statement;
 
       object.definition = {
-        name: this.getNameObject(model)
+        name: this.getNameObject(model),
+        type: this.getActivityType(model)
       };
 
       // Experienced.
