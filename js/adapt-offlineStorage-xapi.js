@@ -63,7 +63,6 @@ define([
     getLearnerInfo: function() {
       var actor = xapi.get('actor') || {};
       var name = actor.name || '';
-      var id = actor.account && actor.account.name;
       var lastname;
       var firstname;
       var matches = name.match(/(\S+)\s(.+)/);
@@ -76,13 +75,39 @@ define([
       }
 
       return {
-        id: id,
+        id: this.getLearnerId(actor),
         name: name,
         lastname: lastname,
         firstname: firstname
       };
+    },
+
+    /**
+     * Get the learner's id by checking the actor properties in the order 'name', 'openid', 'mbox'
+     * @param {object} actor
+     * @return {string} the learner's unique id
+     */
+    getLearnerId: function(actor) {
+      var name = actor.account && actor.account.name;
+
+      if (name) {
+        return name;
+      }
+
+      if (actor.openid) {
+        return actor.openid;
+      }
+
+      if (typeof actor.mbox === 'string' && actor.mbox.length > 0) {
+        return actor.mbox.replace('mailto:', '')
+      }
+
+      console.log('xAPI: could not determine the learner\'s ID');
+
+      return null;
     }
 
   });
 
 });
+s
