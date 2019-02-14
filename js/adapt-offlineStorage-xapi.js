@@ -58,11 +58,12 @@ define([
     },
 
     /**
-     * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
+     * @returns {{id: string, name: string in the format Firstname Lastname, firstname: string, lastname: string }}
      */
     getLearnerInfo: function() {
       var actor = xapi.get('actor') || {};
       var name = actor.name || '';
+      var id = actor.account && actor.account.name;
       var lastname;
       var firstname;
       var matches = name.match(/(\S+)\s(.+)/);
@@ -75,6 +76,7 @@ define([
       }
 
       return {
+        id: id,
         name: name,
         lastname: lastname,
         firstname: firstname
