@@ -58,7 +58,7 @@ define([
     },
 
     /**
-     * @returns {{id: string, name: string in the format Firstname Lastname, firstname: string, lastname: string }}
+     * @returns {{id: string, name: string, firstname: string, lastname: string}} The learner's id (Actor.account.name), full name (in the format Firstname Lastname), first and last names
      */
     getLearnerInfo: function() {
       var actor = xapi.get('actor') || {};
