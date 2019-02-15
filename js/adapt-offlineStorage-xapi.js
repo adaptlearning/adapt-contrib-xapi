@@ -58,7 +58,7 @@ define([
     },
 
     /**
-     * @returns {{name: string in the format Firstname Lastname, firstname: string, lastname: string }}
+     * @returns {{id: string, name: string, firstname: string, lastname: string}} The learner's id, full name (in the format Firstname Lastname), first and last names
      */
     getLearnerInfo: function() {
       var actor = xapi.get('actor') || {};
@@ -75,10 +75,36 @@ define([
       }
 
       return {
+        id: this.getLearnerId(actor),
         name: name,
         lastname: lastname,
         firstname: firstname
       };
+    },
+
+    /**
+     * Get the learner's id by checking the actor properties in the order 'name', 'openid', 'mbox'
+     * @param {object} actor
+     * @return {string} the learner's unique id
+     */
+    getLearnerId: function(actor) {
+      var name = actor.account && actor.account.name;
+
+      if (name) {
+        return name;
+      }
+
+      if (actor.openid) {
+        return actor.openid;
+      }
+
+      if (typeof actor.mbox === 'string' && actor.mbox.length > 0) {
+        return actor.mbox.replace('mailto:', '')
+      }
+
+      console.log('xAPI: could not determine the learner\'s ID');
+
+      return null;
     }
 
   });
