@@ -51,7 +51,7 @@ define([
         'assessments:complete': true,
         'questionView:recordInteraction': true
       },
-      contentobjects: {
+      contentObjects: {
         'change:_isComplete': true
       },
       articles: {
