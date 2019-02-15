@@ -46,19 +46,19 @@ define([
     // Default events to send statements for.
     coreEvents: {
       Adapt: {
-        'router:page': true,
-        'router:menu': true,
+        'router:page': false,
+        'router:menu': false,
         'assessments:complete': true,
         'questionView:recordInteraction': true
       },
       contentObjects: {
-        'change:_isComplete': true
+        'change:_isComplete': false
       },
       articles: {
-        'change:_isComplete': true
+        'change:_isComplete': false
       },
       blocks: {
-        'change:_isComplete': true
+        'change:_isComplete': false
       },
       components: {
         'change:_isComplete': true
