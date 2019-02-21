@@ -17,7 +17,7 @@
 				"questionView:recordInteraction": true,
 				"assessments:complete": true
 			},
-			"contentobjects": {
+			"contentObjects": {
 				"change:_isComplete": true
 			},
 			"articles": {

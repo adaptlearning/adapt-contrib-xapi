@@ -147,7 +147,7 @@
                 "_shouldTrackState": {
                   "type": "boolean",
                   "required": false,
-                  "default": false,
+                  "default": true,
                   "title": "Track state",
                   "inputType": "Checkbox",
                   "validators": [],
@@ -176,7 +176,7 @@
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "router:menu",
                           "validators": [],
                           "help": "Triggered when a menu item is displayed."
@@ -185,7 +185,7 @@
                           "type": "boolean",
                           "required": true,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "router:page",
                           "validators": [],
                           "help": "Triggered when a page is displayed."
@@ -210,16 +210,16 @@
                         }
                       }
                     },
-                    "contentobjects": {
+                    "contentObjects": {
                       "type": "object",
                       "required": false,
-                      "title": "contentobjects",
+                      "title": "contentObjects",
                       "properties": {
                         "change:_isComplete": {
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "change:_isComplete",
                           "validators": [],
                           "help": "Triggered when a contentobject, i.e. a page or menu item, is completed."
@@ -235,7 +235,7 @@
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "change:_isComplete",
                           "validators": [],
                           "help": "Triggered when an article is completed."
@@ -251,7 +251,7 @@
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "change:_isComplete",
                           "validators": [],
                           "help": "Triggered when a block is completed."

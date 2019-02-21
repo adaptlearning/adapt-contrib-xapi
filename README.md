@@ -29,7 +29,7 @@ By default the xAPI extension listens for the following *core* events.  Those wi
 | Adapt | `router:menu` |
 | Adapt | `assessments:complete` |
 | Adapt | `questionView:recordInteraction` |
-| contentobjects |`change:_isComplete` |
+| contentObjects |`change:_isComplete` |
 | articles | `change:_isComplete` |
 | blocks | `change:_isComplete` |
 | components | `change:_isComplete` |
@@ -48,7 +48,7 @@ In response to the course, the statements based on the following ADL verbs are s
 In response to activity on navigating via pages and menus:
 - experienced
 
-In response to completion of non-question components, blocks, articles or contentobjects:
+In response to completion of non-question components, blocks, articles or contentObjects:
 - completed
 
 In response to completion of question components, along with details of the interaction the following verb will be sent:
