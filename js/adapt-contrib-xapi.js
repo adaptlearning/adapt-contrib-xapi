@@ -139,9 +139,11 @@ define([
             return this;
           }
 
-          this._onWindowOnload = _.bind(this.onWindowUnload, this);
-
-          $(window).on('beforeunload unload', this._onWindowOnload);
+          if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
+            $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
+          } else {
+            $(window).on('beforeunload unload', this.onWindowUnload.bind(this));
+          }
 
           if (!this.get('shouldTrackState')) {
             // xAPI is not managing the state.
@@ -270,11 +272,29 @@ define([
     },
 
     /**
+     * Sends 'suspended' and 'terminated' statements to the LRS when the window
+     * is closed or the browser app is minimised on a device. Sends a 'resume'
+     * statement when switching back to a suspended session
+     */
+    onVisibilityChange: function() {
+      if (document.visibilityState === 'visible') {
+        return this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+      }
+
+      if (!this.isComplete) {
+        // If the course is still in progress, send the 'suspended' verb.
+        this.sendStatementViaFetch(this.getCourseStatement(ADL.verbs.suspended));
+      }
+
+      // Always send the 'terminated' verb.
+      this.sendStatementViaFetch(this.getCourseStatement(ADL.verbs.terminated));
+
+    },
+
+    /**
      * Sends a 'terminated' statement to the LRS when the window is closed.
      */
     onWindowUnload: function() {
-      $(window).off('beforeunload unload', this._onWindowOnload);
-
       var statements = [];
 
       if (!this.isComplete) {
@@ -285,7 +305,9 @@ define([
       // Always send the 'terminated' verb.
       statements.push(this.getCourseStatement(ADL.verbs.terminated));
 
-      this.sendStatements(statements);
+      statements.forEach(this.sendStatementViaFetch.bind(this));
+
+      this.isTerminated = true;
     },
 
     /**
@@ -450,7 +472,7 @@ define([
     /**
      * Creates an xAPI statement related to the Adapt.course object.
      * @param {object | string} verb - A valid ADL.verbs object or key.
-     * @param {object} result - An optional result object.
+     * @param {object} [result] - An optional result object.
      * @return A valid ADL statement object.
      */
     getCourseStatement: function(verb, result) {
@@ -1242,6 +1264,67 @@ define([
     },
 
     /**
+     * Send a Statement using the fetch API in order to make use of the keepalive
+     * feature not available in AJAX requests. This makes the sending of suspended
+     * and terminated statements more reliable
+     */
+    sendStatementViaFetch: function(statement) {
+      var lrs = ADL.XAPIWrapper.lrs;
+
+      // Fetch not supported in IE and keepalive/custom headers
+      // not supported for CORS preflight requests so attempt
+      // to send the statement in the usual way
+      if (!window.fetch || this.isCORS(lrs.endpoint)) {
+        return this.sendStatement(statement);
+      }
+
+      var url = lrs.endpoint + 'statements';
+      var credentials = ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
+      var headers = {};
+      headers["Content-Type"] = "application/json";
+      headers["Authorization"] = lrs.auth;
+      headers['X-Experience-API-Version'] = ADL.XAPIWrapper.xapiVersion;
+
+      //Add extended LMS-specified values to the URL
+      var extended = _.map(lrs.extended, function(value, key) {
+        return key + '=' + encodeURIComponent(value);
+      });
+
+      if (extended.length > 0) {
+        url += (url.indexOf('?') > -1 ? '&' : '?') + extended.join('&');
+      }
+
+      fetch(url, {
+        body: JSON.stringify(statement),
+        cache: 'no-cache',
+        credentials: credentials,
+        headers: headers,
+        keepalive: true,
+        method: 'POST'
+      }).then(function() {
+        Adapt.trigger('xapi:lrs:sendStatement:success', statement);
+      }).catch(function(error) {
+        Adapt.trigger('xapi:lrs:sendStatement:error', error);
+      })
+    },
+
+    /**
+     * Determine if sending the statement involves a Cross Origin Request
+     * @param {string} url - the lrs endpoint
+     * @returns {boolean}
+     */
+    isCORS: function(url) {
+      var urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
+      var isCORS = (location.protocol.toLowerCase() !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
+      if (!isCORS) {
+        var urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
+        isCORS = (urlPort === location.port);
+      }
+
+      return isCORS;
+    },
+
+    /**
      * Send an xAPI statement to the LRS once all async operations are complete
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
      * @param {ADLCallback} [callback]
@@ -1324,7 +1407,11 @@ define([
       // Rather than calling the wrapper's sendStatements() function, iterate
       // over each statement and call sendStatement().
       Async.each(statements, function(statement, nextStatement) {
-        this.sendStatement(statement, nextStatement);
+        if (_.contains([ADL.verbs.suspended, ADL.verbs.terminated], statement.verb)) {
+          return this.sendStatementViaFetch(statement);
+        } else {
+          this.sendStatement(statement, nextStatement);
+        }
       }.bind(this), function(error) {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
