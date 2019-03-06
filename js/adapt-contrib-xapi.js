@@ -688,6 +688,11 @@ define([
         return;
       }
 
+      if (!model.get('_isComplete')) {
+        // The item is not actually completed, e.g. it may have been reset.
+        return;
+      }
+
       var result = { completion: true };
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
       var statement;
