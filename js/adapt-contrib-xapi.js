@@ -673,8 +673,15 @@ define([
     /**
      * Sends an xAPI statement when an item has been completed.
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
+     * @param {boolean} isComplete - Flag to indicate if the model has been completed
      */
-    onItemComplete: function(model) {
+    onItemComplete: function(model, isComplete) {
+
+      if (isComplete === false) {
+        // The item is not actually completed, e.g. it may have been reset.
+        return;
+      }
+
       // If this is a question component (interaction), do not record multiple statements.
       if (model.get('_type') === 'component' && model.get('_isQuestionType') === true
         && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
