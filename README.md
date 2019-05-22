@@ -36,12 +36,13 @@ By default the xAPI extension listens for the following *core* events.  Those wi
 
 
 ## Statements
-In response to the course, the statements based on the following ADL verbs are sent:
+In response to the course, the statements based on the following ADL verbs may be sent:
 - launched
 - initialized
 - attempted
 - failed
 - passed
+- completed
 - suspended
 - terminated
 
