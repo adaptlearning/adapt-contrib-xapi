@@ -278,6 +278,8 @@ define([
      */
     onVisibilityChange: function() {
       if (document.visibilityState === 'visible') {
+        this.isTerminated = false;
+
         return this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
       }
 
@@ -286,6 +288,10 @@ define([
 
     // Sends (optional) 'suspended' and 'terminated' statements to the LRS.
     sendUnloadStatements: function() {
+      if (this.isTerminated) {
+        return;
+      }
+
       var statements = [];
 
       if (!this.isComplete) {
