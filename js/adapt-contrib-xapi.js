@@ -142,7 +142,7 @@ define([
           if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
             $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
           } else {
-            $(window).on('beforeunload unload', this.onWindowUnload.bind(this));
+            $(window).on('beforeunload unload', this.sendUnloadStatements.bind(this));
           }
 
           if (!this.get('shouldTrackState')) {
@@ -274,27 +274,18 @@ define([
     /**
      * Sends 'suspended' and 'terminated' statements to the LRS when the window
      * is closed or the browser app is minimised on a device. Sends a 'resume'
-     * statement when switching back to a suspended session
+     * statement when switching back to a suspended session.
      */
     onVisibilityChange: function() {
       if (document.visibilityState === 'visible') {
         return this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
       }
 
-      if (!this.isComplete) {
-        // If the course is still in progress, send the 'suspended' verb.
-        this.sendStatementViaFetch(this.getCourseStatement(ADL.verbs.suspended));
-      }
-
-      // Always send the 'terminated' verb.
-      this.sendStatementViaFetch(this.getCourseStatement(ADL.verbs.terminated));
-
+      this.sendUnloadStatements();
     },
 
-    /**
-     * Sends a 'terminated' statement to the LRS when the window is closed.
-     */
-    onWindowUnload: function() {
+    // Sends (optional) 'suspended' and 'terminated' statements to the LRS.
+    sendUnloadStatements: function() {
       var statements = [];
 
       if (!this.isComplete) {
@@ -305,13 +296,14 @@ define([
       // Always send the 'terminated' verb.
       statements.push(this.getCourseStatement(ADL.verbs.terminated));
 
-      statements.forEach(this.sendStatementViaFetch.bind(this));
+      // Note: it is not possible to intercept these synchronous statements.
+      this.sendStatementsSync(statements);
 
       this.isTerminated = true;
     },
 
     /**
-    * Check Wrapper to see if all parameters needed are set
+    * Check Wrapper to see if all parameters needed are set.
     */
     checkWrapperConfig: function() {
       if (this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
@@ -1264,28 +1256,29 @@ define([
     },
 
     /**
-     * Send a Statement using the fetch API in order to make use of the keepalive
+     * Sends statements using the Fetch API in order to make use of the keepalive
      * feature not available in AJAX requests. This makes the sending of suspended
-     * and terminated statements more reliable
+     * and terminated statements more reliable.
      */
-    sendStatementViaFetch: function(statement) {
+    sendStatementsSync: function(statements) {
       var lrs = ADL.XAPIWrapper.lrs;
 
       // Fetch not supported in IE and keepalive/custom headers
       // not supported for CORS preflight requests so attempt
       // to send the statement in the usual way
       if (!window.fetch || this.isCORS(lrs.endpoint)) {
-        return this.sendStatement(statement);
+        return this.sendStatements(statements);
       }
 
       var url = lrs.endpoint + 'statements';
       var credentials = ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
-      var headers = {};
-      headers["Content-Type"] = "application/json";
-      headers["Authorization"] = lrs.auth;
-      headers['X-Experience-API-Version'] = ADL.XAPIWrapper.xapiVersion;
+      var headers = {
+        'Content-Type': 'application/json',
+        'Authorization': lrs.auth,
+        'X-Experience-API-Version': ADL.XAPIWrapper.xapiVersion
+      };
 
-      //Add extended LMS-specified values to the URL
+      // Add extended LMS-specified values to the URL
       var extended = _.map(lrs.extended, function(value, key) {
         return key + '=' + encodeURIComponent(value);
       });
@@ -1295,14 +1288,14 @@ define([
       }
 
       fetch(url, {
-        body: JSON.stringify(statement),
+        body: JSON.stringify(statements),
         cache: 'no-cache',
         credentials: credentials,
         headers: headers,
         keepalive: true,
         method: 'POST'
       }).then(function() {
-        Adapt.trigger('xapi:lrs:sendStatement:success', statement);
+        Adapt.trigger('xapi:lrs:sendStatement:success', statements);
       }).catch(function(error) {
         Adapt.trigger('xapi:lrs:sendStatement:error', error);
       })
@@ -1407,11 +1400,7 @@ define([
       // Rather than calling the wrapper's sendStatements() function, iterate
       // over each statement and call sendStatement().
       Async.each(statements, function(statement, nextStatement) {
-        if (_.contains([ADL.verbs.suspended, ADL.verbs.terminated], statement.verb)) {
-          return this.sendStatementViaFetch(statement);
-        } else {
-          this.sendStatement(statement, nextStatement);
-        }
+        this.sendStatement(statement, nextStatement);
       }.bind(this), function(error) {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
