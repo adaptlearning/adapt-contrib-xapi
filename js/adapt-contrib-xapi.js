@@ -127,11 +127,11 @@ define([
         this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
         this.courseDescription = Adapt.course.get('description') || '';
 
-        var statements = [];
-
         // Send the 'launched' and 'initialized' statements.
-        statements.push(this.getCourseStatement(ADL.verbs.launched));
-        statements.push(this.getCourseStatement(ADL.verbs.initialized));
+        var statements = [
+          this.getCourseStatement(ADL.verbs.launched),
+          this.getCourseStatement(ADL.verbs.initialized)
+        ];
 
         this.sendStatements(statements, _.bind(function(error) {
           if (error) {
