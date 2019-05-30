@@ -1298,6 +1298,7 @@ define([
         cache: 'no-cache',
         credentials: credentials,
         headers: headers,
+        mode: 'same-origin',
         keepalive: true,
         method: 'POST'
       }).then(function() {
@@ -1314,7 +1315,7 @@ define([
      */
     isCORS: function(url) {
       var urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
-      var isCORS = (location.protocol.toLowerCase() !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
+      var isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
       if (!isCORS) {
         var urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
         isCORS = (urlPort === location.port);
