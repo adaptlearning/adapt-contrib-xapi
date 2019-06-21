@@ -626,9 +626,12 @@ define([
           break;
         }
         case 'matching': {
-          response = response.replace(/#/g, "[,]");
-          response = response.replace(/\./g, "[.]");
-
+          response = response
+            .split('#')
+            .map(function(val, i) {
+              return (i + 1) + '[.]' + val.replace('.', '_')
+            })
+            .join('[,]');
           break;
         }
       }
