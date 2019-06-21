@@ -646,9 +646,13 @@ define([
           break;
         }
         case 'matching': {
-          response = response.replace(/#/g, "[,]");
-          response = response.replace(/\./g, "[.]");
-
+          // Example: 1[.]1_1[,]2[.]2_5
+          response = response
+            .split('#')
+            .map(function(val, i) {
+              return (i + 1) + '[.]' + val.replace('.', '_')
+            })
+            .join('[,]');
           break;
         }
       }
