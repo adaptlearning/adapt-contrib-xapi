@@ -626,6 +626,7 @@ define([
           break;
         }
         case 'matching': {
+          // Example: 1[.]1_1[,]2[.]2_5
           response = response
             .split('#')
             .map(function(val, i) {
