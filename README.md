@@ -5,7 +5,7 @@
 From this point on, the README assumes a certain level of familiarity with the xAPI and the philosophy behind it.  If the xAPI specification is new to you, please start with the documentation at [xapi.com](https://xapi.com/overview/) before continuing. 
 
 ## Configuration
-Some setup is required in order to configure the xAPI extension.  If using a standalone Adapt Framework, refer to  [example.json](https://github.com/adaptlearning/adapt-contrib-xapi/blob/master/example.json) for a JSON snipped which should be added to your course's config.json.  If using the Authoring tool you can configure the following attributes:
+Some setup is required in order to configure the xAPI extension.  If using a standalone Adapt Framework, refer to  [example.json](https://github.com/adaptlearning/adapt-contrib-xapi/blob/master/example.json) for a JSON snippet which should be added to your course's config.json.  If using the Authoring tool you can configure the following attributes:
 
 |Setting|Default|Help|
 |--|--|--|
