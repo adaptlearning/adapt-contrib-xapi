@@ -1048,7 +1048,7 @@ define([
             var parseError;
 
             // Check for empty response, otherwise the subsequent JSON.parse() will fail.
-            if (xhr.status === 200 && xhr.response === '') {
+            if (xhr.response === '') {
               return nextType();
             }
 
