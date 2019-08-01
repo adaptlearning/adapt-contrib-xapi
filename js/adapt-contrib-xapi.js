@@ -1035,17 +1035,22 @@ define([
               return nextType(new Error('\'xhr\' parameter is missing from callback'));
             }
 
-            if (xhr.status == 404) {
+            if (xhr.status === 404) {
               return nextType();
             }
 
-            if (xhr.status != 200) {
+            if (xhr.status !== 200) {
               Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
               return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
             }
 
             var response;
             var parseError;
+
+            // Check for empty response, otherwise the subsequent JSON.parse() will fail.
+            if (xhr.response === '') {
+              return nextType();
+            }
 
             try {
               response = JSON.parse(xhr.response);
