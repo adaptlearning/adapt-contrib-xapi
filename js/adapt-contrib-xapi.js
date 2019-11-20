@@ -97,7 +97,7 @@ define([
         }
 
         this.set({
-          activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
+          activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
           displayLang: Adapt.config.get('_defaultLanguage'),
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
