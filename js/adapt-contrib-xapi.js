@@ -628,7 +628,7 @@ define([
       // Answered
       statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
 
-      this.addGroupingActivity(model, statement)
+      this.addGroupingActivity(view.model, statement)
       this.sendStatement(statement);
     },
 
