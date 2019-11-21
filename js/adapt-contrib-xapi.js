@@ -771,8 +771,8 @@ define([
         if (articleModel && articleModel.has('_assessment') && articleModel.get('_assessment')._isEnabled) {
           // Set the assessment as the parent.
           var assessment = {
-            _id: articleModel.get('_id'),
-            _type: 'article-assessment',
+            articleId: articleModel.get('_id'),
+            type: 'article-assessment',
             pageId: articleModel.get('_parentId')
           }
 
