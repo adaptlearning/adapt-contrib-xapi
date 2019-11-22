@@ -97,8 +97,6 @@ define([
           return this;
         }
 
-        this.getLearnerInfo()
-
         this.set({
           activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
           displayLang: Adapt.config.get('_defaultLanguage'),
@@ -437,6 +435,9 @@ define([
         Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
         return;
       }
+
+      // Allow surfacing the learner's info in _globals.
+      this.getLearnerInfo()
 
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
