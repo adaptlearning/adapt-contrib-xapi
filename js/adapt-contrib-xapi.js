@@ -97,6 +97,8 @@ define([
           return this;
         }
 
+        this.getLearnerInfo()
+
         this.set({
           activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
           displayLang: Adapt.config.get('_defaultLanguage'),
@@ -176,6 +178,19 @@ define([
       }, this));
     },
 
+    /**
+     * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
+     */
+    getLearnerInfo: function() {
+      var globals = Adapt.course.get('_globals');
+
+      if (!globals._learnerInfo) {
+          globals._learnerInfo = {};
+      }
+
+      _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
+    },
+  
     /**
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
