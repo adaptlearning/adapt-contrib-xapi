@@ -17,6 +17,7 @@ Some setup is required in order to configure the xAPI extension.  If using a sta
 |Verb language | `en-US`| Indicates the language of the verbs which will be passed to the LRS
 |Auto generate IDs for statements | `false` | It is recommended this is not enabled, so that the LRS will generate unique identifiers
 |Track state| `false` | Lets the LRS manage the course state via the State API
+|Use registration| `false` | Uses the `registration` parameter defined by the launch mechanism for calls to the State API
 |LRS connection failure behaviour | Show errors | Indicates what should happen when the course cannot connect to the LRS
 |Component blacklist | `blank,graphic` | A comma-separated list of components which should not send statements.  Set this to an empty string if all components should send a statement.
  

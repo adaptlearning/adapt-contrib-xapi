@@ -153,6 +153,15 @@
                   "validators": [],
                   "help": "When enabled, the associated LRS be used to track state via the State API."
                 },
+                "_shouldUseRegistration": {
+                  "type": "boolean",
+                  "required": false,
+                  "default": false,
+                  "title": "Use registration",
+                  "inputType": "Checkbox",
+                  "validators": [],
+                  "help": "When enabled, the registration will be used as part of get/set calls to the State API."
+                },
                 "_componentBlacklist": {
                   "type": "string",
                   "required": false,
