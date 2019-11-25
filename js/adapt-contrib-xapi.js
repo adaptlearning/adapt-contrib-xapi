@@ -792,7 +792,7 @@ define([
         statement.addGroupingActivity(this.getCourseActivity())
       }
 
-      if (['article', 'block', 'component'].indexOf(type)) {
+      if (['article', 'block', 'component'].indexOf(type) !== -1) {
         // Group these items by page/lesson.
         var pageModel = model.findAncestor('pages')
 
