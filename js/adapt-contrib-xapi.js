@@ -2,7 +2,6 @@
  * adapt-contrib-xapi
  * License      - http://github.com/adaptlearning/adapt_framework/LICENSE
  * Maintainers  - Dennis Heaney <dennis@learningpool.com>
- *              - Barry McKay <barry@learningpool.com>
  *              - Brian Quinn <brian@learningpool.com>
  */
 define([
@@ -831,6 +830,12 @@ define([
           }
 
           statement.addParentActivity(this.getAssessmentObject(assessment))
+
+          if (assessment.id) {
+            statement.object.definition.extensions = _.extend({}, statement.object.definition.extensions, {
+              'http://id.tincanapi.com/extension/assessment-id': assessment.id
+            });
+          }
         }
       }
     },
@@ -902,6 +907,12 @@ define([
 
       statement.addGroupingActivity(this.getCourseActivity())
       statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
+
+      if (assessment.id) {
+        statement.object.definition.extensions = _.extend({}, statement.object.definition.extensions, {
+          'http://id.tincanapi.com/extension/assessment-id': assessment.id
+        });
+      }
 
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
