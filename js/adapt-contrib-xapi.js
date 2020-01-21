@@ -863,7 +863,7 @@ define([
     getAssessmentObject: function(assessment) {
       // Instantiate a Model so it can be used to obtain an IRI.
       var fakeModel = new Backbone.Model({
-        _id: assessment.articleId || assessment.id,
+        _id: assessment.id || assessment.articleId,
         _type: assessment.type,
         pageId: assessment.pageId
       });
