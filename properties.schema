@@ -74,7 +74,7 @@
                     ]
                   },
                   "validators": [],
-                  "help": "Indicates whether the plugin should use standard xAPI or cmi5 profile (comming soon)."
+                  "help": "Indicates whether the plugin should use standard xAPI or cmi5 profile (coming soon)."
                 },
                 "_activityID": {
                   "type": "string",
