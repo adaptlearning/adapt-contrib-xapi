@@ -780,7 +780,7 @@ define([
      * @param {string|Adapt.Model} page - Either an Adapt contentObject model of type 'page', or the _id of one.
      * @returns {XAPIStatement.Activity} Activity corresponding to the lesson.
      */
-    getLessonActivity(page) {
+    getLessonActivity: function(page) {
       var pageModel = (typeof page === 'string')
         ? Adapt.findById(page)
         : page
