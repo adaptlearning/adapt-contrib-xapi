@@ -2,7 +2,7 @@ define([
   'core/js/adapt',
   './adapt-contrib-xapi',
   './adapt-offlineStorage-xapi'
-], function(Adapt) {
+], function(Adapt, xapi, offlineStorage) {
 
   Adapt.on('app:dataLoaded', initialise);
 
@@ -10,8 +10,10 @@ define([
     var config = Adapt.config.get('_xapi') || {};
 
     if (!config._isEnabled) {
-      return Adapt.offlineStorage.setReadyStatus();
+      return;
     }
+
+    offlineStorage.load();
 
     Adapt.wait.begin();
 
