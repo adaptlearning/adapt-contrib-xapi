@@ -4,7 +4,7 @@ define([
 ], function(Adapt, xapi) {
 
   //xAPI handler for Adapt.offlineStorage interface.
-  var offlineStorage = Backbone.Model.extend({
+  var offlineStorage = {
 
     load: function() {
       // Use a lightweight fake model to pass into xAPI.sendState
@@ -112,7 +112,7 @@ define([
       });
     }
 
-  });
+  };
 
   return offlineStorage;
 
