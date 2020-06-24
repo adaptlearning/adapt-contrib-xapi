@@ -24,8 +24,9 @@ define([
     Adapt.once('xapi:lrs:initialize:error ' + successEvent, function() {
       Adapt.offlineStorage.get();
       Adapt.offlineStorage.setReadyStatus();
-      Adapt.wait.end();
     });
+
+    Adapt.wait.end();
 
   }
 
