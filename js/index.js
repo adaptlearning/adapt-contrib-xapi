@@ -1,8 +1,8 @@
 define([
   'core/js/adapt',
+  './adapt-offlineStorage-xapi',
   './adapt-contrib-xapi',
-  './adapt-offlineStorage-xapi'
-], function(Adapt, xapi, offlineStorage) {
+], function(Adapt, offlineStorage) {
 
   Adapt.on('app:dataLoaded', initialise);
 
@@ -15,8 +15,6 @@ define([
 
     offlineStorage.load();
 
-    Adapt.wait.begin();
-
     // Wait for offline storage to be restored if _shouldTrackState is enabled
     var successEvent = config._shouldTrackState ? 'xapi:stateLoaded' : 'xapi:lrs:initialize:success';
 
@@ -25,9 +23,6 @@ define([
       Adapt.offlineStorage.get();
       Adapt.offlineStorage.setReadyStatus();
     });
-
-    Adapt.wait.end();
-
   }
 
 });
