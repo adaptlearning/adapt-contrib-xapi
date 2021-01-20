@@ -1,6 +1,6 @@
 {
   "name": "adapt-contrib-xapi",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "framework": ">=5.7.0",
   "homepage": "https://github.com/adaptlearning/adapt-contrib-xapi",
   "authors": [

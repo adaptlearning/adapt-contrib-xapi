@@ -5,6 +5,7 @@ define([
 
   //xAPI handler for Adapt.offlineStorage interface.
   class OfflineStorage {
+
     constructor() {
       this.store = new Backbone.Model();
       this.isDataRestored = false;
@@ -23,10 +24,13 @@ define([
     }
 
     getAll() {
-      if (!isDataRestored) {
+      console.log('in offline');
+      console.log(xapi);
+      console.log(this.isDataRestored);
+      if (!this.isDataRestored) {
         const state = xapi.get('state') || {};
-        store.set(state.offlineStorage);
-        isDataRestored = true;
+        this.store.set(state.offlineStorage);
+        this.isDataRestored = true;
       }
 
       //If not connected return just the store.

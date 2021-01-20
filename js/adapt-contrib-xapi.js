@@ -269,6 +269,7 @@ define([
      * Triggers 'plugin:endWait' event (if required).
      */
     onInitialised(error) {
+      console.log(error);
       this.set({ isInitialised: !!!error });
 
       Adapt.wait.end();
@@ -287,11 +288,17 @@ define([
       // Update the language.
       this.set({ displayLang: newLanguage });
 
+      console.log('before delete state');
+      console.log(this);
       // Since a language change counts as a new attempt, reset the state.
-      this.deleteState(() => {
-        // Send a statement to track the (new) course.
-        this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
-      });
+      // this.deleteState(() => {
+      //   // Send a statement to track the (new) course.
+      //   this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
+      //   console.log('after');
+      //   console.log(this);
+      // });
+      // console.log('after');
+      // console.log(this);
     }
 
     /**
@@ -385,7 +392,7 @@ define([
     getBaseUrl() {
       const url = window.location.origin + window.location.pathname;
 
-      Adapt.log.info('adapt-contrib-xapi: Using detected URL (' + url + ') as ActivityID');
+      Adapt.log.info(`adapt-contrib-xapi: Using detected URL ${url} as ActivityID`);
 
       return url;
     }
@@ -445,7 +452,7 @@ define([
       }
 
       // Allow surfacing the learner's info in _globals.
-      this.getLearnerInfo()
+      this.getLearnerInfo();
 
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
@@ -1117,7 +1124,6 @@ define([
       this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error, xhr) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendState:error', error);
-          return;
         }
 
         Adapt.trigger('xapi:lrs:sendState:success', newState);
@@ -1588,8 +1594,12 @@ define([
   /** Adapt event listeners begin here */
   Adapt.once('app:dataLoaded', function() {
     const xapi = xAPI.getInstance();
+    console.log('data loaded');
+    console.log(xapi);
 
-    xapi.initalize();
+    xapi.initialize();
+    console.log('data loaded initialize');
+    console.log(xapi);
 
     Adapt.on('adapt:initialize', function() {
       xapi.setupListeners();
