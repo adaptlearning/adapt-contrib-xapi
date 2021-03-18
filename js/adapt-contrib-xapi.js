@@ -279,7 +279,7 @@ define([
       // Update the language.
       this.set({ displayLang: newLanguage });
 
-      Adapt.offlineStorage.set('_activeLanguage', newLanguage);
+      Adapt.offlineStorage.set('lang', newLanguage);
 
       // Since a language change counts as a new attempt, reset the state.
       this.deleteState(function() {
