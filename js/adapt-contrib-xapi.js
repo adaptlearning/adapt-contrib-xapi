@@ -99,13 +99,15 @@ define([
 
         this.set({
           activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
-          displayLang: Adapt.config.get('_defaultLanguage'),
+          displayLang: Adapt.config.get('_activeLanguage') || Adapt.config.get('_defaultLanguage'),
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
           shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
+
+        Adapt.offlineStorage.set('lang', this.get('displayLang'));
 
         var componentBlacklist = this.get('componentBlacklist');
 
@@ -188,7 +190,7 @@ define([
 
       _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
     },
-  
+
     /**
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
@@ -278,6 +280,8 @@ define([
     onLanguageChanged: function(newLanguage) {
       // Update the language.
       this.set({ displayLang: newLanguage });
+
+      Adapt.offlineStorage.set('lang', newLanguage);
 
       // Since a language change counts as a new attempt, reset the state.
       this.deleteState(function() {
@@ -612,7 +616,7 @@ define([
       var statement;
       var description = {};
 
-      description[this.get('displayLang')] = this.stripHtml(view.model.get('body'));
+      description[lang] = this.stripHtml(view.model.get('body'));
 
       object.definition = {
         name: this.getNameObject(view.model),
@@ -1089,7 +1093,7 @@ define([
       var actor = this.get('actor');
       var type = model.get('_type');
       var state = this.get('state');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
@@ -1138,7 +1142,7 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var state = {};
@@ -1216,10 +1220,10 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
- 
+
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
           if (error) {
