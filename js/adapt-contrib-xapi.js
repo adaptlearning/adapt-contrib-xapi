@@ -107,6 +107,8 @@ define([
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
+        Adapt.offlineStorage.set('lang', this.get('displayLang'));
+
         var componentBlacklist = this.get('componentBlacklist');
 
         if (!_.isArray(componentBlacklist)) {
