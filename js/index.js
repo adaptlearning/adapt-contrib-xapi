@@ -18,7 +18,7 @@ define([
       const successEvent = config._shouldTrackState ? 'xapi:stateLoaded' : 'xapi:lrs:initialize:success';
   
       // Ensure that the course still loads if there is a connection error
-      Adapt.once(`xapi:lrs:initialize:error ${successEvent}`, function() {
+      Adapt.once(`xapi:lrs:initialize:error ${successEvent}`, () => {
         Adapt.offlineStorage.get();
         Adapt.offlineStorage.setReadyStatus();
       });

@@ -91,7 +91,7 @@ define([
       Adapt.wait.begin();
 
       // Initialize the xAPIWrapper.
-      this.initializeWrapper(_.bind(function(error) {
+      this.initializeWrapper = error => {
         if (error) {
           this.onInitialised(error);
           return this;
@@ -111,7 +111,7 @@ define([
 
         if (!_.isArray(componentBlacklist)) {
           // Create the blacklist array and force the items to lowercase.
-          componentBlacklist = componentBlacklist.split(/,\s?/).map(function(component) {
+          componentBlacklist = componentBlacklist.split(/,\s?/).map(component => {
             return component.toLowerCase();
           });
         }
@@ -135,7 +135,7 @@ define([
           this.getCourseStatement(ADL.verbs.initialized)
         ];
 
-        this.sendStatements(statements, _.bind(function(error) {
+        this.sendStatements(statements, error => {
           if (error) {
             this.onInitialised(error);
             return this;
@@ -154,7 +154,7 @@ define([
           }
 
           // Retrieve the course state.
-          this.getState(_.bind(function(error) {
+          this.getState(error => {
             if (error) {
               this.onInitialised(error);
               return this;
@@ -171,9 +171,9 @@ define([
             this.restoreState();
             this.onInitialised();
             return this;
-          }, this));
-        }, this));
-      }, this));
+          });
+        });
+      }
     }
 
     /**
@@ -211,7 +211,7 @@ define([
           callback();
         } else {
           // If no endpoint is configured, assume this is using the ADL launch method.
-          ADL.launch(_.bind(function(error, launchData, xapiWrapper) {
+          ADL.launch((error, launchData, xapiWrapper) => {
             if (error) {
               return callback(error);
             }
@@ -226,7 +226,7 @@ define([
             this.xapiWrapper.strictCallbacks = true;
 
             callback();
-          }, this), true, true);
+          }, true, true);
         }
       } else {
         // The endpoint has been defined in the config, so use the static values.
@@ -265,7 +265,7 @@ define([
 
       Adapt.wait.end();
 
-      _.defer(function() {
+      _.defer(() => {
         if (error) {
           Adapt.trigger('xapi:lrs:initialize:error', error);
           return;
@@ -280,7 +280,7 @@ define([
       this.set({ displayLang: newLanguage });
 
       // Since a language change counts as a new attempt, reset the state.
-      this.deleteState(function() {
+      this.deleteState(() => {
         // Send a statement to track the (new) course.
         this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
       });
@@ -342,7 +342,7 @@ define([
       const keys = ['endpoint', 'user', 'password'];
       const newConfig = {};
 
-      _.each(keys, function(key) {
+      _.each(keys, key => {
         const val = this.getConfig('_' + key);
 
         if (val) {
@@ -359,7 +359,7 @@ define([
 
           newConfig[key] = val;
         }
-      }, this);
+      });
 
       if (!_.isEmpty(newConfig)) {
         this.xapiWrapper.changeConfig(newConfig);
@@ -474,7 +474,7 @@ define([
 
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.
-      _.each(_.keys(this.coreEvents), function(key) {
+      _.each(_.keys(this.coreEvents), key => {
         if (key !== 'Adapt') {
           const val = this.coreEvents[key];
 
@@ -482,7 +482,7 @@ define([
             this.listenTo(Adapt[key], 'change:_isComplete', this.onItemComplete);
           }
         }
-      }, this);
+      });
     }
 
     /**
@@ -626,7 +626,7 @@ define([
         _.extend(object.definition, view.getInteractionObject());
 
         // Ensure any 'description' properties are objects with the language map.
-        _.each(_.keys(object.definition), function(key) {
+        _.each(_.keys(object.definition), key => {
           if (_.isArray(object.definition[key]) && object.definition[key].length !== 0) {
             for (const i = 0; i < object.definition[key].length; i++) {
               if (!object.definition[key][i].hasOwnProperty('description')) {
@@ -690,7 +690,7 @@ define([
           // Example: 1[.]1_1[,]2[.]2_5
           response = response
             .split('#')
-            .map(function(val, i) {
+            .map((val, i) => {
               return (i + 1) + '[.]' + val.replace('.', '_')
             })
             .join('[,]');
@@ -884,8 +884,6 @@ define([
      * @param {object} assessment - Object representing the state of the assessment.
      */
     onAssessmentComplete(assessment) {
-      const self = this;
-
       const object = this.getAssessmentObject(assessment)
       const result = this.getAssessmentResultObject(assessment);
       let statement;
@@ -902,8 +900,8 @@ define([
       statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
 
       // Delay so that component completion can be recorded before assessment completion.
-      _.delay(function() {
-        self.sendStatement(statement);
+      _.delay(() => {
+        this.sendStatement(statement);
       }, 500);
     }
 
@@ -970,7 +968,6 @@ define([
      * @param {object} completionData
      */
     onTrackingComplete(completionData) {
-      const self = this;
       let result = {};
       let completionVerb;
 
@@ -1001,9 +998,9 @@ define([
       // Store a reference that the course has actually been completed.
       this.isComplete = true;
 
-      _.defer(function() {
+      _.defer(() => {
         // Send the completion status.
-        self.sendStatement(self.getCourseStatement(completionVerb, result));
+        this.sendStatement(this.getCourseStatement(completionVerb, result));
       });
     }
 
@@ -1020,7 +1017,7 @@ define([
       const Adapt = require('core/js/adapt');
 
       if (state.components) {
-        _.each(state.components, function(stateObject) {
+        _.each(state.components, stateObject => {
           const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
@@ -1032,7 +1029,7 @@ define([
       }
 
       if (state.blocks) {
-        _.each(state.blocks, function(stateObject) {
+        _.each(state.blocks, stateObject => {
           const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
@@ -1090,7 +1087,7 @@ define([
       const registration = this.get('shouldUseRegistration') === true 
         ? this.get('registration')
         : null;
-      const collectionName = _.findKey(this.coreObjects, function(o) {
+      const collectionName = _.findKey(this.coreObjects, o => {
         return o === type || o.indexOf(type) > -1
       });
       const stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
@@ -1133,7 +1130,6 @@ define([
     getState(callback) {
       callback = _.isFunction(callback) ? callback : function() { };
 
-      const self = this;
       const activityId = this.get('activityId');
       const actor = this.get('actor');
       const registration = this.get('shouldUseRegistration') === true 
@@ -1141,9 +1137,9 @@ define([
         : null;
       const state = {};
 
-      Async.each(_.keys(this.coreObjects), function(type, nextType) {
-        self.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
-          _.defer(function() {
+      Async.each(_.keys(this.coreObjects), (type, nextType) => {
+        this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
+          _.defer(() => {
             if (error) {
               Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
               return nextType(error);
@@ -1188,14 +1184,14 @@ define([
             return nextType();
           });
         });
-      }, function(error) {
+      }, error => {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
           return callback(error);
         }
 
         if (!_.isEmpty(state)) {
-          self.set({ state });
+          this.set({ state });
         }
 
         Adapt.trigger('xapi:stateLoaded');
@@ -1211,15 +1207,14 @@ define([
     deleteState(callback) {
       callback = _.isFunction(callback) ? callback : function() { };
 
-      const self = this;
       const activityId = this.get('activityId');
       const actor = this.get('actor');
       const registration = this.get('shouldUseRegistration') === true 
         ? this.get('registration')
         : null;
  
-      Async.each(_.keys(this.coreObjects), function(type, nextType) {
-        self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
+      Async.each(_.keys(this.coreObjects), (type, nextType) => {
+        this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
           if (error) {
             Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(error);
@@ -1237,7 +1232,7 @@ define([
 
           return nextType();
         });
-      }, function(error) {
+      }, error => {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
           return callback(error);
@@ -1423,7 +1418,7 @@ define([
       };
 
       // Add extended LMS-specified values to the URL
-      const extended = _.map(lrs.extended, function(value, key) {
+      const extended = _.map(lrs.extended, (value, key) => {
         return key + '=' + encodeURIComponent(value);
       });
 
@@ -1469,7 +1464,7 @@ define([
      * @param {array} [attachments] - An array of attachments to pass to the LRS.
      */
     onStatementReady(statement, callback, attachments) {
-      this.xapiWrapper.sendStatement(statement, function(error) {
+      this.xapiWrapper.sendStatement(statement, error => {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
           return callback(error);
@@ -1491,7 +1486,7 @@ define([
     processAttachments(statement, callback) {
       const attachments = statement.attachments;
 
-      Async.each(attachments, function(attachment, nextAttachment) {
+      Async.each(attachments, (attachment, nextAttachment) => {
 
         // First check the attachment for a value
         if (attachment.value) {
@@ -1500,12 +1495,12 @@ define([
           // If a url is specified then we need to obtain the string value
           // Use native xhr so we can set the responseType to 'blob'
           const xhr = new XMLHttpRequest();
-          xhr.onreadystatechange = function() {
+          xhr.onreadystatechange = () => {
             if (this.readyState === 4 && this.status === 200) {
 
               // Use FileReader to retrieve the blob contents as a string
               const reader = new FileReader();
-              reader.onload = function() {
+              reader.onload = () => {
 
                 // Store the string value in the attachment object and
                 // delete the url property which is no longer needed
@@ -1522,10 +1517,10 @@ define([
         } else {
           Adapt.log.warn('Attachment object contained neither a value or url property.');
         }
-      }, function() {
+      }, () => {
         delete statement.attachments;
         this.onStatementReady(statement, callback, attachments);
-      }.bind(this));
+      });
     }
 
     /**
@@ -1544,9 +1539,9 @@ define([
 
       // Rather than calling the wrapper's sendStatements() function, iterate
       // over each statement and call sendStatement().
-      Async.each(statements, function(statement, nextStatement) {
+      Async.each(statements, (statement, nextStatement) => {
         this.sendStatement(statement, nextStatement);
-      }.bind(this), function(error) {
+      }, (error) => {
         if (error) {
           Adapt.log.error('adapt-contrib-xapi:', error);
           return callback(error);
@@ -1593,7 +1588,7 @@ define([
     }
   }
 
-  xAPI.getInstance = function() {
+  xAPI.getInstance = () => {
     if (!xAPI.instance) {
       xAPI.instance = new xAPI();
     }
@@ -1602,25 +1597,25 @@ define([
   };
 
   /** Adapt event listeners begin here */
-  Adapt.once('app:dataLoaded', function() {
+  Adapt.once('app:dataLoaded', () => {
     const xapi = xAPI.getInstance();
 
     xapi.initialize();
 
-    Adapt.on('adapt:initialize', function() {
+    Adapt.on('adapt:initialize', () => {
       xapi.setupListeners();
     });
 
-    Adapt.on('xapi:lrs:initialize:error', function(error) {
+    Adapt.on('xapi:lrs:initialize:error', error => {
       Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
       xapi.showError();
     });
 
-    Adapt.on('xapi:lrs:sendStatement:error', function(error) {
+    Adapt.on('xapi:lrs:sendStatement:error', error => {
       xapi.showError();
     });
 
-    Adapt.on('xapi:lrs:sendState:error', function(error) {
+    Adapt.on('xapi:lrs:sendState:error', error => {
       xapi.showError();
     });
   });

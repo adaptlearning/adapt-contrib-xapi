@@ -9,7 +9,7 @@ define([
     load() {
       // Use a lightweight fake model to pass into xAPI.sendState
       const fakeModel = {
-        get: function() {
+        get() {
           return 'offlineStorage';
         }
       };
