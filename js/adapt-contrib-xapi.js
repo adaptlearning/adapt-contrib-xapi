@@ -107,7 +107,7 @@ define([
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
-        var componentBlacklist = this.get('componentBlacklist');
+        let componentBlacklist = this.get('componentBlacklist');
 
         if (!_.isArray(componentBlacklist)) {
           // Create the blacklist array and force the items to lowercase.
@@ -119,7 +119,7 @@ define([
         this.set('componentBlacklist', componentBlacklist);
 
         if (!this.validateProps()) {
-          var error = new Error('Missing required properties');
+          const error = new Error('Missing required properties');
           Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
           this.onInitialised(error);
           return this;
@@ -130,7 +130,7 @@ define([
         this.courseDescription = Adapt.course.get('description') || '';
 
         // Send the 'launched' and 'initialized' statements.
-        var statements = [
+        const statements = [
           this.getCourseStatement(ADL.verbs.launched),
           this.getCourseStatement(ADL.verbs.initialized)
         ];
@@ -180,10 +180,10 @@ define([
      * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
      */
     getLearnerInfo() {
-      var globals = Adapt.course.get('_globals');
+      const globals = Adapt.course.get('_globals');
 
       if (!globals._learnerInfo) {
-          globals._learnerInfo = {};
+        globals._learnerInfo = {};
       }
 
       _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
@@ -234,7 +234,7 @@ define([
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
 
         // Set any attributes on the xAPIWrapper.
-        var configError;
+        let configError;
         try {
           this.setWrapperConfig();
         } catch (error) {
@@ -307,7 +307,7 @@ define([
         return;
       }
 
-      var statements = [];
+      const statements = [];
 
       if (!this.isComplete) {
         // If the course is still in progress, send the 'suspended' verb.
@@ -339,11 +339,11 @@ define([
      * Attempt to extract endpoint, user and password from the config.json.
      */
     setWrapperConfig() {
-      var keys = ['endpoint', 'user', 'password'];
-      var newConfig = {};
+      const keys = ['endpoint', 'user', 'password'];
+      const newConfig = {};
 
       _.each(keys, function(key) {
-        var val = this.getConfig('_' + key);
+        const val = this.getConfig('_' + key);
 
         if (val) {
           // Note: xAPI wrapper requires a trailing slash and protocol to be present
@@ -375,9 +375,9 @@ define([
      * @return {string} The URL to the current course.
      */
     getBaseUrl() {
-      var url = window.location.origin + window.location.pathname;
+      const url = window.location.origin + window.location.pathname;
 
-      Adapt.log.info('adapt-contrib-xapi: Using detected URL (' + url + ') as ActivityID');
+      Adapt.log.info(`adapt-contrib-xapi: Using detected URL (${url}) as ActivityID`);
 
       return url;
     }
@@ -396,13 +396,13 @@ define([
      * @return {string} - Duration in ISO8601 format
      */
     convertMillisecondsToISO8601Duration(inputMilliseconds) {
-      var hours;
-      var minutes;
-      var seconds;
-      var i_inputMilliseconds = parseInt(inputMilliseconds, 10);
-      var i_inputCentiseconds;
-      var inputIsNegative = '';
-      var rtnStr = '';
+      let hours;
+      let minutes;
+      let seconds;
+      const i_inputMilliseconds = parseInt(inputMilliseconds, 10);
+      let i_inputCentiseconds;
+      let inputIsNegative = '';
+      let rtnStr = '';
 
       // Round to nearest 0.01 seconds.
       i_inputCentiseconds = Math.round(i_inputMilliseconds / 10);
@@ -476,7 +476,7 @@ define([
       // course, contentobjects, articles, blocks and components.
       _.each(_.keys(this.coreEvents), function(key) {
         if (key !== 'Adapt') {
-          var val = this.coreEvents[key];
+          const val = this.coreEvents[key];
 
           if (typeof val === 'object' && val['change:_isComplete'] === true) {
             this.listenTo(Adapt[key], 'change:_isComplete', this.onItemComplete);
@@ -490,17 +490,17 @@ define([
      * @returns {ADL.XAPIStatement.Activity} Activity representing the course.
      */
     getCourseActivity() {
-      var object = new ADL.XAPIStatement.Activity(this.get('activityId'));
-      var name = {};
-      var description = {};
+      const object = new ADL.XAPIStatement.Activity(this.get('activityId'));
+      const name = {};
+      const description = {};
 
       name[this.get('displayLang')] = this.courseName;
       description[this.get('displayLang')] = this.courseDescription;
 
       object.definition = {
         type: ADL.activityTypes.course,
-        name: name,
-        description: description
+        name,
+        description
       };
 
       return object;
@@ -517,7 +517,7 @@ define([
         result = {};
       }
 
-      var object = this.getCourseActivity()
+      const object = this.getCourseActivity()
 
       // Append the duration.
       switch (verb) {
@@ -550,7 +550,7 @@ define([
      * @return {object} An object containing a key-value pair with the language code and name.
      */
     getNameObject(model) {
-      var name = {};
+      const name = {};
 
       name[this.get('displayLang')] = model.get('displayTitle') || model.get('title');
 
@@ -563,7 +563,7 @@ define([
      * @return {string} A URL to the current activity type.
      */
     getActivityType(model) {
-      var type = '';
+      let type = '';
 
       switch (model.get('_type')) {
         case 'component': {
@@ -606,17 +606,17 @@ define([
         return;
       }
 
-      var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
-      var isComplete = view.model.get('_isComplete');
-      var lang = this.get('displayLang');
-      var statement;
-      var description = {};
+      const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
+      const completion = view.model.get('_isComplete');
+      const lang = this.get('displayLang');
+      let statement;
+      const description = {};
 
       description[this.get('displayLang')] = this.stripHtml(view.model.get('body'));
 
       object.definition = {
         name: this.getNameObject(view.model),
-        description: description,
+        description,
         type: ADL.activityTypes.question,
         interactionType: view.getResponseType()
       };
@@ -628,13 +628,13 @@ define([
         // Ensure any 'description' properties are objects with the language map.
         _.each(_.keys(object.definition), function(key) {
           if (_.isArray(object.definition[key]) && object.definition[key].length !== 0) {
-            for (var i = 0; i < object.definition[key].length; i++) {
+            for (const i = 0; i < object.definition[key].length; i++) {
               if (!object.definition[key][i].hasOwnProperty('description')) {
                 break;
               }
 
               if (typeof object.definition[key][i].description === 'string') {
-                var description = {};
+                const description = {};
                 description[lang] = object.definition[key][i].description;
 
                 object.definition[key][i].description = description;
@@ -644,12 +644,12 @@ define([
         });
       }
 
-      var result = {
+      const result = {
         score: {
           raw: view.model.get('_score') || 0
         },
         success: view.model.get('_isCorrect'),
-        completion: isComplete,
+        completion,
         response: this.processInteractionResponse(object.definition.interactionType, view.getResponse())
       };
 
@@ -666,7 +666,7 @@ define([
      * @returns {string} The same string minus HTML
      */
     stripHtml(html) {
-      var tempDiv = document.createElement('div');
+      const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
 
       return tempDiv.textContent || tempDiv.innerText || '';
@@ -711,8 +711,8 @@ define([
         return;
       }
 
-      var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
-      var statement;
+      const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
+      let statement;
 
       object.definition = {
         name: this.getNameObject(model),
@@ -759,9 +759,9 @@ define([
         return;
       }
 
-      var result = { completion: true };
-      var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
-      var statement;
+      const result = { completion: true };
+      const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
+      let statement;
 
       object.definition = {
         name: this.getNameObject(model),
@@ -781,14 +781,14 @@ define([
      * @returns {XAPIStatement.Activity} Activity corresponding to the lesson.
      */
     getLessonActivity(page) {
-      var pageModel = (typeof page === 'string')
+      const pageModel = (typeof page === 'string')
         ? Adapt.findById(page)
         : page
-      var activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
-      var name = this.getNameObject(pageModel)
+      const activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
+      const name = this.getNameObject(pageModel)
 
       activity.definition = {
-        name: name,
+        name,
         type: ADL.activityTypes.lesson
       }
 
@@ -803,7 +803,7 @@ define([
      * @param {ADL.XAPIStatement} statement - A valid xAPI statement object.
      */
     addGroupingActivity(model, statement) {
-      var type = model.get('_type');
+      const type = model.get('_type');
 
       if (type !== 'course') {
         // Add a grouping for the course.
@@ -812,7 +812,7 @@ define([
 
       if (['article', 'block', 'component'].indexOf(type) !== -1) {
         // Group these items by page/lesson.
-        var pageModel = model.findAncestor('pages')
+        const pageModel = model.findAncestor('pages')
 
         statement.addGroupingActivity(this.getLessonActivity(pageModel));
       }
@@ -823,7 +823,7 @@ define([
 
         if (articleModel && articleModel.has('_assessment') && articleModel.get('_assessment')._isEnabled) {
           // Set the assessment as the parent.
-          var assessment = {
+          const assessment = {
             id: articleModel.get('_assessment')._id,
             articleId: articleModel.get('_id'),
             type: 'article-assessment',
@@ -841,7 +841,7 @@ define([
      * @return {object} - A result object containing score, success and completion properties.
      */
     getAssessmentResultObject(assessment) {
-      var result = {
+      return {
         score: {
           scaled: (assessment.scoreAsPercent / 100),
           raw: assessment.score,
@@ -851,8 +851,6 @@ define([
         success: assessment.isPass,
         completion: assessment.isComplete
       };
-
-      return result;
     }
 
     /**
@@ -862,14 +860,14 @@ define([
      */
     getAssessmentObject(assessment) {
       // Instantiate a Model so it can be used to obtain an IRI.
-      var fakeModel = new Backbone.Model({
+      const fakeModel = new Backbone.Model({
         _id: assessment.id || assessment.articleId,
         _type: assessment.type,
         pageId: assessment.pageId
       });
 
-      var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
-      var name = {};
+      const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
+      const name = {};
 
       name[this.get('displayLang')] = assessment.id || 'Assessment';
 
@@ -878,7 +876,7 @@ define([
         type: ADL.activityTypes.assessment
       };
 
-      return object
+      return object;
     }
 
     /**
@@ -886,11 +884,11 @@ define([
      * @param {object} assessment - Object representing the state of the assessment.
      */
     onAssessmentComplete(assessment) {
-      var self = this;
+      const self = this;
 
-      var object = this.getAssessmentObject(assessment)
-      var result = this.getAssessmentResultObject(assessment);
-      var statement;
+      const object = this.getAssessmentObject(assessment)
+      const result = this.getAssessmentResultObject(assessment);
+      let statement;
 
       if (assessment.isPass) {
         // Passed.
@@ -916,11 +914,11 @@ define([
      */
     getVerb(verb) {
       if (typeof verb === 'string') {
-        var key = verb.toLowerCase();
+        const key = verb.toLowerCase();
         verb = ADL.verbs[key];
 
         if (!verb) {
-          Adapt.log.error('adapt-contrib-xapi: Verb "' + key + '" does not exist in ADL.verbs object');
+          Adapt.log.error(`adapt-contrib-xapi: Verb " ${key} " does not exist in ADL.verbs object`);
         }
       }
 
@@ -928,14 +926,14 @@ define([
         throw new Error('Unrecognised verb: ' + verb);
       }
 
-      var lang = this.get('lang') || this.defaultLang;
+      const lang = this.get('lang') || this.defaultLang;
 
-      var singleLanguageVerb = {
+      const singleLanguageVerb = {
         id: verb.id,
         display: {}
       };
 
-      var description = verb.display[lang];
+      const description = verb.display[lang];
 
       if (description) {
         singleLanguageVerb.display[lang] = description;
@@ -953,8 +951,8 @@ define([
      * @return {string} An IRI formulated specific to the passed model.
      */
     getUniqueIri(model) {
-      var iri = this.get('activityId');
-      var type = model.get('_type');
+      let iri = this.get('activityId');
+      const type = model.get('_type');
 
       if (type !== 'course') {
         if (type === 'article-assessment') {
@@ -972,9 +970,9 @@ define([
      * @param {object} completionData
      */
     onTrackingComplete(completionData) {
-      var self = this;
-      var result = {};
-      var completionVerb;
+      const self = this;
+      let result = {};
+      let completionVerb;
 
       // Check the completion status.
       switch (completionData.status) {
@@ -1013,17 +1011,17 @@ define([
      * Refresh course progress from loaded state.
      */
     restoreState() {
-      var state = this.get('state');
+      const state = this.get('state');
 
       if (_.isEmpty(state)) {
         return;
       }
 
-      var Adapt = require('core/js/adapt');
+      const Adapt = require('core/js/adapt');
 
       if (state.components) {
         _.each(state.components, function(stateObject) {
-          var restoreModel = Adapt.findById(stateObject._id);
+          const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
             restoreModel.setTrackableState(stateObject);
@@ -1035,7 +1033,7 @@ define([
 
       if (state.blocks) {
         _.each(state.blocks, function(stateObject) {
-          var restoreModel = Adapt.findById(stateObject._id);
+          const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
             restoreModel.setTrackableState(stateObject);
@@ -1055,7 +1053,7 @@ define([
      * @return {ADL.XAPIStatement} A formatted xAPI statement object.
      */
     getStatement(verb, object, result, context) {
-      var statement = new ADL.XAPIStatement(
+      const statement = new ADL.XAPIStatement(
         new ADL.XAPIStatement.Agent(this.get('actor')),
         verb,
         object
@@ -1085,21 +1083,21 @@ define([
         return;
       }
 
-      var activityId = this.get('activityId');
-      var actor = this.get('actor');
-      var type = model.get('_type');
-      var state = this.get('state');
-      var registration = this.get('shouldUseRegistration') === true 
+      const activityId = this.get('activityId');
+      const actor = this.get('actor');
+      const type = model.get('_type');
+      const state = this.get('state');
+      const registration = this.get('shouldUseRegistration') === true 
         ? this.get('registration')
         : null;
-      var collectionName = _.findKey(this.coreObjects, function(o) {
+      const collectionName = _.findKey(this.coreObjects, function(o) {
         return o === type || o.indexOf(type) > -1
       });
-      var stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
-      var newState;
+      const stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
+      let newState;
 
       if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
-        var index = _.findIndex(stateCollection, { _id: model.get('_id') });
+        const index = _.findIndex(stateCollection, { _id: model.get('_id') });
 
         if (index !== -1) {
           stateCollection.splice(index, 1, modelState);
@@ -1115,7 +1113,7 @@ define([
       // Update the locally held state.
       state[collectionName] = newState;
       this.set({
-        state: state
+        state
       });
 
       // Pass the new state to the LRS.
@@ -1135,13 +1133,13 @@ define([
     getState(callback) {
       callback = _.isFunction(callback) ? callback : function() { };
 
-      var self = this;
-      var activityId = this.get('activityId');
-      var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      const self = this;
+      const activityId = this.get('activityId');
+      const actor = this.get('actor');
+      const registration = this.get('shouldUseRegistration') === true 
         ? this.get('registration')
         : null;
-      var state = {};
+      const state = {};
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
@@ -1165,8 +1163,8 @@ define([
               return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
             }
 
-            var response;
-            var parseError;
+            let response;
+            let parseError;
 
             // Check for empty response, otherwise the subsequent JSON.parse() will fail.
             if (xhr.response === '') {
@@ -1197,7 +1195,7 @@ define([
         }
 
         if (!_.isEmpty(state)) {
-          self.set({ state: state });
+          self.set({ state });
         }
 
         Adapt.trigger('xapi:stateLoaded');
@@ -1213,10 +1211,10 @@ define([
     deleteState(callback) {
       callback = _.isFunction(callback) ? callback : function() { };
 
-      var self = this;
-      var activityId = this.get('activityId');
-      var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      const self = this;
+      const activityId = this.get('activityId');
+      const actor = this.get('actor');
+      const registration = this.get('shouldUseRegistration') === true 
         ? this.get('registration')
         : null;
  
@@ -1275,7 +1273,7 @@ define([
       try {
         switch(key) {
           case 'actor': {
-            var actor = JSON.parse(this.xapiWrapper.lrs[key]);
+            const actor = JSON.parse(this.xapiWrapper.lrs[key]);
 
             if (_.isArray(actor.name)) {
               // Convert the name from an array to a string.
@@ -1289,7 +1287,7 @@ define([
 
             // If the account is an array, some work will be required.
             if (_.isArray(actor.account)) {
-              var account = {};
+              const account = {};
 
               // Convert 'accountServiceHomePage' to 'homePage'.
               if (typeof actor.account[0].accountServiceHomePage !== 'undefined') {
@@ -1332,7 +1330,7 @@ define([
     }
 
     getLRSExtendedAttribute(key) {
-      var extended = this.getLRSAttribute('extended');
+      const extended = this.getLRSAttribute('extended');
       if (extended == null) {
         return null;
       }
@@ -1354,7 +1352,7 @@ define([
      * @return {boolean} true if the properties are valid, false otherwise.
      */
     validateProps() {
-      var errorCount = 0;
+      let errorCount = 0;
 
       if (!this.get('actor') || typeof this.get('actor') !== 'object') {
         Adapt.log.warn('adapt-contrib-xapi: "actor" attribute not found!');
@@ -1407,7 +1405,7 @@ define([
      * and terminated statements more reliable.
      */
     sendStatementsSync(statements) {
-      var lrs = ADL.XAPIWrapper.lrs;
+      const lrs = ADL.XAPIWrapper.lrs;
 
       // Fetch not supported in IE and keepalive/custom headers
       // not supported for CORS preflight requests so attempt
@@ -1416,16 +1414,16 @@ define([
         return this.sendStatements(statements);
       }
 
-      var url = lrs.endpoint + 'statements';
-      var credentials = ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
-      var headers = {
+      let url = lrs.endpoint + 'statements';
+      const credentials = ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
+      const headers = {
         'Content-Type': 'application/json',
         'Authorization': lrs.auth,
         'X-Experience-API-Version': ADL.XAPIWrapper.xapiVersion
       };
 
       // Add extended LMS-specified values to the URL
-      var extended = _.map(lrs.extended, function(value, key) {
+      const extended = _.map(lrs.extended, function(value, key) {
         return key + '=' + encodeURIComponent(value);
       });
 
@@ -1436,8 +1434,8 @@ define([
       fetch(url, {
         body: JSON.stringify(statements),
         cache: 'no-cache',
-        credentials: credentials,
-        headers: headers,
+        credentials,
+        headers,
         mode: 'same-origin',
         keepalive: true,
         method: 'POST'
@@ -1454,10 +1452,10 @@ define([
      * @returns {boolean}
      */
     isCORS(url) {
-      var urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
-      var isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
+      const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
+      let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
       if (!isCORS) {
-        var urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
+        const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
         isCORS = (urlPort === location.port);
       }
 
@@ -1491,7 +1489,7 @@ define([
      * @param {ADLCallback} [callback]
      */
     processAttachments(statement, callback) {
-      var attachments = statement.attachments;
+      const attachments = statement.attachments;
 
       Async.each(attachments, function(attachment, nextAttachment) {
 
@@ -1501,12 +1499,12 @@ define([
         } else if (attachment.url) {
           // If a url is specified then we need to obtain the string value
           // Use native xhr so we can set the responseType to 'blob'
-          var xhr = new XMLHttpRequest();
+          const xhr = new XMLHttpRequest();
           xhr.onreadystatechange = function() {
             if (this.readyState === 4 && this.status === 200) {
 
               // Use FileReader to retrieve the blob contents as a string
-              var reader = new FileReader();
+              const reader = new FileReader();
               reader.onload = function() {
 
                 // Store the string value in the attachment object and
@@ -1580,7 +1578,7 @@ define([
         return;
       }
 
-      var notifyObject = {
+      const notifyObject = {
         title: this.getGlobals().lrsConnectionErrorTitle,
         body: this.getGlobals().lrsConnectionErrorMessage,
         confirmText: this.getGlobals().confirm
@@ -1605,7 +1603,7 @@ define([
 
   /** Adapt event listeners begin here */
   Adapt.once('app:dataLoaded', function() {
-    var xapi = xAPI.getInstance();
+    const xapi = xAPI.getInstance();
 
     xapi.initialize();
 

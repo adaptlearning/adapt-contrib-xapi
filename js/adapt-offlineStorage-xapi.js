@@ -8,14 +8,14 @@ define([
 
     load() {
       // Use a lightweight fake model to pass into xAPI.sendState
-      var fakeModel = {
+      const fakeModel = {
         get: function() {
           return 'offlineStorage';
         }
       };
 
-      var store = new Backbone.Model();
-      var isDataRestored = false;
+      const store = new Backbone.Model();
+      let isDataRestored = false;
 
       Adapt.offlineStorage.initialize({
 
@@ -33,7 +33,7 @@ define([
 
         getAll() {
           if (!isDataRestored) {
-            var state = xapi.get('state') || {};
+            const state = xapi.get('state') || {};
             store.set(state.offlineStorage);
             isDataRestored = true;
           }
@@ -63,11 +63,11 @@ define([
          * @returns {{id: string, name: string, firstname: string, lastname: string}} The learner's id, full name (in the format Firstname Lastname), first and last names
          */
         getLearnerInfo() {
-          var actor = xapi.get('actor') || {};
-          var name = actor.name || '';
-          var lastname;
-          var firstname;
-          var matches = name.match(/(\S+)\s(.+)/);
+          const actor = xapi.get('actor') || {};
+          const name = actor.name || '';
+          let lastname;
+          let firstname;
+          const matches = name.match(/(\S+)\s(.+)/);
 
           if (matches && matches.length > 2) {
             lastname = matches[2];
@@ -78,9 +78,9 @@ define([
 
           return {
             id: this.getLearnerId(actor),
-            name: name,
-            lastname: lastname,
-            firstname: firstname
+            name,
+            lastname,
+            firstname
           };
         },
 
@@ -90,7 +90,7 @@ define([
          * @return {string} the learner's unique id
          */
         getLearnerId(actor) {
-          var name = actor.account && actor.account.name;
+          const name = actor.account && actor.account.name;
 
           if (name) {
             return name;
