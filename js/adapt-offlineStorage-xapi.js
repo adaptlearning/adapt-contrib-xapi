@@ -4,9 +4,9 @@ define([
 ], function(Adapt, xapi) {
 
   //xAPI handler for Adapt.offlineStorage interface.
-  var offlineStorage = {
+  const offlineStorage = {
 
-    load: function() {
+    load() {
       // Use a lightweight fake model to pass into xAPI.sendState
       var fakeModel = {
         get: function() {
@@ -19,7 +19,7 @@ define([
 
       Adapt.offlineStorage.initialize({
 
-        get: function(name) {
+        get(name) {
           if (!name) {
             return this.getAll();
           }
@@ -31,7 +31,7 @@ define([
           return store.get(name);
         },
 
-        getAll: function() {
+        getAll() {
           if (!isDataRestored) {
             var state = xapi.get('state') || {};
             store.set(state.offlineStorage);
@@ -48,21 +48,21 @@ define([
           });
         },
 
-        set: function(name, value) {
+        set(name, value) {
           store.set(name, value);
 
           // xAPI may not yet be initialised so use a soft trigger rather than hard calling xAPI.sendState
           Adapt.trigger('state:change', fakeModel, store.toJSON());
         },
 
-        useTemporaryStore: function() {
+        useTemporaryStore() {
           return !xapi.get('isInitialised');
         },
 
         /**
          * @returns {{id: string, name: string, firstname: string, lastname: string}} The learner's id, full name (in the format Firstname Lastname), first and last names
          */
-        getLearnerInfo: function() {
+        getLearnerInfo() {
           var actor = xapi.get('actor') || {};
           var name = actor.name || '';
           var lastname;
@@ -89,7 +89,7 @@ define([
          * @param {object} actor
          * @return {string} the learner's unique id
          */
-        getLearnerId: function(actor) {
+        getLearnerId(actor) {
           var name = actor.account && actor.account.name;
 
           if (name) {
@@ -112,7 +112,7 @@ define([
       });
     }
 
-  };
+  }
 
   return offlineStorage;
 
