@@ -83,7 +83,7 @@ class xAPI extends Backbone.Model {
     Adapt.wait.begin();
 
     // Initialize the xAPIWrapper.
-    this.initializeWrapper = error => {
+    this.initializeWrapper(error => {
       if (error) {
         this.onInitialised(error);
         return this;
@@ -165,7 +165,7 @@ class xAPI extends Backbone.Model {
           return this;
         });
       });
-    }
+    });
   }
 
   /**
