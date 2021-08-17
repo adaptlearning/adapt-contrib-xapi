@@ -627,7 +627,7 @@ define([
 
         // Ensure any 'description' properties are objects with the language map.
         _.keys(object.definition).forEach(key => {
-          if (Array.isArray(object.definition[key]) && object.definition[key].length !== 0) {
+          if (object.definition[key]?.length !== 0) {
             for (const i = 0; i < object.definition[key].length; i++) {
               if (!object.definition[key][i].hasOwnProperty('description')) {
                 break;
@@ -821,7 +821,7 @@ define([
         // Get the article containing this question component.
         let articleModel = model.findAncestor('articles')
 
-        if (articleModel && articleModel.has('_assessment') && articleModel.get('_assessment')._isEnabled) {
+        if (articleModel?.has('_assessment')?._isEnabled) {
           // Set the assessment as the parent.
           const assessment = {
             id: articleModel.get('_assessment')._id,
@@ -1554,11 +1554,7 @@ define([
     getGlobals() {
       return _.defaults(
         (
-          Adapt &&
-          Adapt.course &&
-          Adapt.course.get('_globals') &&
-          Adapt.course.get('_globals')._extensions &&
-          Adapt.course.get('_globals')._extensions._xapi
+          Adapt?.course?.get('_globals')?._extensions?._xapi
         ) || {},
         {
           'confirm': 'OK',

@@ -69,7 +69,7 @@ define([
           let firstname;
           const matches = name.match(/(\S+)\s(.+)/);
 
-          if (matches && matches.length > 2) {
+          if (matches?.length > 2) {
             lastname = matches[2];
             firstname = matches[1];
           } else {
@@ -90,7 +90,7 @@ define([
          * @return {string} the learner's unique id
          */
         getLearnerId(actor) {
-          const name = actor.account && actor.account.name;
+          const name = actor.account?.name;
 
           if (name) {
             return name;
