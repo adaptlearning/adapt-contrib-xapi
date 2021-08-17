@@ -78,15 +78,7 @@ class xAPI extends Backbone.Model {
 
   /** Implementation starts here */
   initialize() {
-    if (!Adapt.config) {
-      return;
-    }
-
-    this.config = Adapt.config.get('_xapi');
-
-    if (!this.getConfig('_isEnabled')) {
-      return this;
-    }
+    if (!this.getConfig('_isEnabled')) return this;
 
     Adapt.wait.begin();
 
@@ -209,52 +201,52 @@ class xAPI extends Backbone.Model {
         this.xapiWrapper.strictCallbacks = true;
 
         callback();
-      } else {
-        // If no endpoint is configured, assume this is using the ADL launch method.
-        ADL.launch((error, launchData, xapiWrapper) => {
-          if (error) {
-            return callback(error);
-          }
+        return;
+      } 
+      // If no endpoint is configured, assume this is using the ADL launch method.
+      ADL.launch((error, launchData, xapiWrapper) => {
+        if (error) {
+          return callback(error);
+        }
 
-          // Initialise the xAPI wrapper.
-          this.xapiWrapper = xapiWrapper;
+        // Initialise the xAPI wrapper.
+        this.xapiWrapper = xapiWrapper;
 
-          this.set({
-            actor: launchData.actor
-          });
+        this.set({
+          actor: launchData.actor
+        });
 
-          this.xapiWrapper.strictCallbacks = true;
+        this.xapiWrapper.strictCallbacks = true;
 
-          callback();
-        }, true, true);
-      }
-    } else {
-      // The endpoint has been defined in the config, so use the static values.
-      // Initialise the xAPI wrapper.
-      this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
-
-      // Set any attributes on the xAPIWrapper.
-      let configError;
-      try {
-        this.setWrapperConfig();
-      } catch (error) {
-        configError = error;
-      }
-
-      if (configError) {
-        return callback(error);
-      }
-
-      // Set the LRS specific properties.
-      this.set({
-        registration: this.getLRSAttribute('registration'),
-        actor: this.getLRSAttribute('actor')
-      });
-
-      this.xapiWrapper.strictCallbacks = true;
-
-      callback();
+        callback();
+      }, true, true);
+      return;
     }
+    // The endpoint has been defined in the config, so use the static values.
+    // Initialise the xAPI wrapper.
+    this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
+
+    // Set any attributes on the xAPIWrapper.
+    let configError;
+    try {
+      this.setWrapperConfig();
+    } catch (error) {
+      configError = error;
+    }
+
+    if (configError) {
+      return callback(error);
+    }
+
+    // Set the LRS specific properties.
+    this.set({
+      registration: this.getLRSAttribute('registration'),
+      actor: this.getLRSAttribute('actor')
+    });
+
+    this.xapiWrapper.strictCallbacks = true;
+
+    callback();
   }
 
   /**
@@ -303,9 +295,7 @@ class xAPI extends Backbone.Model {
 
   // Sends (optional) 'suspended' and 'terminated' statements to the LRS.
   sendUnloadStatements() {
-    if (this.isTerminated) {
-      return;
-    }
+    if (this.isTerminated) return;
 
     const statements = [];
 
@@ -328,11 +318,10 @@ class xAPI extends Backbone.Model {
   */
   checkWrapperConfig() {
     if (this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
-      && this.xapiWrapper.lrs.auth && this.xapiWrapper.lrs.activity_id ) {
-        return true;
-      } else {
-        return false;
-      }
+    && this.xapiWrapper.lrs.auth && this.xapiWrapper.lrs.activity_id ) {
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -597,14 +586,11 @@ class xAPI extends Backbone.Model {
    * @param {ComponentView} view - An instance of Adapt.ComponentView.
    */
   onQuestionInteraction(view) {
-    if (!view.model || view.model.get('_type') !== 'component' && !view.model.get('_isQuestionType')) {
-      return;
-    }
+    if (!view.model || view.model.get('_type') !== 'component'
+      && !view.model.get('_isQuestionType')) return;
 
-    if (this.isComponentOnBlacklist(view.model.get('_component'))) {
-      // This component is on the blacklist, so do not send a statement.
-      return;
-    }
+    // This component is on the blacklist, so do not send a statement.
+    if (this.isComponentOnBlacklist(view.model.get('_component'))) return;
 
     const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
     const completion = view.model.get('_isComplete');
@@ -741,23 +727,17 @@ class xAPI extends Backbone.Model {
    * @param {boolean} isComplete - Flag to indicate if the model has been completed
    */
   onItemComplete(model, isComplete) {
-    if (isComplete === false) {
-      // The item is not actually completed, e.g. it may have been reset.
-      return;
-    }
+    // The item is not actually completed, e.g. it may have been reset.
+    if (isComplete === false) return;
 
     // If this is a question component (interaction), do not record multiple statements.
+    // Return because 'Answered' will already have been passed.
     if (model.get('_type') === 'component' && model.get('_isQuestionType') === true
       && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
-      && this.coreEvents['components']['change:_isComplete'] === true) {
-      // Return because 'Answered' will already have been passed.
-      return;
-    }
+      && this.coreEvents['components']['change:_isComplete'] === true) return;
 
-    if (model.get('_type') === 'component' && this.isComponentOnBlacklist(model.get('_component'))) {
-      // This component is on the blacklist, so do not send a statement.
-      return;
-    }
+    // This component is on the blacklist, so do not send a statement.
+    if (model.get('_type') === 'component' && this.isComponentOnBlacklist(model.get('_component'))) return;
 
     const result = { completion: true };
     const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
@@ -935,11 +915,10 @@ class xAPI extends Backbone.Model {
 
     if (description) {
       singleLanguageVerb.display[lang] = description;
-    } else {
-      // Fallback in case the verb translation doesn't exist.
-      singleLanguageVerb.display[this.defaultLang] = verb.display[this.defaultLang];
+      return singleLanguageVerb;
     }
-
+    // Fallback in case the verb translation doesn't exist.
+    singleLanguageVerb.display[this.defaultLang] = verb.display[this.defaultLang];
     return singleLanguageVerb;
   }
 
@@ -1010,9 +989,7 @@ class xAPI extends Backbone.Model {
   restoreState() {
     const state = this.get('state');
 
-    if (state.length === 0) {
-      return;
-    }
+    if (state.length === 0) return;
 
     const Adapt = require('core/js/adapt');
 
@@ -1248,11 +1225,12 @@ class xAPI extends Backbone.Model {
    * @return {object|boolean} The attribute value, or false if not found.
    */
   getConfig(key) {
-    if (!this.config || key === '' || typeof this.config[key] === 'undefined') {
+    const config = Adapt.config?.get('_xapi');
+    if (!config || key === '' || typeof config[key] === 'undefined') {
       return false;
     }
 
-    return this.config[key];
+    return config[key];
   }
 
   /**
@@ -1307,15 +1285,6 @@ class xAPI extends Backbone.Model {
 
           return actor;
         }
-        // case 'registration': {
-        //   var registration = this.xapiWrapper.lrs[key];
-        //   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(registration)) {
-        //     // The 'registration' isn't a valid UUID, generate one.
-        //     return ADL.ruuid();
-        //   } else {
-        //     return registration;
-        //   }
-        // }
         default:
           return this.xapiWrapper.lrs[key];
       }
@@ -1358,10 +1327,6 @@ class xAPI extends Backbone.Model {
       Adapt.log.warn('adapt-contrib-xapi: "activityId" attribute not found!');
       errorCount++;
     }
-
-    // if (!this.get('registration')) {
-    //   Adapt.log.warn('adapt-contrib-xapi: "registration" attribute not found!');
-    // }
 
     if (errorCount > 0) {
       return false;
@@ -1565,9 +1530,7 @@ class xAPI extends Backbone.Model {
   }
 
   showError() {
-    if (this.getConfig('_lrsFailureBehaviour') === 'ignore') {
-      return;
-    }
+    if (this.getConfig('_lrsFailureBehaviour') === 'ignore') return;
 
     const notifyObject = {
       title: this.getGlobals().lrsConnectionErrorTitle,
