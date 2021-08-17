@@ -109,7 +109,7 @@ define([
 
         let componentBlacklist = this.get('componentBlacklist');
 
-        if (!_.isArray(componentBlacklist)) {
+        if (!Array.isArray(componentBlacklist)) {
           // Create the blacklist array and force the items to lowercase.
           componentBlacklist = componentBlacklist.split(/,\s?/).map(component => {
             return component.toLowerCase();
@@ -160,7 +160,7 @@ define([
               return this;
             }
 
-            if (_.isEmpty(this.get('state'))) {
+            if (this.get('state').length === 0) {
               // This is a new attempt, send 'attempted'.
               this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
             } else {
@@ -342,7 +342,7 @@ define([
       const keys = ['endpoint', 'user', 'password'];
       const newConfig = {};
 
-      _.each(keys, key => {
+      keys.forEach(key => {
         const val = this.getConfig('_' + key);
 
         if (val) {
@@ -361,7 +361,7 @@ define([
         }
       });
 
-      if (!_.isEmpty(newConfig)) {
+      if (!newConfig.length > 0) {
         this.xapiWrapper.changeConfig(newConfig);
 
         if (!this.xapiWrapper.testConfig()) {
@@ -474,7 +474,7 @@ define([
 
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.
-      _.each(_.keys(this.coreEvents), key => {
+      _.keys(this.coreEvents).forEach(key => {
         if (key !== 'Adapt') {
           const val = this.coreEvents[key];
 
@@ -626,8 +626,8 @@ define([
         _.extend(object.definition, view.getInteractionObject());
 
         // Ensure any 'description' properties are objects with the language map.
-        _.each(_.keys(object.definition), key => {
-          if (_.isArray(object.definition[key]) && object.definition[key].length !== 0) {
+        _.keys(object.definition).forEach(key => {
+          if (Array.isArray(object.definition[key]) && object.definition[key].length !== 0) {
             for (const i = 0; i < object.definition[key].length; i++) {
               if (!object.definition[key][i].hasOwnProperty('description')) {
                 break;
@@ -1010,14 +1010,14 @@ define([
     restoreState() {
       const state = this.get('state');
 
-      if (_.isEmpty(state)) {
+      if (state.length === 0) {
         return;
       }
 
       const Adapt = require('core/js/adapt');
 
       if (state.components) {
-        _.each(state.components, stateObject => {
+        state.components.forEach(stateObject => {
           const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
@@ -1029,7 +1029,7 @@ define([
       }
 
       if (state.blocks) {
-        _.each(state.blocks, stateObject => {
+        state.blocks.forEach(stateObject => {
           const restoreModel = Adapt.findById(stateObject._id);
 
           if (restoreModel) {
@@ -1056,7 +1056,7 @@ define([
         object
       );
 
-      if (result && !_.isEmpty(result)) {
+      if (result.length > 0) {
         statement.result = result;
       }
 
@@ -1090,7 +1090,7 @@ define([
       const collectionName = _.findKey(this.coreObjects, o => {
         return o === type || o.indexOf(type) > -1
       });
-      const stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
+      const stateCollection = Array.isArray(state[collectionName]) ? state[collectionName] : [];
       let newState;
 
       if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
@@ -1190,7 +1190,7 @@ define([
           return callback(error);
         }
 
-        if (!_.isEmpty(state)) {
+        if (state.length > 0) {
           this.set({ state });
         }
 
@@ -1270,18 +1270,18 @@ define([
           case 'actor': {
             const actor = JSON.parse(this.xapiWrapper.lrs[key]);
 
-            if (_.isArray(actor.name)) {
+            if (Array.isArray(actor.name)) {
               // Convert the name from an array to a string.
               actor.name = actor.name[0];
             }
 
-            if (_.isArray(actor.mbox)) {
+            if (Array.isArray(actor.mbox)) {
               // Convert mbox from an array to a string.
               actor.mbox = actor.mbox[0];
             }
 
             // If the account is an array, some work will be required.
-            if (_.isArray(actor.account)) {
+            if (Array.isArray(actor.account)) {
               const account = {};
 
               // Convert 'accountServiceHomePage' to 'homePage'.
@@ -1387,7 +1387,7 @@ define([
 
       // Allow the trigger above to augment attachments if the attachments
       // parameter is not set.
-      if (_.isUndefined(attachments) && statement.attachments) {
+      if (attachments === undefined && statement.attachments) {
         return this.processAttachments(statement, callback);
       } else {
         this.onStatementReady(statement, callback, attachments);
@@ -1418,7 +1418,7 @@ define([
       };
 
       // Add extended LMS-specified values to the URL
-      const extended = _.map(lrs.extended, (value, key) => {
+      const extended = lrs.extended.map((value, key) => {
         return key + '=' + encodeURIComponent(value);
       });
 
