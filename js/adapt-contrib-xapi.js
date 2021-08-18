@@ -235,7 +235,7 @@ class xAPI extends Backbone.Model {
     }
 
     if (configError) {
-      return callback(error);
+      return callback(configError);
     }
 
     // Set the LRS specific properties.
@@ -253,7 +253,7 @@ class xAPI extends Backbone.Model {
    * Triggers 'plugin:endWait' event (if required).
    */
   onInitialised(error) {
-    this.set({ isInitialised: !!!error });
+    this.set({ isInitialised: !error });
 
     Adapt.wait.end();
 
