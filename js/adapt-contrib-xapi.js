@@ -328,7 +328,7 @@ class xAPI extends Backbone.Model {
     const newConfig = {};
 
     keys.forEach(key => {
-      const val = this.getConfig('_' + key);
+      let val = this.getConfig('_' + key);
 
       if (val) {
         // Note: xAPI wrapper requires a trailing slash and protocol to be present
@@ -1566,11 +1566,11 @@ Adapt.once('app:dataLoaded', () => {
     xapi.showError();
   });
 
-  Adapt.on('xapi:lrs:sendStatement:error', error => {
+  Adapt.on('xapi:lrs:sendStatement:error', () => {
     xapi.showError();
   });
 
-  Adapt.on('xapi:lrs:sendState:error', error => {
+  Adapt.on('xapi:lrs:sendState:error', () => {
     xapi.showError();
   });
 });
