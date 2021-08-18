@@ -231,10 +231,6 @@ class xAPI extends Backbone.Model {
     try {
       this.setWrapperConfig();
     } catch (error) {
-      configError = error;
-    }
-
-    if (configError) {
       return callback(configError);
     }
 
