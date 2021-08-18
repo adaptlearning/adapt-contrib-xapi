@@ -9,7 +9,6 @@ import Adapt from 'core/js/adapt';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import Async from 'libraries/async.min';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
-import urlPolyfill from 'libraries/url-polyfill.min';
 
 'use strict';
 
@@ -35,7 +34,6 @@ class xAPI extends Backbone.Model {
     }
 
     this.xapiWrapper = XAPIWrapper;
-    this.urlPolyfill = urlPolyfill;
     this.startAttemptDuration = 0;
     this.startTimeStamp = null;
     this.courseName = '';
