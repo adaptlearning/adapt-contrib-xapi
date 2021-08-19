@@ -225,10 +225,9 @@ class xAPI extends Backbone.Model {
     this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
 
     // Set any attributes on the xAPIWrapper.
-    let configError;
     try {
       this.setWrapperConfig();
-    } catch (error) {
+    } catch (configError) {
       return callback(configError);
     }
 
@@ -311,10 +310,8 @@ class xAPI extends Backbone.Model {
   * Check Wrapper to see if all parameters needed are set.
   */
   checkWrapperConfig() {
-    if (this.xapiWrapper.lrs.endpoint && this.xapiWrapper.lrs.actor
-    && this.xapiWrapper.lrs.auth && this.xapiWrapper.lrs.activity_id ) {
-      return true;
-    }
+    const lrs = this.xapiWrapper.lrs;
+    if (lrs.endpoint && lrs.actor && lrs.auth && lrs.activity_id ) return true;
     return false;
   }
 
@@ -344,7 +341,7 @@ class xAPI extends Backbone.Model {
       }
     });
 
-    if (!newConfig.length > 0) {
+    if (newConfig.length > 0) {
       this.xapiWrapper.changeConfig(newConfig);
 
       if (!this.xapiWrapper.testConfig()) {
@@ -383,12 +380,11 @@ class xAPI extends Backbone.Model {
     let minutes;
     let seconds;
     const i_inputMilliseconds = parseInt(inputMilliseconds, 10);
-    let i_inputCentiseconds;
     let inputIsNegative = '';
     let rtnStr = '';
 
     // Round to nearest 0.01 seconds.
-    i_inputCentiseconds = Math.round(i_inputMilliseconds / 10);
+    let i_inputCentiseconds = Math.round(i_inputMilliseconds / 10);
 
     if (i_inputCentiseconds < 0) {
       inputIsNegative = '-';
@@ -1348,9 +1344,8 @@ class xAPI extends Backbone.Model {
     // parameter is not set.
     if (attachments === undefined && statement.attachments) {
       return this.processAttachments(statement, callback);
-    } else {
-      this.onStatementReady(statement, callback, attachments);
     }
+    this.onStatementReady(statement, callback, attachments);
   }
 
   /**

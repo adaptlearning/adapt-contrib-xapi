@@ -1,10 +1,8 @@
 import Adapt from 'core/js/adapt';
 import offlineStorage from './adapt-offlineStorage-xapi';
-import xAPI from './adapt-contrib-xapi';
   
 class xAPIIndex extends Backbone.Controller {
   initialise() {
-    this.xAPI = xAPI;
     const config = Adapt.config.get('_xapi') || {};
 
     if (!config._isEnabled) {
