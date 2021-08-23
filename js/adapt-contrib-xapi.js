@@ -31,7 +31,7 @@ class xAPI extends Backbone.Model {
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
-    }
+    };
 
     this.xapiWrapper = XAPIWrapper;
     this.startAttemptDuration = 0;
@@ -61,7 +61,7 @@ class xAPI extends Backbone.Model {
       components: {
         'change:_isComplete': true
       }
-    }
+    };
 
     // An object describing the core Adapt framework collections.
     this.coreObjects = {
@@ -71,7 +71,7 @@ class xAPI extends Backbone.Model {
       blocks: 'block',
       components: 'component',
       offlineStorage: 'offlineStorage'
-    }
+    };
   }
 
   /** Implementation starts here */
@@ -416,7 +416,7 @@ class xAPI extends Backbone.Model {
     }
 
     // Allow surfacing the learner's info in _globals.
-    this.getLearnerInfo()
+    this.getLearnerInfo();
 
     this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
@@ -496,7 +496,7 @@ class xAPI extends Backbone.Model {
       result = {};
     }
 
-    const object = this.getCourseActivity()
+    const object = this.getCourseActivity();
 
     // Append the duration.
     switch (verb) {
@@ -576,8 +576,8 @@ class xAPI extends Backbone.Model {
    * @param {ComponentView} view - An instance of Adapt.ComponentView.
    */
   onQuestionInteraction(view) {
-    if (!view.model || view.model.get('_type') !== 'component'
-      && !view.model.get('_isQuestionType')) return;
+    if (!view.model || view.model.get('_type') !== 'component' &&
+      !view.model.get('_isQuestionType')) return;
 
     // This component is on the blacklist, so do not send a statement.
     if (this.isComponentOnBlacklist(view.model.get('_component'))) return;
@@ -604,7 +604,7 @@ class xAPI extends Backbone.Model {
       // Ensure any 'description' properties are objects with the language map.
       _.keys(object.definition).forEach(key => {
         if (object.definition[key]?.length !== 0) {
-          for (const i = 0; i < object.definition[key].length; i++) {
+          for (let i = 0; i < object.definition[key].length; i++) {
             if (!object.definition[key][i].hasOwnProperty('description')) {
               break;
             }
@@ -632,7 +632,7 @@ class xAPI extends Backbone.Model {
     // Answered
     statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
 
-    this.addGroupingActivity(view.model, statement)
+    this.addGroupingActivity(view.model, statement);
     this.sendStatement(statement);
   }
 
@@ -667,7 +667,7 @@ class xAPI extends Backbone.Model {
         response = response
           .split('#')
           .map((val, i) => {
-            return (i + 1) + '[.]' + val.replace('.', '_')
+            return (i + 1) + '[.]' + val.replace('.', '_');
           })
           .join('[,]');
         break;
@@ -698,7 +698,7 @@ class xAPI extends Backbone.Model {
     // Experienced.
     statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
-    this.addGroupingActivity(model, statement)
+    this.addGroupingActivity(model, statement);
     this.sendStatement(statement);
   }
 
@@ -722,9 +722,9 @@ class xAPI extends Backbone.Model {
 
     // If this is a question component (interaction), do not record multiple statements.
     // Return because 'Answered' will already have been passed.
-    if (model.get('_type') === 'component' && model.get('_isQuestionType') === true
-      && this.coreEvents['Adapt']['questionView:recordInteraction'] === true
-      && this.coreEvents['components']['change:_isComplete'] === true) return;
+    if (model.get('_type') === 'component' && model.get('_isQuestionType') === true &&
+      this.coreEvents['Adapt']['questionView:recordInteraction'] === true &&
+      this.coreEvents['components']['change:_isComplete'] === true) return;
 
     // This component is on the blacklist, so do not send a statement.
     if (model.get('_type') === 'component' && this.isComponentOnBlacklist(model.get('_component'))) return;
@@ -741,7 +741,7 @@ class xAPI extends Backbone.Model {
     // Completed.
     statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
 
-    this.addGroupingActivity(model, statement)
+    this.addGroupingActivity(model, statement);
     this.sendStatement(statement);
   }
 
@@ -753,14 +753,14 @@ class xAPI extends Backbone.Model {
   getLessonActivity(page) {
     const pageModel = (typeof page === 'string')
       ? Adapt.findById(page)
-      : page
-    const activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
-    const name = this.getNameObject(pageModel)
+      : page;
+    const activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel));
+    const name = this.getNameObject(pageModel);
 
     activity.definition = {
       name,
       type: ADL.activityTypes.lesson
-    }
+    };
 
     return activity;
   }
@@ -777,19 +777,19 @@ class xAPI extends Backbone.Model {
 
     if (type !== 'course') {
       // Add a grouping for the course.
-      statement.addGroupingActivity(this.getCourseActivity())
+      statement.addGroupingActivity(this.getCourseActivity());
     }
 
     if (['article', 'block', 'component'].indexOf(type) !== -1) {
       // Group these items by page/lesson.
-      const pageModel = model.findAncestor('pages')
+      const pageModel = model.findAncestor('pages');
 
       statement.addGroupingActivity(this.getLessonActivity(pageModel));
     }
 
     if (type === 'component' && model.get('_isPartOfAssessment')) {
       // Get the article containing this question component.
-      let articleModel = model.findAncestor('articles')
+      let articleModel = model.findAncestor('articles');
 
       if (articleModel?.has('_assessment')?._isEnabled) {
         // Set the assessment as the parent.
@@ -798,9 +798,9 @@ class xAPI extends Backbone.Model {
           articleId: articleModel.get('_id'),
           type: 'article-assessment',
           pageId: articleModel.get('_parentId')
-        }
+        };
 
-        statement.addParentActivity(this.getAssessmentObject(assessment))
+        statement.addParentActivity(this.getAssessmentObject(assessment));
       }
     }
   }
@@ -854,7 +854,7 @@ class xAPI extends Backbone.Model {
    * @param {object} assessment - Object representing the state of the assessment.
    */
   onAssessmentComplete(assessment) {
-    const object = this.getAssessmentObject(assessment)
+    const object = this.getAssessmentObject(assessment);
     const result = this.getAssessmentResultObject(assessment);
     let statement;
 
@@ -866,8 +866,8 @@ class xAPI extends Backbone.Model {
       statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
     }
 
-    statement.addGroupingActivity(this.getCourseActivity())
-    statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
+    statement.addGroupingActivity(this.getCourseActivity());
+    statement.addGroupingActivity(this.getLessonActivity(assessment.pageId));
 
     // Delay so that component completion can be recorded before assessment completion.
     _.delay(() => {
@@ -1055,7 +1055,7 @@ class xAPI extends Backbone.Model {
       ? this.get('registration')
       : null;
     const collectionName = _.findKey(this.coreObjects, o => {
-      return o === type || o.indexOf(type) > -1
+      return o === type || o.indexOf(type) > -1;
     });
     const stateCollection = Array.isArray(state[collectionName]) ? state[collectionName] : [];
     let newState;
@@ -1081,7 +1081,7 @@ class xAPI extends Backbone.Model {
     });
 
     // Pass the new state to the LRS.
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error, xhr) {
+    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error) {
       if (error) {
         Adapt.trigger('xapi:lrs:sendState:error', error);
       }
@@ -1392,7 +1392,7 @@ class xAPI extends Backbone.Model {
       Adapt.trigger('xapi:lrs:sendStatement:success', statements);
     }).catch(function(error) {
       Adapt.trigger('xapi:lrs:sendStatement:error', error);
-    })
+    });
   }
 
   /**
@@ -1401,7 +1401,7 @@ class xAPI extends Backbone.Model {
    * @returns {boolean}
    */
   isCORS(url) {
-    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
+    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
     if (!isCORS) {
       const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
@@ -1460,7 +1460,7 @@ class xAPI extends Backbone.Model {
               // delete the url property which is no longer needed
               attachment.value = reader.result;
               delete attachment.url;
-              nextAttachment()
+              nextAttachment();
             };
             reader.readAsBinaryString(this.response);
           }
