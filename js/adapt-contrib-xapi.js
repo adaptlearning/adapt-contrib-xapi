@@ -10,13 +10,11 @@ import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import Async from 'libraries/async.min';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
 
-'use strict';
-
 /**
  * @callback ErrorOnlyCallback
  * @param {?Error} error
  */
-class xAPI extends Backbone.Model {
+class XAPI extends Backbone.Model {
 
   preinitialize() {
     // Declare defaults and model properties
@@ -121,8 +119,8 @@ class xAPI extends Backbone.Model {
 
       // Send the 'launched' and 'initialized' statements.
       const statements = [
-        this.getCourseStatement(ADL.verbs.launched),
-        this.getCourseStatement(ADL.verbs.initialized)
+        this.getCourseStatement(window.ADL.verbs.launched),
+        this.getCourseStatement(window.ADL.verbs.initialized)
       ];
 
       this.sendStatements(statements, error => {
@@ -152,10 +150,10 @@ class xAPI extends Backbone.Model {
 
           if (this.get('state').length === 0) {
             // This is a new attempt, send 'attempted'.
-            this.sendStatement(this.getCourseStatement(ADL.verbs.attempted));
+            this.sendStatement(this.getCourseStatement(window.ADL.verbs.attempted));
           } else {
             // This is a continuation of an existing attempt, send 'resumed'.
-            this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+            this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
           }
 
           this.restoreState();
@@ -186,8 +184,8 @@ class xAPI extends Backbone.Model {
   initializeWrapper(callback) {
     // If no endpoint has been configured, assume the ADL Launch method.
     if (!this.getConfig('_endpoint')) {
-      //check to see if configuration has been passed in URL
-      this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
+      // check to see if configuration has been passed in URL
+      this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
       if (this.checkWrapperConfig()) {
         // URL had all necessary configuration so we continue using it.
         // Set the LRS specific properties.
@@ -200,9 +198,9 @@ class xAPI extends Backbone.Model {
 
         callback();
         return;
-      } 
+      }
       // If no endpoint is configured, assume this is using the ADL launch method.
-      ADL.launch((error, launchData, xapiWrapper) => {
+      window.ADL.launch((error, launchData, xapiWrapper) => {
         if (error) {
           return callback(error);
         }
@@ -222,7 +220,7 @@ class xAPI extends Backbone.Model {
     }
     // The endpoint has been defined in the config, so use the static values.
     // Initialise the xAPI wrapper.
-    this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
+    this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
 
     // Set any attributes on the xAPIWrapper.
     try {
@@ -267,7 +265,7 @@ class xAPI extends Backbone.Model {
     // Since a language change counts as a new attempt, reset the state.
     this.deleteState(() => {
       // Send a statement to track the (new) course.
-      this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
+      this.sendStatement(this.getCourseStatement(window.ADL.verbs.launched));
     });
   }
 
@@ -280,7 +278,7 @@ class xAPI extends Backbone.Model {
     if (document.visibilityState === 'visible') {
       this.isTerminated = false;
 
-      return this.sendStatement(this.getCourseStatement(ADL.verbs.resumed));
+      return this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
     }
 
     this.sendUnloadStatements();
@@ -294,11 +292,11 @@ class xAPI extends Backbone.Model {
 
     if (!this.isComplete) {
       // If the course is still in progress, send the 'suspended' verb.
-      statements.push(this.getCourseStatement(ADL.verbs.suspended));
+      statements.push(this.getCourseStatement(window.ADL.verbs.suspended));
     }
 
     // Always send the 'terminated' verb.
-    statements.push(this.getCourseStatement(ADL.verbs.terminated));
+    statements.push(this.getCourseStatement(window.ADL.verbs.terminated));
 
     // Note: it is not possible to intercept these synchronous statements.
     this.sendStatementsSync(statements);
@@ -311,7 +309,7 @@ class xAPI extends Backbone.Model {
   */
   checkWrapperConfig() {
     const lrs = this.xapiWrapper.lrs;
-    if (lrs.endpoint && lrs.actor && lrs.auth && lrs.activity_id ) return true;
+    if (lrs.endpoint && lrs.actor && lrs.auth && lrs.activity_id) return true;
     return false;
   }
 
@@ -365,7 +363,7 @@ class xAPI extends Backbone.Model {
   getAttemptDuration() {
     return this.startAttemptDuration + this.getSessionDuration();
   }
-  
+
   getSessionDuration() {
     return Math.abs((new Date()) - this.startTimeStamp);
   }
@@ -376,24 +374,21 @@ class xAPI extends Backbone.Model {
    * @return {string} - Duration in ISO8601 format
    */
   convertMillisecondsToISO8601Duration(inputMilliseconds) {
-    let hours;
-    let minutes;
-    let seconds;
-    const i_inputMilliseconds = parseInt(inputMilliseconds, 10);
+    const iInputMilliseconds = parseInt(inputMilliseconds, 10);
     let inputIsNegative = '';
     let rtnStr = '';
 
     // Round to nearest 0.01 seconds.
-    let i_inputCentiseconds = Math.round(i_inputMilliseconds / 10);
+    let iInputCentiseconds = Math.round(iInputMilliseconds / 10);
 
-    if (i_inputCentiseconds < 0) {
+    if (iInputCentiseconds < 0) {
       inputIsNegative = '-';
-      i_inputCentiseconds = i_inputCentiseconds * -1;
+      iInputCentiseconds = iInputCentiseconds * -1;
     }
 
-    hours = parseInt(((i_inputCentiseconds) / 360000), 10);
-    minutes = parseInt((((i_inputCentiseconds) % 360000) / 6000), 10);
-    seconds = (((i_inputCentiseconds) % 360000) % 6000) / 100;
+    const hours = parseInt(((iInputCentiseconds) / 360000), 10);
+    const minutes = parseInt((((iInputCentiseconds) % 360000) / 6000), 10);
+    const seconds = (((iInputCentiseconds) % 360000) % 6000) / 100;
 
     rtnStr = inputIsNegative + 'PT';
     if (hours > 0) {
@@ -432,22 +427,22 @@ class xAPI extends Backbone.Model {
 
     // Conditionally listen to the events.
     // Visits to the menu.
-    if (this.coreEvents['Adapt']['router:menu']) {
+    if (this.coreEvents.Adapt['router:menu']) {
       this.listenTo(Adapt, 'router:menu', this.onItemExperience);
     }
 
     // Visits to a page.
-    if (this.coreEvents['Adapt']['router:page']) {
+    if (this.coreEvents.Adapt['router:page']) {
       this.listenTo(Adapt, 'router:page', this.onItemExperience);
     }
 
     // When an interaction takes place on a question.
-    if (this.coreEvents['Adapt']['questionView:recordInteraction']) {
+    if (this.coreEvents.Adapt['questionView:recordInteraction']) {
       this.listenTo(Adapt, 'questionView:recordInteraction', this.onQuestionInteraction);
     }
 
     // When an assessment is completed.
-    if (this.coreEvents['Adapt']['assessments:complete']) {
+    if (this.coreEvents.Adapt['assessments:complete']) {
       this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
     }
 
@@ -466,10 +461,10 @@ class xAPI extends Backbone.Model {
 
   /**
    * Gets an xAPI Activity (with an 'id of the activityId) representing the course.
-   * @returns {ADL.XAPIStatement.Activity} Activity representing the course.
+   * @returns {window.ADL.XAPIStatement.Activity} Activity representing the course.
    */
   getCourseActivity() {
-    const object = new ADL.XAPIStatement.Activity(this.get('activityId'));
+    const object = new window.ADL.XAPIStatement.Activity(this.get('activityId'));
     const name = {};
     const description = {};
 
@@ -477,7 +472,7 @@ class xAPI extends Backbone.Model {
     description[this.get('displayLang')] = this.courseDescription;
 
     object.definition = {
-      type: ADL.activityTypes.course,
+      type: window.ADL.activityTypes.course,
       name,
       description
     };
@@ -500,21 +495,21 @@ class xAPI extends Backbone.Model {
 
     // Append the duration.
     switch (verb) {
-      case ADL.verbs.launched:
-      case ADL.verbs.initialized:
-      case ADL.verbs.attempted: {
+      case window.ADL.verbs.launched:
+      case window.ADL.verbs.initialized:
+      case window.ADL.verbs.attempted: {
         result.duration = 'PT0S';
         break;
       }
 
-      case ADL.verbs.failed:
-      case ADL.verbs.passed:
-      case ADL.verbs.suspended: {
+      case window.ADL.verbs.failed:
+      case window.ADL.verbs.passed:
+      case window.ADL.verbs.suspended: {
         result.duration = this.convertMillisecondsToISO8601Duration(this.getAttemptDuration());
         break;
       }
 
-      case ADL.verbs.terminated: {
+      case window.ADL.verbs.terminated: {
         result.duration = this.convertMillisecondsToISO8601Duration(this.getSessionDuration());
         break;
       }
@@ -546,24 +541,24 @@ class xAPI extends Backbone.Model {
 
     switch (model.get('_type')) {
       case 'component': {
-        type = model.get('_isQuestionType') ? ADL.activityTypes.interaction : ADL.activityTypes.media;
+        type = model.get('_isQuestionType') ? window.ADL.activityTypes.interaction : window.ADL.activityTypes.media;
         break;
       }
       case 'block':
       case 'article': {
-        type = ADL.activityTypes.interaction; //??
+        type = window.ADL.activityTypes.interaction;
         break;
       }
       case 'course': {
-        type = ADL.activityTypes.course;
+        type = window.ADL.activityTypes.course;
         break;
       }
       case 'menu': {
-        type = ADL.activityTypes.module;
+        type = window.ADL.activityTypes.module;
         break;
       }
       case 'page': {
-        type = ADL.activityTypes.lesson;
+        type = window.ADL.activityTypes.lesson;
         break;
       }
     }
@@ -576,16 +571,15 @@ class xAPI extends Backbone.Model {
    * @param {ComponentView} view - An instance of Adapt.ComponentView.
    */
   onQuestionInteraction(view) {
-    if (!view.model || view.model.get('_type') !== 'component' &&
+    if ((!view.model || view.model.get('_type') !== 'component') &&
       !view.model.get('_isQuestionType')) return;
 
     // This component is on the blacklist, so do not send a statement.
     if (this.isComponentOnBlacklist(view.model.get('_component'))) return;
 
-    const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
+    const object = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(view.model));
     const completion = view.model.get('_isComplete');
     const lang = this.get('displayLang');
-    let statement;
     const description = {};
 
     description[this.get('displayLang')] = this.stripHtml(view.model.get('body'));
@@ -593,7 +587,7 @@ class xAPI extends Backbone.Model {
     object.definition = {
       name: this.getNameObject(view.model),
       description,
-      type: ADL.activityTypes.question,
+      type: window.ADL.activityTypes.question,
       interactionType: view.getResponseType()
     };
 
@@ -605,7 +599,7 @@ class xAPI extends Backbone.Model {
       _.keys(object.definition).forEach(key => {
         if (object.definition[key]?.length !== 0) {
           for (let i = 0; i < object.definition[key].length; i++) {
-            if (!object.definition[key][i].hasOwnProperty('description')) {
+            if (!Object.prototype.hasOwnProperty.call(object.definition[key][i], 'description')) {
               break;
             }
 
@@ -630,7 +624,7 @@ class xAPI extends Backbone.Model {
     };
 
     // Answered
-    statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
+    const statement = this.getStatement(this.getVerb(window.ADL.verbs.answered), object, result);
 
     this.addGroupingActivity(view.model, statement);
     this.sendStatement(statement);
@@ -687,8 +681,7 @@ class xAPI extends Backbone.Model {
       return;
     }
 
-    const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
-    let statement;
+    const object = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(model));
 
     object.definition = {
       name: this.getNameObject(model),
@@ -696,7 +689,7 @@ class xAPI extends Backbone.Model {
     };
 
     // Experienced.
-    statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
+    const statement = this.getStatement(this.getVerb(window.ADL.verbs.experienced), object);
 
     this.addGroupingActivity(model, statement);
     this.sendStatement(statement);
@@ -723,15 +716,14 @@ class xAPI extends Backbone.Model {
     // If this is a question component (interaction), do not record multiple statements.
     // Return because 'Answered' will already have been passed.
     if (model.get('_type') === 'component' && model.get('_isQuestionType') === true &&
-      this.coreEvents['Adapt']['questionView:recordInteraction'] === true &&
-      this.coreEvents['components']['change:_isComplete'] === true) return;
+      this.coreEvents.Adapt['questionView:recordInteraction'] === true &&
+      this.coreEvents.components['change:_isComplete'] === true) return;
 
     // This component is on the blacklist, so do not send a statement.
     if (model.get('_type') === 'component' && this.isComponentOnBlacklist(model.get('_component'))) return;
 
     const result = { completion: true };
-    const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(model));
-    let statement;
+    const object = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(model));
 
     object.definition = {
       name: this.getNameObject(model),
@@ -739,7 +731,7 @@ class xAPI extends Backbone.Model {
     };
 
     // Completed.
-    statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
+    const statement = this.getStatement(this.getVerb(window.ADL.verbs.completed), object, result);
 
     this.addGroupingActivity(model, statement);
     this.sendStatement(statement);
@@ -754,12 +746,12 @@ class xAPI extends Backbone.Model {
     const pageModel = (typeof page === 'string')
       ? Adapt.findById(page)
       : page;
-    const activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel));
+    const activity = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel));
     const name = this.getNameObject(pageModel);
 
     activity.definition = {
       name,
-      type: ADL.activityTypes.lesson
+      type: window.ADL.activityTypes.lesson
     };
 
     return activity;
@@ -789,7 +781,7 @@ class xAPI extends Backbone.Model {
 
     if (type === 'component' && model.get('_isPartOfAssessment')) {
       // Get the article containing this question component.
-      let articleModel = model.findAncestor('articles');
+      const articleModel = model.findAncestor('articles');
 
       if (articleModel?.has('_assessment')?._isEnabled) {
         // Set the assessment as the parent.
@@ -836,14 +828,14 @@ class xAPI extends Backbone.Model {
       pageId: assessment.pageId
     });
 
-    const object = new ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
+    const object = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
     const name = {};
 
     name[this.get('displayLang')] = assessment.id || 'Assessment';
 
     object.definition = {
       name: name,
-      type: ADL.activityTypes.assessment
+      type: window.ADL.activityTypes.assessment
     };
 
     return object;
@@ -860,10 +852,10 @@ class xAPI extends Backbone.Model {
 
     if (assessment.isPass) {
       // Passed.
-      statement = this.getStatement(this.getVerb(ADL.verbs.passed), object, result);
+      statement = this.getStatement(this.getVerb(window.ADL.verbs.passed), object, result);
     } else {
       // Failed.
-      statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
+      statement = this.getStatement(this.getVerb(window.ADL.verbs.failed), object, result);
     }
 
     statement.addGroupingActivity(this.getCourseActivity());
@@ -883,10 +875,10 @@ class xAPI extends Backbone.Model {
   getVerb(verb) {
     if (typeof verb === 'string') {
       const key = verb.toLowerCase();
-      verb = ADL.verbs[key];
+      verb = window.ADL.verbs[key];
 
       if (!verb) {
-        Adapt.log.error(`adapt-contrib-xapi: Verb " ${key} " does not exist in ADL.verbs object`);
+        Adapt.log.error(`adapt-contrib-xapi: Verb " ${key} " does not exist in window.ADL.verbs object`);
       }
     }
 
@@ -943,21 +935,21 @@ class xAPI extends Backbone.Model {
     // Check the completion status.
     switch (completionData.status) {
       case COMPLETION_STATE.PASSED: {
-        completionVerb = ADL.verbs.passed;
+        completionVerb = window.ADL.verbs.passed;
         break;
       }
 
       case COMPLETION_STATE.FAILED: {
-        completionVerb = ADL.verbs.failed;
+        completionVerb = window.ADL.verbs.failed;
         break;
       }
 
       default: {
-        completionVerb = ADL.verbs.completed;
+        completionVerb = window.ADL.verbs.completed;
       }
     }
 
-    if (completionVerb === ADL.verbs.completed) {
+    if (completionVerb === window.ADL.verbs.completed) {
       result = { completion: true };
     } else {
       // The assessment(s) play a part in completion, so use their result.
@@ -1017,8 +1009,8 @@ class xAPI extends Backbone.Model {
    * @return {ADL.XAPIStatement} A formatted xAPI statement object.
    */
   getStatement(verb, object, result, context) {
-    const statement = new ADL.XAPIStatement(
-      new ADL.XAPIStatement.Agent(this.get('actor')),
+    const statement = new window.ADL.XAPIStatement(
+      new window.ADL.XAPIStatement.Agent(this.get('actor')),
       verb,
       object
     );
@@ -1051,11 +1043,11 @@ class xAPI extends Backbone.Model {
     const actor = this.get('actor');
     const type = model.get('_type');
     const state = this.get('state');
-    const registration = this.get('shouldUseRegistration') === true 
+    const registration = this.get('shouldUseRegistration') === true
       ? this.get('registration')
       : null;
     const collectionName = _.findKey(this.coreObjects, o => {
-      return o === type || o.indexOf(type) > -1;
+      return (o === type || o.indexOf(type) > -1);
     });
     const stateCollection = Array.isArray(state[collectionName]) ? state[collectionName] : [];
     let newState;
@@ -1081,7 +1073,7 @@ class xAPI extends Backbone.Model {
     });
 
     // Pass the new state to the LRS.
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error) {
+    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error, xhr) {
       if (error) {
         Adapt.trigger('xapi:lrs:sendState:error', error);
       }
@@ -1099,7 +1091,7 @@ class xAPI extends Backbone.Model {
 
     const activityId = this.get('activityId');
     const actor = this.get('actor');
-    const registration = this.get('shouldUseRegistration') === true 
+    const registration = this.get('shouldUseRegistration') === true
       ? this.get('registration')
       : null;
     const state = {};
@@ -1176,7 +1168,7 @@ class xAPI extends Backbone.Model {
 
     const activityId = this.get('activityId');
     const actor = this.get('actor');
-    const registration = this.get('shouldUseRegistration') === true 
+    const registration = this.get('shouldUseRegistration') === true
       ? this.get('registration')
       : null;
 
@@ -1234,7 +1226,7 @@ class xAPI extends Backbone.Model {
     }
 
     try {
-      switch(key) {
+      switch (key) {
         case 'actor': {
           const actor = JSON.parse(this.xapiWrapper.lrs[key]);
 
@@ -1354,7 +1346,7 @@ class xAPI extends Backbone.Model {
    * and terminated statements more reliable.
    */
   sendStatementsSync(statements) {
-    const lrs = ADL.XAPIWrapper.lrs;
+    const lrs = window.ADL.XAPIWrapper.lrs;
 
     // Fetch not supported in IE and keepalive/custom headers
     // not supported for CORS preflight requests so attempt
@@ -1364,11 +1356,11 @@ class xAPI extends Backbone.Model {
     }
 
     let url = lrs.endpoint + 'statements';
-    const credentials = ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
+    const credentials = window.ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': lrs.auth,
-      'X-Experience-API-Version': ADL.XAPIWrapper.xapiVersion
+      Authorization: lrs.auth,
+      'X-Experience-API-Version': window.ADL.XAPIWrapper.xapiVersion
     };
 
     // Add extended LMS-specified values to the URL
@@ -1511,9 +1503,9 @@ class xAPI extends Backbone.Model {
         Adapt?.course?.get('_globals')?._extensions?._xapi
       ) || {},
       {
-        'confirm': 'OK',
-        'lrsConnectionErrorTitle': 'LRS not available',
-        'lrsConnectionErrorMessage': 'We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.'
+        confirm: 'OK',
+        lrsConnectionErrorTitle: 'LRS not available',
+        lrsConnectionErrorMessage: 'We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.'
       }
     );
   }
@@ -1536,17 +1528,17 @@ class xAPI extends Backbone.Model {
   }
 }
 
-xAPI.getInstance = () => {
-  if (!xAPI.instance) {
-    xAPI.instance = new xAPI();
+XAPI.getInstance = () => {
+  if (!XAPI.instance) {
+    XAPI.instance = new XAPI();
   }
 
-  return xAPI.instance;
+  return XAPI.instance;
 };
 
 /** Adapt event listeners begin here */
 Adapt.once('app:dataLoaded', () => {
-  const xapi = xAPI.getInstance();
+  const xapi = XAPI.getInstance();
 
   xapi.initialize();
 
@@ -1568,4 +1560,4 @@ Adapt.once('app:dataLoaded', () => {
   });
 });
 
-export default xAPI.getInstance();
+export default XAPI.getInstance();
