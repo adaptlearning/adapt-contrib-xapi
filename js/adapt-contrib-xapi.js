@@ -1,10 +1,3 @@
-/*
- * adapt-contrib-xapi
- * License      - http://github.com/adaptlearning/adapt_framework/LICENSE
- * Maintainers  - Dennis Heaney <dennis@learningpool.com>
- *              - Barry McKay <barry@learningpool.com>
- *              - Brian Quinn <brian@learningpool.com>
- */
 import Adapt from 'core/js/adapt';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import Async from 'libraries/async.min';
@@ -75,6 +68,8 @@ class XAPI extends Backbone.Model {
   /** Implementation starts here */
   initialize() {
     if (!this.getConfig('_isEnabled')) return this;
+    
+    this.listenToOnce(Adapt, 'app:dataLoaded', this.onDataLoaded);
 
     Adapt.wait.begin();
 
@@ -162,6 +157,22 @@ class XAPI extends Backbone.Model {
         });
       });
     });
+  }
+
+  onDataLoaded() {
+    this.listenTo(Adapt, {
+      'adapt:initialize': this.setupListeners,
+      'xapi:lrs:initialize:error': error => {
+        Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+        this.showError();
+      },
+      'xapi:lrs:sendStatement:error xapi:lrs:sendState:error': this.showError
+    });
+  }
+
+  static getInstance() {
+    if (!this.instance) this.instance = new XAPI();
+    return this.instance;
   }
 
   /**
@@ -1395,10 +1406,9 @@ class XAPI extends Backbone.Model {
   isCORS(url) {
     const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
-    if (!isCORS) {
-      const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
-      isCORS = (urlPort === location.port);
-    }
+    if (isCORS) return true;
+    const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
+    isCORS = (urlPort === location.port);
 
     return isCORS;
   }
@@ -1527,37 +1537,5 @@ class XAPI extends Backbone.Model {
     Adapt.once('notify:closed', Adapt.wait.end);
   }
 }
-
-XAPI.getInstance = () => {
-  if (!XAPI.instance) {
-    XAPI.instance = new XAPI();
-  }
-
-  return XAPI.instance;
-};
-
-/** Adapt event listeners begin here */
-Adapt.once('app:dataLoaded', () => {
-  const xapi = XAPI.getInstance();
-
-  xapi.initialize();
-
-  Adapt.on('adapt:initialize', () => {
-    xapi.setupListeners();
-  });
-
-  Adapt.on('xapi:lrs:initialize:error', error => {
-    Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-    xapi.showError();
-  });
-
-  Adapt.on('xapi:lrs:sendStatement:error', () => {
-    xapi.showError();
-  });
-
-  Adapt.on('xapi:lrs:sendState:error', () => {
-    xapi.showError();
-  });
-});
 
 export default XAPI.getInstance();
