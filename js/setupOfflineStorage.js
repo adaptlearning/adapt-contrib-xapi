@@ -1,5 +1,5 @@
 import Adapt from 'core/js/adapt';
-import xapi from './adapt-contrib-xapi';
+import XAPI from './XAPI';
 
 // xAPI handler for Adapt.offlineStorage interface.
 export default function setupOfflineStorage() {
@@ -29,7 +29,7 @@ export default function setupOfflineStorage() {
 
     getAll() {
       if (!isDataRestored) {
-        const state = xapi.get('state') || {};
+        const state = XAPI.get('state') || {};
         store.set(state.offlineStorage);
         isDataRestored = true;
       }
@@ -52,14 +52,14 @@ export default function setupOfflineStorage() {
     },
 
     useTemporaryStore() {
-      return !xapi.get('isInitialised');
+      return !XAPI.get('isInitialised');
     },
 
     /**
      * @returns {{id: string, name: string, firstname: string, lastname: string}} The learner's id, full name (in the format Firstname Lastname), first and last names
      */
     getLearnerInfo() {
-      const actor = xapi.get('actor') || {};
+      const actor = XAPI.get('actor') || {};
       const name = actor.name || '';
       let lastname;
       let firstname;
