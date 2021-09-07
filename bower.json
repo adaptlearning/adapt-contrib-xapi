@@ -1,8 +1,8 @@
 {
-  "name": "adapt-contrib-xapi",
+  "name": "adapt-contrib-XAPI",
   "version": "0.9.0",
   "framework": ">=5.8",
-  "homepage": "https://github.com/adaptlearning/adapt-contrib-xapi",
+  "homepage": "https://github.com/adaptlearning/adapt-contrib-XAPI",
   "authors": [
     "Dennis Heaney <dennis@learningpool.com>",
     "Barry McKay <barry@learningpool.com>",
