@@ -1,15 +1,20 @@
 import Adapt from 'core/js/adapt';
-import offlineStorage from './adapt-offlineStorage-xapi';
+import setupOfflineStorage from './setupOfflineStorage';
 
 class XAPIIndex extends Backbone.Controller {
+
   initialise() {
+    this.listenTo(Adapt, 'app:dataLoaded', this.onDataLoaded);
+  }
+
+  onDataLoaded() {
     const config = Adapt.config.get('_xapi') || {};
 
     if (!config._isEnabled) {
       return;
     }
 
-    offlineStorage.load();
+    setupOfflineStorage();
 
     // Wait for offline storage to be restored if _shouldTrackState is enabled
     const successEvent = config._shouldTrackState ? 'xapi:stateLoaded' : 'xapi:lrs:initialize:success';
@@ -22,4 +27,4 @@ class XAPIIndex extends Backbone.Controller {
   }
 }
 
-Adapt.on('app:dataLoaded', new XAPIIndex().initialise);
+export default new XAPIIndex();

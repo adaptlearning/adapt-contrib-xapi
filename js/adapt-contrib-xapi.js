@@ -1,10 +1,3 @@
-/*
- * adapt-contrib-xapi
- * License      - http://github.com/adaptlearning/adapt_framework/LICENSE
- * Maintainers  - Dennis Heaney <dennis@learningpool.com>
- *              - Barry McKay <barry@learningpool.com>
- *              - Brian Quinn <brian@learningpool.com>
- */
 import Adapt from 'core/js/adapt';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import Async from 'libraries/async.min';
@@ -75,6 +68,8 @@ class XAPI extends Backbone.Model {
   /** Implementation starts here */
   initialize() {
     if (!this.getConfig('_isEnabled')) return this;
+    
+    this.listenToOnce(Adapt, 'app:dataLoaded', this.onDataLoaded);
 
     Adapt.wait.begin();
 
@@ -164,6 +159,22 @@ class XAPI extends Backbone.Model {
     });
   }
 
+  onDataLoaded() {
+    this.listenTo(Adapt, {
+      'adapt:initialize': this.setupListeners,
+      'xapi:lrs:initialize:error': error => {
+        Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+        this.showError();
+      },
+      'xapi:lrs:sendStatement:error xapi:lrs:sendState:error': this.showError
+    });
+  }
+
+  static getInstance() {
+    if (!this.instance) this.instance = new XAPI();
+    return this.instance;
+  }
+
   /**
    * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
    */
@@ -174,7 +185,7 @@ class XAPI extends Backbone.Model {
       globals._learnerInfo = {};
     }
 
-    _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
+    Object.assign(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
   }
 
   /**
@@ -420,7 +431,7 @@ class XAPI extends Backbone.Model {
     }
 
     // Use the config to specify the core events.
-    this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
+    this.coreEvents = Object.assign(this.coreEvents, this.getConfig('_coreEvents'));
 
     // Always listen out for course completion.
     this.listenTo(Adapt, 'tracking:complete', this.onTrackingComplete);
@@ -448,7 +459,7 @@ class XAPI extends Backbone.Model {
 
     // Standard completion events for the various collection types, i.e.
     // course, contentobjects, articles, blocks and components.
-    _.keys(this.coreEvents).forEach(key => {
+    Object.keys(this.coreEvents).forEach(key => {
       if (key !== 'Adapt') {
         const val = this.coreEvents[key];
 
@@ -593,10 +604,10 @@ class XAPI extends Backbone.Model {
 
     if (typeof view.getInteractionObject === 'function') {
       // Get any extra interactions.
-      _.extend(object.definition, view.getInteractionObject());
+      Object.assign(object.definition, view.getInteractionObject());
 
       // Ensure any 'description' properties are objects with the language map.
-      _.keys(object.definition).forEach(key => {
+      Object.keys(object.definition).forEach(key => {
         if (object.definition[key]?.length !== 0) {
           for (let i = 0; i < object.definition[key].length; i++) {
             if (!Object.prototype.hasOwnProperty.call(object.definition[key][i], 'description')) {
@@ -1096,7 +1107,7 @@ class XAPI extends Backbone.Model {
       : null;
     const state = {};
 
-    Async.each(_.keys(this.coreObjects), (type, nextType) => {
+    Async.each(Object.keys(this.coreObjects), (type, nextType) => {
       this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
         _.defer(() => {
           if (error) {
@@ -1172,7 +1183,7 @@ class XAPI extends Backbone.Model {
       ? this.get('registration')
       : null;
 
-    Async.each(_.keys(this.coreObjects), (type, nextType) => {
+    Async.each(Object.keys(this.coreObjects), (type, nextType) => {
       this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
         if (error) {
           Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
@@ -1395,10 +1406,9 @@ class XAPI extends Backbone.Model {
   isCORS(url) {
     const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
-    if (!isCORS) {
-      const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
-      isCORS = (urlPort === location.port);
-    }
+    if (isCORS) return true;
+    const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
+    isCORS = (urlPort === location.port);
 
     return isCORS;
   }
@@ -1527,37 +1537,5 @@ class XAPI extends Backbone.Model {
     Adapt.once('notify:closed', Adapt.wait.end);
   }
 }
-
-XAPI.getInstance = () => {
-  if (!XAPI.instance) {
-    XAPI.instance = new XAPI();
-  }
-
-  return XAPI.instance;
-};
-
-/** Adapt event listeners begin here */
-Adapt.once('app:dataLoaded', () => {
-  const xapi = XAPI.getInstance();
-
-  xapi.initialize();
-
-  Adapt.on('adapt:initialize', () => {
-    xapi.setupListeners();
-  });
-
-  Adapt.on('xapi:lrs:initialize:error', error => {
-    Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-    xapi.showError();
-  });
-
-  Adapt.on('xapi:lrs:sendStatement:error', () => {
-    xapi.showError();
-  });
-
-  Adapt.on('xapi:lrs:sendState:error', () => {
-    xapi.showError();
-  });
-});
 
 export default XAPI.getInstance();
