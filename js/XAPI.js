@@ -3,10 +3,6 @@ import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import Async from 'libraries/async.min';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
 
-/**
- * @callback ErrorOnlyCallback
- * @param {?Error} error
- */
 class XAPI extends Backbone.Model {
 
   preinitialize() {
@@ -66,97 +62,97 @@ class XAPI extends Backbone.Model {
   }
 
   /** Implementation starts here */
-  initialize() {
+  async initialize() {
     if (!this.getConfig('_isEnabled')) return this;
-    
+
     this.listenToOnce(Adapt, 'app:dataLoaded', this.onDataLoaded);
 
     Adapt.wait.begin();
 
     // Initialize the xAPIWrapper.
-    this.initializeWrapper(error => {
-      if (error) {
-        this.onInitialised(error);
-        return this;
-      }
+    try {
+      await this.initializeWrapper();
+    } catch (error) {
+      this.onInitialised(error);
+      return this;
+    }
 
-      this.set({
-        activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
-        displayLang: Adapt.config.get('_defaultLanguage'),
-        lang: this.getConfig('_lang'),
-        generateIds: this.getConfig('_generateIds'),
-        shouldTrackState: this.getConfig('_shouldTrackState'),
-        shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
-        componentBlacklist: this.getConfig('_componentBlacklist') || []
-      });
-
-      let componentBlacklist = this.get('componentBlacklist');
-
-      if (!Array.isArray(componentBlacklist)) {
-        // Create the blacklist array and force the items to lowercase.
-        componentBlacklist = componentBlacklist.split(/,\s?/).map(component => {
-          return component.toLowerCase();
-        });
-      }
-
-      this.set('componentBlacklist', componentBlacklist);
-
-      if (!this.validateProps()) {
-        const error = new Error('Missing required properties');
-        Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-        this.onInitialised(error);
-        return this;
-      }
-
-      this.startTimeStamp = new Date();
-      this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
-      this.courseDescription = Adapt.course.get('description') || '';
-
-      // Send the 'launched' and 'initialized' statements.
-      const statements = [
-        this.getCourseStatement(window.ADL.verbs.launched),
-        this.getCourseStatement(window.ADL.verbs.initialized)
-      ];
-
-      this.sendStatements(statements, error => {
-        if (error) {
-          this.onInitialised(error);
-          return this;
-        }
-
-        if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
-          $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
-        } else {
-          $(window).on('beforeunload unload', this.sendUnloadStatements.bind(this));
-        }
-
-        if (!this.get('shouldTrackState')) {
-          // xAPI is not managing the state.
-          this.onInitialised();
-          return this;
-        }
-
-        // Retrieve the course state.
-        this.getState(error => {
-          if (error) {
-            this.onInitialised(error);
-            return this;
-          }
-
-          if (this.get('state').length === 0) {
-            // This is a new attempt, send 'attempted'.
-            this.sendStatement(this.getCourseStatement(window.ADL.verbs.attempted));
-          } else {
-            // This is a continuation of an existing attempt, send 'resumed'.
-            this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
-          }
-
-          this.restoreState();
-          this.onInitialised();
-          return this;
-        });
-      });
+    this.set({
+      activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
+      displayLang: Adapt.config.get('_defaultLanguage'),
+      lang: this.getConfig('_lang'),
+      generateIds: this.getConfig('_generateIds'),
+      shouldTrackState: this.getConfig('_shouldTrackState'),
+      shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
+      componentBlacklist: this.getConfig('_componentBlacklist') || []
     });
+
+    let componentBlacklist = this.get('componentBlacklist');
+
+    if (!Array.isArray(componentBlacklist)) {
+      // Create the blacklist array and force the items to lowercase.
+      componentBlacklist = componentBlacklist.split(/,\s?/).map(component => {
+        return component.toLowerCase();
+      });
+    }
+
+    this.set('componentBlacklist', componentBlacklist);
+
+    if (!this.validateProps()) {
+      const error = new Error('Missing required properties');
+      Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+      this.onInitialised(error);
+      return this;
+    }
+
+    this.startTimeStamp = new Date();
+    this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
+    this.courseDescription = Adapt.course.get('description') || '';
+
+    // Send the 'launched' and 'initialized' statements.
+    const statements = [
+      this.getCourseStatement(window.ADL.verbs.launched),
+      this.getCourseStatement(window.ADL.verbs.initialized)
+    ];
+
+    try {
+      await this.sendStatements(statements);
+    } catch (error) {
+      this.onInitialised(error);
+      return this;
+    }
+
+    if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
+      $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
+    } else {
+      $(window).on('beforeunload unload', this.sendUnloadStatements.bind(this));
+    }
+
+    if (!this.get('shouldTrackState')) {
+      // xAPI is not managing the state.
+      this.onInitialised();
+      return this;
+    }
+
+    // Retrieve the course state.
+    try {
+      await this.getState();
+    } catch (error) {
+      this.onInitialised(error);
+      return this;
+    }
+
+    if (this.get('state').length === 0) {
+      // This is a new attempt, send 'attempted'.
+      await this.sendStatement(this.getCourseStatement(window.ADL.verbs.attempted));
+    } else {
+      // This is a continuation of an existing attempt, send 'resumed'.
+      await this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
+    }
+
+    this.restoreState();
+    this.onInitialised();
+    return this;
   }
 
   onDataLoaded() {
@@ -190,9 +186,8 @@ class XAPI extends Backbone.Model {
 
   /**
    * Intializes the ADL xapiWrapper code.
-   * @param {ErrorOnlyCallback} callback
    */
-  initializeWrapper(callback) {
+  async initializeWrapper() {
     // If no endpoint has been configured, assume the ADL Launch method.
     if (!this.getConfig('_endpoint')) {
       // check to see if configuration has been passed in URL
@@ -207,38 +202,35 @@ class XAPI extends Backbone.Model {
 
         this.xapiWrapper.strictCallbacks = true;
 
-        callback();
         return;
       }
-      // If no endpoint is configured, assume this is using the ADL launch method.
-      window.ADL.launch((error, launchData, xapiWrapper) => {
-        if (error) {
-          return callback(error);
-        }
 
-        // Initialise the xAPI wrapper.
-        this.xapiWrapper = xapiWrapper;
+      return new Promise((resolve, reject) => {
+        // If no endpoint is configured, assume this is using the ADL launch method.
+        window.ADL.launch((error, launchData, xapiWrapper) => {
+          if (error) {
+            return reject(error);
+          }
 
-        this.set({
-          actor: launchData.actor
-        });
+          // Initialise the xAPI wrapper.
+          this.xapiWrapper = xapiWrapper;
 
-        this.xapiWrapper.strictCallbacks = true;
+          this.set({
+            actor: launchData.actor
+          });
 
-        callback();
-      }, true, true);
-      return;
+          this.xapiWrapper.strictCallbacks = true;
+
+          resolve();
+        }, true, true);
+      });
     }
     // The endpoint has been defined in the config, so use the static values.
     // Initialise the xAPI wrapper.
     this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
 
     // Set any attributes on the xAPIWrapper.
-    try {
-      this.setWrapperConfig();
-    } catch (configError) {
-      return callback(configError);
-    }
+    this.setWrapperConfig();
 
     // Set the LRS specific properties.
     this.set({
@@ -247,8 +239,6 @@ class XAPI extends Backbone.Model {
     });
 
     this.xapiWrapper.strictCallbacks = true;
-
-    callback();
   }
 
   /**
@@ -269,15 +259,14 @@ class XAPI extends Backbone.Model {
     });
   }
 
-  onLanguageChanged(newLanguage) {
+  async onLanguageChanged(newLanguage) {
     // Update the language.
     this.set({ displayLang: newLanguage });
 
     // Since a language change counts as a new attempt, reset the state.
-    this.deleteState(() => {
-      // Send a statement to track the (new) course.
-      this.sendStatement(this.getCourseStatement(window.ADL.verbs.launched));
-    });
+    await this.deleteState();
+    // Send a statement to track the (new) course.
+    await this.sendStatement(this.getCourseStatement(window.ADL.verbs.launched));
   }
 
   /**
@@ -285,18 +274,18 @@ class XAPI extends Backbone.Model {
    * is closed or the browser app is minimised on a device. Sends a 'resume'
    * statement when switching back to a suspended session.
    */
-  onVisibilityChange() {
+  async onVisibilityChange() {
     if (document.visibilityState === 'visible') {
       this.isTerminated = false;
 
       return this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
     }
 
-    this.sendUnloadStatements();
+    await this.sendUnloadStatements();
   }
 
   // Sends (optional) 'suspended' and 'terminated' statements to the LRS.
-  sendUnloadStatements() {
+  async sendUnloadStatements() {
     if (this.isTerminated) return;
 
     const statements = [];
@@ -310,7 +299,7 @@ class XAPI extends Backbone.Model {
     statements.push(this.getCourseStatement(window.ADL.verbs.terminated));
 
     // Note: it is not possible to intercept these synchronous statements.
-    this.sendStatementsSync(statements);
+    await this.sendStatementsSync(statements);
 
     this.isTerminated = true;
   }
@@ -581,7 +570,7 @@ class XAPI extends Backbone.Model {
    * Sends an 'answered' statement to the LRS.
    * @param {ComponentView} view - An instance of Adapt.ComponentView.
    */
-  onQuestionInteraction(view) {
+  async onQuestionInteraction(view) {
     if ((!view.model || view.model.get('_type') !== 'component') &&
       !view.model.get('_isQuestionType')) return;
 
@@ -608,18 +597,17 @@ class XAPI extends Backbone.Model {
 
       // Ensure any 'description' properties are objects with the language map.
       Object.keys(object.definition).forEach(key => {
-        if (object.definition[key]?.length !== 0) {
-          for (let i = 0; i < object.definition[key].length; i++) {
-            if (!Object.prototype.hasOwnProperty.call(object.definition[key][i], 'description')) {
-              break;
-            }
+        if (!object.definition[key]?.length) return;
+        for (let i = 0; i < object.definition[key].length; i++) {
+          if (!Object.prototype.hasOwnProperty.call(object.definition[key][i], 'description')) {
+            break;
+          }
 
-            if (typeof object.definition[key][i].description === 'string') {
-              const description = {};
-              description[lang] = object.definition[key][i].description;
+          if (typeof object.definition[key][i].description === 'string') {
+            const description = {};
+            description[lang] = object.definition[key][i].description;
 
-              object.definition[key][i].description = description;
-            }
+            object.definition[key][i].description = description;
           }
         }
       });
@@ -638,7 +626,7 @@ class XAPI extends Backbone.Model {
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.answered), object, result);
 
     this.addGroupingActivity(view.model, statement);
-    this.sendStatement(statement);
+    await this.sendStatement(statement);
   }
 
   /**
@@ -686,7 +674,7 @@ class XAPI extends Backbone.Model {
    * Sends an xAPI statement when an item has been experienced.
    * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
    */
-  onItemExperience(model) {
+  async onItemExperience(model) {
     if (model.get('_id') === 'course') {
       // We don't really want to track actions on the home menu.
       return;
@@ -703,7 +691,7 @@ class XAPI extends Backbone.Model {
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.experienced), object);
 
     this.addGroupingActivity(model, statement);
-    this.sendStatement(statement);
+    await this.sendStatement(statement);
   }
 
   /**
@@ -720,7 +708,7 @@ class XAPI extends Backbone.Model {
    * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
    * @param {boolean} isComplete - Flag to indicate if the model has been completed
    */
-  onItemComplete(model, isComplete) {
+  async onItemComplete(model, isComplete) {
     // The item is not actually completed, e.g. it may have been reset.
     if (isComplete === false) return;
 
@@ -745,7 +733,7 @@ class XAPI extends Backbone.Model {
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.completed), object, result);
 
     this.addGroupingActivity(model, statement);
-    this.sendStatement(statement);
+    await this.sendStatement(statement);
   }
 
   /**
@@ -873,8 +861,8 @@ class XAPI extends Backbone.Model {
     statement.addGroupingActivity(this.getLessonActivity(assessment.pageId));
 
     // Delay so that component completion can be recorded before assessment completion.
-    _.delay(() => {
-      this.sendStatement(statement);
+    _.delay(async () => {
+      await this.sendStatement(statement);
     }, 500);
   }
 
@@ -970,9 +958,9 @@ class XAPI extends Backbone.Model {
     // Store a reference that the course has actually been completed.
     this.isComplete = true;
 
-    _.defer(() => {
+    _.defer(async () => {
       // Send the completion status.
-      this.sendStatement(this.getCourseStatement(completionVerb, result));
+      await this.sendStatement(this.getCourseStatement(completionVerb, result));
     });
   }
 
@@ -1095,10 +1083,8 @@ class XAPI extends Backbone.Model {
 
   /**
    * Retrieves the state information for the current course.
-   * @param {ErrorOnlyCallback} [callback]
    */
-  getState(callback) {
-    callback = _.isFunction(callback) ? callback : function() { };
+  async getState() {
 
     const activityId = this.get('activityId');
     const actor = this.get('actor');
@@ -1107,109 +1093,102 @@ class XAPI extends Backbone.Model {
       : null;
     const state = {};
 
-    Async.each(Object.keys(this.coreObjects), (type, nextType) => {
-      this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
-        _.defer(() => {
-          if (error) {
-            Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(error);
-          }
+    try {
+      await Async.each(Object.keys(this.coreObjects), (type, nextType) => {
+        this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
+          _.defer(() => {
+            if (error) {
+              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
+              return nextType(error);
+            }
 
-          if (!xhr) {
-            Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(new Error('\'xhr\' parameter is missing from callback'));
-          }
+            if (!xhr) {
+              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
+              return nextType(new Error('\'xhr\' parameter is missing from callback'));
+            }
 
-          if (xhr.status === 404) {
+            if (xhr.status === 404) {
+              return nextType();
+            }
+
+            if (xhr.status !== 200) {
+              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
+              return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
+            }
+
+            let response;
+            let parseError;
+
+            // Check for empty response, otherwise the subsequent JSON.parse() will fail.
+            if (xhr.response === '') {
+              return nextType();
+            }
+
+            try {
+              response = JSON.parse(xhr.response);
+            } catch (e) {
+              parseError = e;
+            }
+
+            if (parseError) {
+              return nextType(parseError);
+            }
+
+            if (!_.isEmpty(response)) {
+              state[type] = response;
+            }
+
             return nextType();
-          }
-
-          if (xhr.status !== 200) {
-            Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
-          }
-
-          let response;
-          let parseError;
-
-          // Check for empty response, otherwise the subsequent JSON.parse() will fail.
-          if (xhr.response === '') {
-            return nextType();
-          }
-
-          try {
-            response = JSON.parse(xhr.response);
-          } catch (e) {
-            parseError = e;
-          }
-
-          if (parseError) {
-            return nextType(parseError);
-          }
-
-          if (!_.isEmpty(response)) {
-            state[type] = response;
-          }
-
-          return nextType();
+          });
         });
       });
-    }, error => {
-      if (error) {
-        Adapt.log.error('adapt-contrib-xapi:', error);
-        return callback(error);
-      }
+    } catch (error) {
+      Adapt.log.error('adapt-contrib-xapi:', error);
+      throw error;
+    }
 
-      if (state.length > 0) {
-        this.set({ state });
-      }
+    if (state.length > 0) {
+      this.set({ state });
+    }
 
-      Adapt.trigger('xapi:stateLoaded');
-
-      callback();
-    });
+    Adapt.trigger('xapi:stateLoaded');
   }
 
   /**
    * Deletes all state information for the current course.
-   * @param {ErrorOnlyCallback} [callback]
    */
-  deleteState(callback) {
-    callback = _.isFunction(callback) ? callback : function() { };
-
+  async deleteState() {
     const activityId = this.get('activityId');
     const actor = this.get('actor');
     const registration = this.get('shouldUseRegistration') === true
       ? this.get('registration')
       : null;
 
-    Async.each(Object.keys(this.coreObjects), (type, nextType) => {
-      this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
-        if (error) {
-          Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-          return nextType(error);
-        }
+    try {
+      await Async.each(Object.keys(this.coreObjects), (type, nextType) => {
+        this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
+          if (error) {
+            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
+            return nextType(error);
+          }
 
-        if (!xhr) {
-          Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-          return nextType(new Error('\'xhr\' parameter is missing from callback'));
-        }
+          if (!xhr) {
+            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
+            return nextType(new Error('\'xhr\' parameter is missing from callback'));
+          }
 
-        if (xhr.status !== 204) {
-          Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-          return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
-        }
+          if (xhr.status !== 204) {
+            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
+            return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
+          }
 
-        return nextType();
+          return nextType();
+        });
       });
-    }, error => {
-      if (error) {
-        Adapt.log.error('adapt-contrib-xapi:', error);
-        return callback(error);
-      }
-
-      callback();
-    });
+    } catch (error) {
+      Adapt.log.error('adapt-contrib-xapi:', error);
+      throw error;
+    }
   }
 
   /**
@@ -1331,12 +1310,9 @@ class XAPI extends Backbone.Model {
   /**
    * Prepares to send a single xAPI statement to the LRS.
    * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   * @param {ADLCallback} [callback]
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
    */
-  sendStatement(statement, callback, attachments) {
-    callback = _.isFunction(callback) ? callback : function() { };
-
+  async sendStatement(statement, attachments = null) {
     if (!statement) {
       return;
     }
@@ -1346,9 +1322,9 @@ class XAPI extends Backbone.Model {
     // Allow the trigger above to augment attachments if the attachments
     // parameter is not set.
     if (attachments === undefined && statement.attachments) {
-      return this.processAttachments(statement, callback);
+      return await this.processAttachments(statement);
     }
-    this.onStatementReady(statement, callback, attachments);
+    await this.onStatementReady(statement, attachments);
   }
 
   /**
@@ -1356,7 +1332,7 @@ class XAPI extends Backbone.Model {
    * feature not available in AJAX requests. This makes the sending of suspended
    * and terminated statements more reliable.
    */
-  sendStatementsSync(statements) {
+  async sendStatementsSync(statements) {
     const lrs = window.ADL.XAPIWrapper.lrs;
 
     // Fetch not supported in IE and keepalive/custom headers
@@ -1383,19 +1359,21 @@ class XAPI extends Backbone.Model {
       url += (url.indexOf('?') > -1 ? '&' : '?') + extended.join('&');
     }
 
-    fetch(url, {
-      body: JSON.stringify(statements),
-      cache: 'no-cache',
-      credentials,
-      headers,
-      mode: 'same-origin',
-      keepalive: true,
-      method: 'POST'
-    }).then(function() {
-      Adapt.trigger('xapi:lrs:sendStatement:success', statements);
-    }).catch(function(error) {
+    try {
+      await fetch(url, {
+        body: JSON.stringify(statements),
+        cache: 'no-cache',
+        credentials,
+        headers,
+        mode: 'same-origin',
+        keepalive: true,
+        method: 'POST'
+      });
+    } catch (error) {
       Adapt.trigger('xapi:lrs:sendStatement:error', error);
-    });
+      return;
+    }
+    Adapt.trigger('xapi:lrs:sendStatement:success', statements);
   }
 
   /**
@@ -1416,19 +1394,16 @@ class XAPI extends Backbone.Model {
   /**
    * Send an xAPI statement to the LRS once all async operations are complete
    * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   * @param {ADLCallback} [callback]
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
    */
-  onStatementReady(statement, callback, attachments) {
-    this.xapiWrapper.sendStatement(statement, error => {
-      if (error) {
-        Adapt.trigger('xapi:lrs:sendStatement:error', error);
-        return callback(error);
-      }
-
-      Adapt.trigger('xapi:lrs:sendStatement:success', statement);
-      return callback();
-    }, attachments);
+  async onStatementReady(statement, attachments) {
+    try {
+      await this.xapiWrapper.sendStatement(statement, attachments);
+    } catch (error) {
+      Adapt.trigger('xapi:lrs:sendStatement:error', error);
+      throw error;
+    }
+    Adapt.trigger('xapi:lrs:sendStatement:success', statement);
   }
 
   /**
@@ -1437,12 +1412,11 @@ class XAPI extends Backbone.Model {
    * If a url is specified for an attachment then retrieve the text content
    * and store this instead
    * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   * @param {ADLCallback} [callback]
    */
-  processAttachments(statement, callback) {
+  async processAttachments(statement) {
     const attachments = statement.attachments;
 
-    Async.each(attachments, (attachment, nextAttachment) => {
+    await Async.each(attachments, (attachment, nextAttachment) => {
 
       // First check the attachment for a value
       if (attachment.value) {
@@ -1473,19 +1447,16 @@ class XAPI extends Backbone.Model {
       } else {
         Adapt.log.warn('Attachment object contained neither a value or url property.');
       }
-    }, () => {
-      delete statement.attachments;
-      this.onStatementReady(statement, callback, attachments);
     });
+    delete statement.attachments;
+    await this.onStatementReady(statement, attachments);
   }
 
   /**
    * Sends multiple xAPI statements to the LRS.
    * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
-   * @param {ErrorOnlyCallback} [callback]
    */
-  sendStatements(statements, callback) {
-    callback = _.isFunction(callback) ? callback : function() { };
+  async sendStatements(statements) {
 
     if (!statements || statements.length === 0) {
       return;
@@ -1495,16 +1466,15 @@ class XAPI extends Backbone.Model {
 
     // Rather than calling the wrapper's sendStatements() function, iterate
     // over each statement and call sendStatement().
-    Async.each(statements, (statement, nextStatement) => {
-      this.sendStatement(statement, nextStatement);
-    }, (error) => {
-      if (error) {
-        Adapt.log.error('adapt-contrib-xapi:', error);
-        return callback(error);
-      }
-
-      callback();
-    });
+    try {
+      await Async.each(statements, async (statement, nextStatement) => {
+        await this.sendStatement(statement);
+        nextStatement();
+      });
+    } catch (error) {
+      Adapt.log.error('adapt-contrib-xapi:', error);
+      throw error;
+    }
   }
 
   getGlobals() {
