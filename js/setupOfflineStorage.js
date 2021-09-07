@@ -1,5 +1,5 @@
 import Adapt from 'core/js/adapt';
-import XAPI from './adapt-contrib-XAPI';
+import XAPI from './XAPI';
 
 // xAPI handler for Adapt.offlineStorage interface.
 export default function setupOfflineStorage() {
