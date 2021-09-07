@@ -1,7 +1,7 @@
 import Adapt from 'core/js/adapt';
 import xapi from './adapt-contrib-xapi';
 
-//xAPI handler for Adapt.offlineStorage interface.
+// xAPI handler for Adapt.offlineStorage interface.
 const offlineStorage = {
 
   load() {
@@ -36,7 +36,7 @@ const offlineStorage = {
           isDataRestored = true;
         }
 
-        //If not connected return just the store.
+        // If not connected return just the store.
         if (this.useTemporaryStore()) {
           return store.toJSON();
         }
@@ -99,7 +99,7 @@ const offlineStorage = {
         }
 
         if (typeof actor.mbox === 'string' && actor.mbox.length > 0) {
-          return actor.mbox.replace('mailto:', '')
+          return actor.mbox.replace('mailto:', '');
         }
 
         console.log('xAPI: could not determine the learner\'s ID');
@@ -110,6 +110,6 @@ const offlineStorage = {
     });
   }
 
-}
+};
 
 export default offlineStorage;
