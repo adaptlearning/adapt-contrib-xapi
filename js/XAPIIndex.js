@@ -3,7 +3,7 @@ import setupOfflineStorage from './setupOfflineStorage';
 
 class XAPIIndex extends Backbone.Controller {
 
-  initialise() {
+  initialize() {
     this.listenTo(Adapt, 'app:dataLoaded', this.onDataLoaded);
   }
 
