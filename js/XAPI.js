@@ -582,7 +582,7 @@ class XAPI extends Backbone.Model {
     const lang = this.get('displayLang');
     const description = {};
 
-    description[this.get('displayLang')] = this.stripHtml(view.model.get('body'));
+    description[lang] = this.stripHtml(view.model.get('body'));
 
     object.definition = {
       name: this.getNameObject(view.model),
