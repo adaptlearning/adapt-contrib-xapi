@@ -20,7 +20,7 @@ class XAPIIndex extends Backbone.Controller {
     const successEvent = config._shouldTrackState ? 'xapi:stateLoaded' : 'xapi:lrs:initialize:success';
 
     // Ensure that the course still loads if there is a connection error
-    this.listenToOnce(`xapi:lrs:initialize:error ${successEvent}`, this.onLRSReady);
+    this.listenToOnce(Adapt, `xapi:lrs:initialize:error ${successEvent}`, this.onLRSReady);
   }
 
   onLRSReady() {
