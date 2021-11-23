@@ -216,7 +216,8 @@ class XAPI extends Backbone.Model {
           this.xapiWrapper = xapiWrapper;
 
           this.set({
-            actor: launchData.actor
+            actor: launchData.actor,
+            registration: xapiWrapper.lrs.registration
           });
 
           this.xapiWrapper.strictCallbacks = true;
