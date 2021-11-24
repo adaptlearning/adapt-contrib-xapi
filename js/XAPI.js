@@ -65,8 +65,6 @@ class XAPI extends Backbone.Model {
   async initialize() {
     if (!this.getConfig('_isEnabled')) return this;
 
-    this.listenToOnce(Adapt, 'app:dataLoaded', this.onDataLoaded);
-
     Adapt.wait.begin();
 
     // Initialize the xAPIWrapper.
@@ -153,17 +151,6 @@ class XAPI extends Backbone.Model {
     this.restoreState();
     this.onInitialised();
     return this;
-  }
-
-  onDataLoaded() {
-    this.listenTo(Adapt, {
-      'adapt:initialize': this.setupListeners,
-      'xapi:lrs:initialize:error': error => {
-        Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-        this.showError();
-      },
-      'xapi:lrs:sendStatement:error xapi:lrs:sendState:error': this.showError
-    });
   }
 
   static getInstance() {
@@ -1509,4 +1496,4 @@ class XAPI extends Backbone.Model {
   }
 }
 
-export default XAPI.getInstance();
+export default XAPI;

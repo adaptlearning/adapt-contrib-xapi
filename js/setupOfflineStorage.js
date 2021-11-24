@@ -1,8 +1,7 @@
 import Adapt from 'core/js/adapt';
-import XAPI from './XAPI';
 
 // xAPI handler for Adapt.offlineStorage interface.
-export default function setupOfflineStorage() {
+export default function setupOfflineStorage(XAPI) {
   // Use a lightweight fake model to pass into xAPI.sendState
   const fakeModel = {
     get() {
