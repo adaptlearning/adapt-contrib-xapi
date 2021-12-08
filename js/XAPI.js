@@ -1,6 +1,5 @@
 import Adapt from 'core/js/adapt';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
-import Async from 'libraries/async.min';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
 
 class XAPI extends Backbone.Model {
@@ -1060,7 +1059,7 @@ class XAPI extends Backbone.Model {
     });
 
     // Pass the new state to the LRS.
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error, xhr) {
+    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
       if (error) {
         Adapt.trigger('xapi:lrs:sendState:error', error);
       }
@@ -1083,7 +1082,7 @@ class XAPI extends Backbone.Model {
     try {
       for (let type in this.coreObjects) {
         await new Promise((resolve, reject) => {
-          this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
+          this.xapiWrapper.getState(activityId, actor, type, registration, null, (error, xhr) => {
             if (error) {
               Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
               return reject(new Error(error));
@@ -1145,26 +1144,28 @@ class XAPI extends Backbone.Model {
       : null;
 
     try {
-      await Async.each(Object.keys(this.coreObjects), (type, nextType) => {
-        this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
-          if (error) {
-            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(error);
-          }
+      for (let type in this.coreObjects) {
+        await new Promise((resolve, reject) => {
+          this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, (error, xhr) => {
+            if (error) {
+              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              return reject(error);
+            }
 
-          if (!xhr) {
-            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(new Error('\'xhr\' parameter is missing from callback'));
-          }
+            if (!xhr) {
+              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              return reject(new Error('\'xhr\' parameter is missing from callback'));
+            }
 
-          if (xhr.status !== 204) {
-            Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
-            return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
-          }
+            if (xhr.status !== 204) {
+              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              return reject(new Error(`Invalid status code ${xhr.status} returned from getState() call`));
+            }
 
-          return nextType();
+            return resolve();
+          });
         });
-      });
+      }
     } catch (error) {
       Adapt.log.error('adapt-contrib-xapi:', error);
       throw error;
@@ -1396,12 +1397,13 @@ class XAPI extends Backbone.Model {
   async processAttachments(statement) {
     const attachments = statement.attachments;
 
-    await Async.each(attachments, (attachment, nextAttachment) => {
-
+    for (let attachment in attachments) {
       // First check the attachment for a value
       if (attachment.value) {
-        nextAttachment();
-      } else if (attachment.url) {
+        continue;
+      }
+
+      if (attachment.url) {
         // If a url is specified then we need to obtain the string value
         // Use native xhr so we can set the responseType to 'blob'
         const xhr = new XMLHttpRequest();
@@ -1411,12 +1413,11 @@ class XAPI extends Backbone.Model {
             // Use FileReader to retrieve the blob contents as a string
             const reader = new FileReader();
             reader.onload = () => {
-
               // Store the string value in the attachment object and
               // delete the url property which is no longer needed
               attachment.value = reader.result;
               delete attachment.url;
-              nextAttachment();
+              continue;
             };
             reader.readAsBinaryString(this.response);
           }
@@ -1427,7 +1428,8 @@ class XAPI extends Backbone.Model {
       } else {
         Adapt.log.warn('Attachment object contained neither a value or url property.');
       }
-    });
+    }
+
     delete statement.attachments;
     await this.onStatementReady(statement, attachments);
   }
@@ -1437,7 +1439,6 @@ class XAPI extends Backbone.Model {
    * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
    */
   async sendStatements(statements) {
-
     if (!statements || statements.length === 0) {
       return;
     }
@@ -1447,10 +1448,9 @@ class XAPI extends Backbone.Model {
     // Rather than calling the wrapper's sendStatements() function, iterate
     // over each statement and call sendStatement().
     try {
-      await Async.each(statements, async (statement, nextStatement) => {
+      for (let statement in statements) {
         await this.sendStatement(statement);
-        nextStatement();
-      });
+      }
     } catch (error) {
       Adapt.log.error('adapt-contrib-xapi:', error);
       throw error;
