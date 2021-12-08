@@ -1397,10 +1397,11 @@ class XAPI extends Backbone.Model {
   async processAttachments(statement) {
     const attachments = statement.attachments;
 
-    for (let attachment in attachments) {
-      // First check the attachment for a value
+    for (let attachment of attachments) {
+      await new Promise((resolve, reject) => {
+        // First check the attachment for a value
       if (attachment.value) {
-        continue;
+        resolve();
       }
 
       if (attachment.url) {
@@ -1417,7 +1418,7 @@ class XAPI extends Backbone.Model {
               // delete the url property which is no longer needed
               attachment.value = reader.result;
               delete attachment.url;
-              continue;
+              resolve();
             };
             reader.readAsBinaryString(this.response);
           }
@@ -1427,7 +1428,9 @@ class XAPI extends Backbone.Model {
         xhr.send();
       } else {
         Adapt.log.warn('Attachment object contained neither a value or url property.');
+        resolve();
       }
+      });
     }
 
     delete statement.attachments;
@@ -1448,7 +1451,7 @@ class XAPI extends Backbone.Model {
     // Rather than calling the wrapper's sendStatements() function, iterate
     // over each statement and call sendStatement().
     try {
-      for (let statement in statements) {
+      for (let statement of statements) {
         await this.sendStatement(statement);
       }
     } catch (error) {
@@ -1481,7 +1484,7 @@ class XAPI extends Backbone.Model {
 
     // Setup wait so that notify does not get dismissed when the page loads
     Adapt.wait.begin();
-    Adapt.trigger('notify:alert', notifyObject);
+    Adapt.notify.alert(notifyObject);
     // Ensure notify appears on top of the loading screen
     $('.notify').css({ position: 'relative', zIndex: 5001 });
     Adapt.once('notify:closed', Adapt.wait.end);
