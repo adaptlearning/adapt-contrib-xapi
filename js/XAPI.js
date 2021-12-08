@@ -1073,7 +1073,6 @@ class XAPI extends Backbone.Model {
    * Retrieves the state information for the current course.
    */
   async getState() {
-
     const activityId = this.get('activityId');
     const actor = this.get('actor');
     const registration = this.get('shouldUseRegistration') === true
@@ -1082,60 +1081,53 @@ class XAPI extends Backbone.Model {
     const state = {};
 
     try {
-      await Async.each(Object.keys(this.coreObjects), (type, nextType) => {
-        this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
-          _.defer(() => {
+      for (let type in this.coreObjects) {
+        await new Promise((resolve, reject) => {
+          this.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
             if (error) {
-              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-              return nextType(error);
+              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              return reject(new Error(error));
             }
 
             if (!xhr) {
-              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-              return nextType(new Error('\'xhr\' parameter is missing from callback'));
+              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              return reject(new Error('\'xhr\' parameter is missing from callback'));
             }
 
             if (xhr.status === 404) {
-              return nextType();
+              return resolve();
             }
 
             if (xhr.status !== 200) {
-              Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
-              return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
+              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              return reject(new Error(`Invalid status code ${xhr.status} returned from getState() call`));
             }
-
-            let response;
-            let parseError;
 
             // Check for empty response, otherwise the subsequent JSON.parse() will fail.
             if (xhr.response === '') {
-              return nextType();
+              return resolve();
             }
 
             try {
-              response = JSON.parse(xhr.response);
-            } catch (e) {
-              parseError = e;
+              const response = JSON.parse(xhr.response);
+
+              if (!_.isEmpty(response)) {
+                state[type] = response;
+              }
+            } catch (parseError) {
+              return reject(parseError);
             }
 
-            if (parseError) {
-              return nextType(parseError);
-            }
-
-            if (!_.isEmpty(response)) {
-              state[type] = response;
-            }
-
-            return nextType();
+            return resolve();
           });
         });
-      });
+      }
     } catch (error) {
       Adapt.log.error('adapt-contrib-xapi:', error);
       throw error;
     }
 
-    if (state.length > 0) {
+    if (!_.isEmpty(state)) {
       this.set({ state });
     }
 
