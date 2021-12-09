@@ -208,7 +208,7 @@ class XAPI extends Backbone.Model {
 
           this.xapiWrapper.strictCallbacks = true;
 
-          resolve();
+          return resolve();
         }, true, true);
       });
     }
@@ -1400,36 +1400,36 @@ class XAPI extends Backbone.Model {
     for (let attachment of attachments) {
       await new Promise((resolve, reject) => {
         // First check the attachment for a value
-      if (attachment.value) {
-        resolve();
-      }
+        if (attachment.value) {
+          return resolve();
+        }
 
-      if (attachment.url) {
-        // If a url is specified then we need to obtain the string value
-        // Use native xhr so we can set the responseType to 'blob'
-        const xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = () => {
-          if (this.readyState === 4 && this.status === 200) {
+        if (attachment.url) {
+          // If a url is specified then we need to obtain the string value
+          // Use native xhr so we can set the responseType to 'blob'
+          const xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = () => {
+            if (this.readyState === 4 && this.status === 200) {
 
-            // Use FileReader to retrieve the blob contents as a string
-            const reader = new FileReader();
-            reader.onload = () => {
-              // Store the string value in the attachment object and
-              // delete the url property which is no longer needed
-              attachment.value = reader.result;
-              delete attachment.url;
-              resolve();
-            };
-            reader.readAsBinaryString(this.response);
-          }
-        };
-        xhr.open('GET', attachment.url);
-        xhr.responseType = 'blob';
-        xhr.send();
-      } else {
-        Adapt.log.warn('Attachment object contained neither a value or url property.');
-        resolve();
-      }
+              // Use FileReader to retrieve the blob contents as a string
+              const reader = new FileReader();
+              reader.onload = () => {
+                // Store the string value in the attachment object and
+                // delete the url property which is no longer needed
+                attachment.value = reader.result;
+                delete attachment.url;
+                return resolve();
+              };
+              reader.readAsBinaryString(this.response);
+            }
+          };
+          xhr.open('GET', attachment.url);
+          xhr.responseType = 'blob';
+          xhr.send();
+        } else {
+          Adapt.log.warn('Attachment object contained neither a value or url property.');
+          return resolve();
+        }
       });
     }
 
