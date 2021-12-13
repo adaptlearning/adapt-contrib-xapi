@@ -48,6 +48,20 @@ export function getBaseUrl() {
 }
 
 /**
+ * Retrieve a config item for the current course, e.g. '_activityID'.
+ * @param {string} key - The data attribute to fetch.
+ * @return {object|boolean} The attribute value, or false if not found.
+ */
+export function getConfig(key) {
+  const config = Adapt.config?.get('_xapi');
+  if (!config || key === '' || typeof config[key] === 'undefined') {
+    return false;
+  }
+
+  return config[key];
+}
+
+/**
  * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
  */
 export function getLearnerInfo() {
@@ -88,7 +102,9 @@ function getGlobals() {
   );
 }
 
-export function showErrorNotification() {
+export function showError() {
+  if (getConfig('_lrsFailureBehaviour') === 'ignore') return;
+
   const notifyObject = {
     title: getGlobals().lrsConnectionErrorTitle,
     body: getGlobals().lrsConnectionErrorMessage,
@@ -177,4 +193,22 @@ export function processInteractionResponse(responseType, response) {
   }
 
   return response;
+}
+
+/**
+ * Takes an assessment state and returns a results object based on it.
+ * @param {object} assessment - An instance of the assessment state.
+ * @return {object} - A result object containing score, success and completion properties.
+ */
+export function getAssessmentResultObject(assessment) {
+  return {
+    score: {
+      scaled: (assessment.scoreAsPercent / 100),
+      raw: assessment.score,
+      min: 0,
+      max: assessment.maxScore
+    },
+    success: assessment.isPass,
+    completion: assessment.isComplete
+  };
 }

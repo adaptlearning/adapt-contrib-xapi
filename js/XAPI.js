@@ -1,6 +1,8 @@
 import Adapt from 'core/js/adapt';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
+import { sendStatement, sendStatements, sendStatementsSync } from './StatementHandler'
+import { convertMillisecondsToISO8601Duration, getActivityType, getAssessmentResultObject, getBaseUrl, getConfig, getLearnerInfo, processInteractionResponse, stripHtml } from './Helpers'
 
 class XAPI extends Backbone.Model {
 
@@ -62,7 +64,7 @@ class XAPI extends Backbone.Model {
 
   /** Implementation starts here */
   async initialize() {
-    if (!this.getConfig('_isEnabled')) return this;
+    if (!getConfig('_isEnabled')) return this;
 
     Adapt.wait.begin();
 
@@ -75,13 +77,13 @@ class XAPI extends Backbone.Model {
     }
 
     this.set({
-      activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
+      activityId: (this.getLRSAttribute('activity_id') || getConfig('_activityID') || getBaseUrl()),
       displayLang: Adapt.config.get('_defaultLanguage'),
-      lang: this.getConfig('_lang'),
-      generateIds: this.getConfig('_generateIds'),
-      shouldTrackState: this.getConfig('_shouldTrackState'),
-      shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
-      componentBlacklist: this.getConfig('_componentBlacklist') || []
+      lang: getConfig('_lang'),
+      generateIds: getConfig('_generateIds'),
+      shouldTrackState: getConfig('_shouldTrackState'),
+      shouldUseRegistration: getConfig('_shouldUseRegistration') || false,
+      componentBlacklist: getConfig('_componentBlacklist') || []
     });
 
     let componentBlacklist = this.get('componentBlacklist');
@@ -113,7 +115,7 @@ class XAPI extends Backbone.Model {
     ];
 
     try {
-      await this.sendStatements(statements);
+      await sendStatements(statements);
     } catch (error) {
       this.onInitialised(error);
       return this;
@@ -139,35 +141,21 @@ class XAPI extends Backbone.Model {
       return this;
     }
 
+    let verb;
+
     if (this.get('state').length === 0) {
       // This is a new attempt, send 'attempted'.
-      await this.sendStatement(this.getCourseStatement(window.ADL.verbs.attempted));
+      verb = this.getCourseStatement(window.ADL.verbs.attempted);
     } else {
       // This is a continuation of an existing attempt, send 'resumed'.
-      await this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
+      verb = this.getCourseStatement(window.ADL.verbs.resumed);
     }
+
+    await sendStatement(this.xapiWrapper, verb);
 
     this.restoreState();
     this.onInitialised();
     return this;
-  }
-
-  static getInstance() {
-    if (!this.instance) this.instance = new XAPI();
-    return this.instance;
-  }
-
-  /**
-   * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
-   */
-  getLearnerInfo() {
-    const globals = Adapt.course.get('_globals');
-
-    if (!globals._learnerInfo) {
-      globals._learnerInfo = {};
-    }
-
-    Object.assign(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
   }
 
   /**
@@ -175,7 +163,7 @@ class XAPI extends Backbone.Model {
    */
   async initializeWrapper() {
     // If no endpoint has been configured, assume the ADL Launch method.
-    if (!this.getConfig('_endpoint')) {
+    if (!getConfig('_endpoint')) {
       // check to see if configuration has been passed in URL
       this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
       if (this.checkWrapperConfig()) {
@@ -253,7 +241,7 @@ class XAPI extends Backbone.Model {
     // Since a language change counts as a new attempt, reset the state.
     await this.deleteState();
     // Send a statement to track the (new) course.
-    await this.sendStatement(this.getCourseStatement(window.ADL.verbs.launched));
+    await sendStatement(this.xapiWrapper, this.getCourseStatement(window.ADL.verbs.launched));
   }
 
   /**
@@ -265,7 +253,7 @@ class XAPI extends Backbone.Model {
     if (document.visibilityState === 'visible') {
       this.isTerminated = false;
 
-      return this.sendStatement(this.getCourseStatement(window.ADL.verbs.resumed));
+      return sendStatement(this.xapiWrapper, this.getCourseStatement(window.ADL.verbs.resumed));
     }
 
     await this.sendUnloadStatements();
@@ -286,7 +274,7 @@ class XAPI extends Backbone.Model {
     statements.push(this.getCourseStatement(window.ADL.verbs.terminated));
 
     // Note: it is not possible to intercept these synchronous statements.
-    await this.sendStatementsSync(statements);
+    await sendStatementsSync(statements);
 
     this.isTerminated = true;
   }
@@ -308,7 +296,7 @@ class XAPI extends Backbone.Model {
     const newConfig = {};
 
     keys.forEach(key => {
-      let val = this.getConfig('_' + key);
+      let val = getConfig('_' + key);
 
       if (val) {
         // Note: xAPI wrapper requires a trailing slash and protocol to be present
@@ -335,60 +323,12 @@ class XAPI extends Backbone.Model {
     }
   }
 
-  /**
-   * Gets the URL the course is currently running on.
-   * @return {string} The URL to the current course.
-   */
-  getBaseUrl() {
-    const url = window.location.origin + window.location.pathname;
-
-    Adapt.log.info(`adapt-contrib-xapi: Using detected URL (${url}) as ActivityID`);
-
-    return url;
-  }
-
   getAttemptDuration() {
     return this.startAttemptDuration + this.getSessionDuration();
   }
 
   getSessionDuration() {
     return Math.abs((new Date()) - this.startTimeStamp);
-  }
-
-  /**
-   * Converts milliseconds to an ISO8601 duration
-   * @param {int} inputMilliseconds - Duration in milliseconds
-   * @return {string} - Duration in ISO8601 format
-   */
-  convertMillisecondsToISO8601Duration(inputMilliseconds) {
-    const iInputMilliseconds = parseInt(inputMilliseconds, 10);
-    let inputIsNegative = '';
-    let rtnStr = '';
-
-    // Round to nearest 0.01 seconds.
-    let iInputCentiseconds = Math.round(iInputMilliseconds / 10);
-
-    if (iInputCentiseconds < 0) {
-      inputIsNegative = '-';
-      iInputCentiseconds = iInputCentiseconds * -1;
-    }
-
-    const hours = parseInt(((iInputCentiseconds) / 360000), 10);
-    const minutes = parseInt((((iInputCentiseconds) % 360000) / 6000), 10);
-    const seconds = (((iInputCentiseconds) % 360000) % 6000) / 100;
-
-    rtnStr = inputIsNegative + 'PT';
-    if (hours > 0) {
-      rtnStr += hours + 'H';
-    }
-
-    if (minutes > 0) {
-      rtnStr += minutes + 'M';
-    }
-
-    rtnStr += seconds + 'S';
-
-    return rtnStr;
   }
 
   setupListeners() {
@@ -398,7 +338,7 @@ class XAPI extends Backbone.Model {
     }
 
     // Allow surfacing the learner's info in _globals.
-    this.getLearnerInfo();
+    getLearnerInfo();
 
     this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
@@ -407,7 +347,7 @@ class XAPI extends Backbone.Model {
     }
 
     // Use the config to specify the core events.
-    this.coreEvents = Object.assign(this.coreEvents, this.getConfig('_coreEvents'));
+    this.coreEvents = Object.assign(this.coreEvents, getConfig('_coreEvents'));
 
     // Always listen out for course completion.
     this.listenTo(Adapt, 'tracking:complete', this.onTrackingComplete);
@@ -492,12 +432,12 @@ class XAPI extends Backbone.Model {
       case window.ADL.verbs.failed:
       case window.ADL.verbs.passed:
       case window.ADL.verbs.suspended: {
-        result.duration = this.convertMillisecondsToISO8601Duration(this.getAttemptDuration());
+        result.duration = convertMillisecondsToISO8601Duration(this.getAttemptDuration());
         break;
       }
 
       case window.ADL.verbs.terminated: {
-        result.duration = this.convertMillisecondsToISO8601Duration(this.getSessionDuration());
+        result.duration = convertMillisecondsToISO8601Duration(this.getSessionDuration());
         break;
       }
     }
@@ -519,41 +459,6 @@ class XAPI extends Backbone.Model {
   }
 
   /**
-   * Gets the activity type for a given model.
-   * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
-   * @return {string} A URL to the current activity type.
-   */
-  getActivityType(model) {
-    let type = '';
-
-    switch (model.get('_type')) {
-      case 'component': {
-        type = model.get('_isQuestionType') ? window.ADL.activityTypes.interaction : window.ADL.activityTypes.media;
-        break;
-      }
-      case 'block':
-      case 'article': {
-        type = window.ADL.activityTypes.interaction;
-        break;
-      }
-      case 'course': {
-        type = window.ADL.activityTypes.course;
-        break;
-      }
-      case 'menu': {
-        type = window.ADL.activityTypes.module;
-        break;
-      }
-      case 'page': {
-        type = window.ADL.activityTypes.lesson;
-        break;
-      }
-    }
-
-    return type;
-  }
-
-  /**
    * Sends an 'answered' statement to the LRS.
    * @param {ComponentView} view - An instance of Adapt.ComponentView.
    */
@@ -569,7 +474,7 @@ class XAPI extends Backbone.Model {
     const lang = this.get('displayLang');
     const description = {};
 
-    description[lang] = this.stripHtml(view.model.get('body'));
+    description[lang] = stripHtml(view.model.get('body'));
 
     object.definition = {
       name: this.getNameObject(view.model),
@@ -606,55 +511,14 @@ class XAPI extends Backbone.Model {
       },
       success: view.model.get('_isCorrect'),
       completion,
-      response: this.processInteractionResponse(object.definition.interactionType, view.getResponse())
+      response: processInteractionResponse(object.definition.interactionType, view.getResponse())
     };
 
     // Answered
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.answered), object, result);
 
     this.addGroupingActivity(view.model, statement);
-    await this.sendStatement(statement);
-  }
-
-  /**
-   * Removes the HTML tags/attributes and returns a string.
-   * @param {string} html - A string containing HTML
-   * @returns {string} The same string minus HTML
-   */
-  stripHtml(html) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-
-    return tempDiv.textContent || tempDiv.innerText || '';
-  }
-
-  /**
-   * In order to support SCORM 1.2 and SCORM 2004, some of the components return a non-standard
-   * response.
-   * @param {string} responseType - The type of the response.
-   * @param {string} response - The unprocessed response string.
-   * @returns {string} A response formatted for xAPI compatibility.
-   */
-  processInteractionResponse(responseType, response) {
-    switch (responseType) {
-      case 'choice': {
-        response = response.replace(/,|#/g, '[,]');
-
-        break;
-      }
-      case 'matching': {
-        // Example: 1[.]1_1[,]2[.]2_5
-        response = response
-          .split('#')
-          .map((val, i) => {
-            return (i + 1) + '[.]' + val.replace('.', '_');
-          })
-          .join('[,]');
-        break;
-      }
-    }
-
-    return response;
+    await sendStatement(this.xapiWrapper, statement);
   }
 
   /**
@@ -671,14 +535,14 @@ class XAPI extends Backbone.Model {
 
     object.definition = {
       name: this.getNameObject(model),
-      type: this.getActivityType(model)
+      type: getActivityType(model)
     };
 
     // Experienced.
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.experienced), object);
 
     this.addGroupingActivity(model, statement);
-    await this.sendStatement(statement);
+    await sendStatement(this.xapiWrapper, statement);
   }
 
   /**
@@ -713,14 +577,14 @@ class XAPI extends Backbone.Model {
 
     object.definition = {
       name: this.getNameObject(model),
-      type: this.getActivityType(model)
+      type: getActivityType(model)
     };
 
     // Completed.
     const statement = this.getStatement(this.getVerb(window.ADL.verbs.completed), object, result);
 
     this.addGroupingActivity(model, statement);
-    await this.sendStatement(statement);
+    await sendStatement(this.xapiWrapper, statement);
   }
 
   /**
@@ -784,24 +648,6 @@ class XAPI extends Backbone.Model {
   }
 
   /**
-   * Takes an assessment state and returns a results object based on it.
-   * @param {object} assessment - An instance of the assessment state.
-   * @return {object} - A result object containing score, success and completion properties.
-   */
-  getAssessmentResultObject(assessment) {
-    return {
-      score: {
-        scaled: (assessment.scoreAsPercent / 100),
-        raw: assessment.score,
-        min: 0,
-        max: assessment.maxScore
-      },
-      success: assessment.isPass,
-      completion: assessment.isComplete
-    };
-  }
-
-  /**
    * Gets an Activity for use in an xAPI statement.
    * @param {object} assessment - Object representing the assessment.
    * @returns {ADL.XAPIStatement.Activity} - Activity representing the assessment.
@@ -833,7 +679,7 @@ class XAPI extends Backbone.Model {
    */
   onAssessmentComplete(assessment) {
     const object = this.getAssessmentObject(assessment);
-    const result = this.getAssessmentResultObject(assessment);
+    const result = getAssessmentResultObject(assessment);
     let statement;
 
     if (assessment.isPass) {
@@ -849,7 +695,7 @@ class XAPI extends Backbone.Model {
 
     // Delay so that component completion can be recorded before assessment completion.
     _.delay(async () => {
-      await this.sendStatement(statement);
+      await sendStatement(this.xapiWrapper, statement);
     }, 500);
   }
 
@@ -939,7 +785,7 @@ class XAPI extends Backbone.Model {
       result = { completion: true };
     } else {
       // The assessment(s) play a part in completion, so use their result.
-      result = this.getAssessmentResultObject(completionData.assessment);
+      result = getAssessmentResultObject(completionData.assessment);
     }
 
     // Store a reference that the course has actually been completed.
@@ -947,7 +793,7 @@ class XAPI extends Backbone.Model {
 
     _.defer(async () => {
       // Send the completion status.
-      await this.sendStatement(this.getCourseStatement(completionVerb, result));
+      await sendStatement(this.xapiWrapper, this.getCourseStatement(completionVerb, result));
     });
   }
 
@@ -1173,20 +1019,6 @@ class XAPI extends Backbone.Model {
   }
 
   /**
-   * Retrieve a config item for the current course, e.g. '_activityID'.
-   * @param {string} key - The data attribute to fetch.
-   * @return {object|boolean} The attribute value, or false if not found.
-   */
-  getConfig(key) {
-    const config = Adapt.config?.get('_xapi');
-    if (!config || key === '' || typeof config[key] === 'undefined') {
-      return false;
-    }
-
-    return config[key];
-  }
-
-  /**
    * Retrieve an LRS attribute for the current session, e.g. 'actor'.
    * @param {string} key - The attribute to fetch.
    * @return {object|null} the attribute value, or null if not found.
@@ -1286,208 +1118,6 @@ class XAPI extends Backbone.Model {
     }
 
     return true;
-  }
-
-  /**
-   * Prepares to send a single xAPI statement to the LRS.
-   * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   * @param {array} [attachments] - An array of attachments to pass to the LRS.
-   */
-  async sendStatement(statement, attachments = null) {
-    if (!statement) {
-      return;
-    }
-
-    Adapt.trigger('xapi:preSendStatement', statement);
-
-    // Allow the trigger above to augment attachments if the attachments
-    // parameter is not set.
-    if (attachments === undefined && statement.attachments) {
-      return await this.processAttachments(statement);
-    }
-    await this.onStatementReady(statement, attachments);
-  }
-
-  /**
-   * Sends statements using the Fetch API in order to make use of the keepalive
-   * feature not available in AJAX requests. This makes the sending of suspended
-   * and terminated statements more reliable.
-   */
-  async sendStatementsSync(statements) {
-    const lrs = window.ADL.XAPIWrapper.lrs;
-
-    // Fetch not supported in IE and keepalive/custom headers
-    // not supported for CORS preflight requests so attempt
-    // to send the statement in the usual way
-    if (!window.fetch || this.isCORS(lrs.endpoint)) {
-      return this.sendStatements(statements);
-    }
-
-    let url = lrs.endpoint + 'statements';
-    const credentials = window.ADL.XAPIWrapper.withCredentials ? 'include' : 'omit';
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: lrs.auth,
-      'X-Experience-API-Version': window.ADL.XAPIWrapper.xapiVersion
-    };
-
-    // Add extended LMS-specified values to the URL
-    const extended = lrs.extended.map((value, key) => {
-      return key + '=' + encodeURIComponent(value);
-    });
-
-    if (extended.length > 0) {
-      url += (url.indexOf('?') > -1 ? '&' : '?') + extended.join('&');
-    }
-
-    try {
-      await fetch(url, {
-        body: JSON.stringify(statements),
-        cache: 'no-cache',
-        credentials,
-        headers,
-        mode: 'same-origin',
-        keepalive: true,
-        method: 'POST'
-      });
-    } catch (error) {
-      Adapt.trigger('xapi:lrs:sendStatement:error', error);
-      return;
-    }
-    Adapt.trigger('xapi:lrs:sendStatement:success', statements);
-  }
-
-  /**
-   * Determine if sending the statement involves a Cross Origin Request
-   * @param {string} url - the lrs endpoint
-   * @returns {boolean}
-   */
-  isCORS(url) {
-    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
-    let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
-    if (isCORS) return true;
-    const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
-    isCORS = (urlPort === location.port);
-
-    return isCORS;
-  }
-
-  /**
-   * Send an xAPI statement to the LRS once all async operations are complete
-   * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   * @param {array} [attachments] - An array of attachments to pass to the LRS.
-   */
-  async onStatementReady(statement, attachments) {
-    try {
-      await this.xapiWrapper.sendStatement(statement, attachments);
-    } catch (error) {
-      Adapt.trigger('xapi:lrs:sendStatement:error', error);
-      throw error;
-    }
-    Adapt.trigger('xapi:lrs:sendStatement:success', statement);
-  }
-
-  /**
-   * Process any attachments that have been added to the statement object by
-   * intercepting the send operation at the xapi:preSendStatement trigger
-   * If a url is specified for an attachment then retrieve the text content
-   * and store this instead
-   * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
-   */
-  async processAttachments(statement) {
-    const attachments = statement.attachments;
-
-    for (let attachment of attachments) {
-      await new Promise((resolve, reject) => {
-        // First check the attachment for a value
-        if (attachment.value) {
-          return resolve();
-        }
-
-        if (attachment.url) {
-          // If a url is specified then we need to obtain the string value
-          // Use native xhr so we can set the responseType to 'blob'
-          const xhr = new XMLHttpRequest();
-          xhr.onreadystatechange = () => {
-            if (this.readyState === 4 && this.status === 200) {
-
-              // Use FileReader to retrieve the blob contents as a string
-              const reader = new FileReader();
-              reader.onload = () => {
-                // Store the string value in the attachment object and
-                // delete the url property which is no longer needed
-                attachment.value = reader.result;
-                delete attachment.url;
-                return resolve();
-              };
-              reader.readAsBinaryString(this.response);
-            }
-          };
-          xhr.open('GET', attachment.url);
-          xhr.responseType = 'blob';
-          xhr.send();
-        } else {
-          Adapt.log.warn('Attachment object contained neither a value or url property.');
-          return resolve();
-        }
-      });
-    }
-
-    delete statement.attachments;
-    await this.onStatementReady(statement, attachments);
-  }
-
-  /**
-   * Sends multiple xAPI statements to the LRS.
-   * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
-   */
-  async sendStatements(statements) {
-    if (!statements || statements.length === 0) {
-      return;
-    }
-
-    Adapt.trigger('xapi:preSendStatements', statements);
-
-    // Rather than calling the wrapper's sendStatements() function, iterate
-    // over each statement and call sendStatement().
-    try {
-      for (let statement of statements) {
-        await this.sendStatement(statement);
-      }
-    } catch (error) {
-      Adapt.log.error('adapt-contrib-xapi:', error);
-      throw error;
-    }
-  }
-
-  getGlobals() {
-    return _.defaults(
-      (
-        Adapt?.course?.get('_globals')?._extensions?._xapi
-      ) || {},
-      {
-        confirm: 'OK',
-        lrsConnectionErrorTitle: 'LRS not available',
-        lrsConnectionErrorMessage: 'We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.'
-      }
-    );
-  }
-
-  showError() {
-    if (this.getConfig('_lrsFailureBehaviour') === 'ignore') return;
-
-    const notifyObject = {
-      title: this.getGlobals().lrsConnectionErrorTitle,
-      body: this.getGlobals().lrsConnectionErrorMessage,
-      confirmText: this.getGlobals().confirm
-    };
-
-    // Setup wait so that notify does not get dismissed when the page loads
-    Adapt.wait.begin();
-    Adapt.notify.alert(notifyObject);
-    // Ensure notify appears on top of the loading screen
-    $('.notify').css({ position: 'relative', zIndex: 5001 });
-    Adapt.once('notify:closed', Adapt.wait.end);
   }
 }
 
