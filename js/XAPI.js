@@ -326,7 +326,7 @@ class XAPI extends Backbone.Model {
       }
     });
 
-    if (newConfig.length > 0) {
+    if (Object.keys(newConfig).length > 0) {
       this.xapiWrapper.changeConfig(newConfig);
 
       if (!this.xapiWrapper.testConfig()) {
