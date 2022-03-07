@@ -326,7 +326,7 @@ class XAPI extends Backbone.Model {
       }
     });
 
-    if (newConfig.length > 0) {
+    if (Object.keys(newConfig).length > 0) {
       this.xapiWrapper.changeConfig(newConfig);
 
       if (!this.xapiWrapper.testConfig()) {
@@ -957,7 +957,7 @@ class XAPI extends Backbone.Model {
   restoreState() {
     const state = this.get('state');
 
-    if (state.length === 0) return;
+    if (state && Object.keys(state).length === 0) return;
 
     const Adapt = require('core/js/adapt');
 
@@ -1001,7 +1001,7 @@ class XAPI extends Backbone.Model {
       object
     );
 
-    if (result.length > 0) {
+    if (result && Object.keys(result).length > 0) {
       statement.result = result;
     }
 
