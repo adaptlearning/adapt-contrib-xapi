@@ -1331,8 +1331,10 @@ class XAPI extends Backbone.Model {
       'X-Experience-API-Version': window.ADL.XAPIWrapper.xapiVersion
     };
 
+    const lrsExtended = lrs.extended || [];
+
     // Add extended LMS-specified values to the URL
-    const extended = lrs.extended.map((value, key) => {
+    const extended = lrsExtended.map((value, key) => {
       return key + '=' + encodeURIComponent(value);
     });
 
