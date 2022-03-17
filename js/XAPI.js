@@ -1363,7 +1363,7 @@ class XAPI extends Backbone.Model {
    * @returns {boolean}
    */
   isCORS(url) {
-    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
+    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
     if (isCORS) return true;
     const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
