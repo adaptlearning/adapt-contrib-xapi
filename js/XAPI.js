@@ -1331,8 +1331,10 @@ class XAPI extends Backbone.Model {
       'X-Experience-API-Version': window.ADL.XAPIWrapper.xapiVersion
     };
 
+    const lrsExtended = lrs.extended || [];
+
     // Add extended LMS-specified values to the URL
-    const extended = lrs.extended.map((value, key) => {
+    const extended = lrsExtended.map((value, key) => {
       return key + '=' + encodeURIComponent(value);
     });
 
@@ -1363,7 +1365,7 @@ class XAPI extends Backbone.Model {
    * @returns {boolean}
    */
   isCORS(url) {
-    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:]*):?(\d+)?(\/.*)?$/);
+    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
     if (isCORS) return true;
     const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
