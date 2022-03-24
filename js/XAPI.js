@@ -1,5 +1,10 @@
 import Adapt from 'core/js/adapt';
+import data from 'core/js/data';
 import COMPLETION_STATE from 'core/js/enums/completionStateEnum';
+import logging from 'core/js/logging';
+import notify from 'core/js/notify';
+import offlineStorage from 'core/js/offlineStorage';
+import wait from 'core/js/wait';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
 
 class XAPI extends Backbone.Model {
@@ -64,7 +69,7 @@ class XAPI extends Backbone.Model {
   async initialize() {
     if (!this.getConfig('_isEnabled')) return this;
 
-    Adapt.wait.begin();
+    wait.begin();
 
     // Initialize the xAPIWrapper.
     try {
@@ -97,7 +102,7 @@ class XAPI extends Backbone.Model {
 
     if (!this.validateProps()) {
       const error = new Error('Missing required properties');
-      Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+      logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
       this.onInitialised(error);
       return this;
     }
@@ -167,7 +172,7 @@ class XAPI extends Backbone.Model {
       globals._learnerInfo = {};
     }
 
-    Object.assign(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
+    Object.assign(globals._learnerInfo, offlineStorage.get('learnerinfo'));
   }
 
   /**
@@ -234,7 +239,7 @@ class XAPI extends Backbone.Model {
   onInitialised(error) {
     this.set({ isInitialised: !error });
 
-    Adapt.wait.end();
+    wait.end();
 
     _.defer(() => {
       if (error) {
@@ -316,7 +321,7 @@ class XAPI extends Backbone.Model {
           val = val.replace(/\/?$/, '/');
 
           if (!/^https?:\/\//i.test(val)) {
-            Adapt.log.warn('adapt-contrib-xapi: "_endpoint" value is missing protocol (defaulting to http://)');
+            logging.warn('adapt-contrib-xapi: "_endpoint" value is missing protocol (defaulting to http://)');
 
             val = 'http://' + val;
           }
@@ -342,7 +347,7 @@ class XAPI extends Backbone.Model {
   getBaseUrl() {
     const url = window.location.origin + window.location.pathname;
 
-    Adapt.log.info(`adapt-contrib-xapi: Using detected URL (${url}) as ActivityID`);
+    logging.info(`adapt-contrib-xapi: Using detected URL (${url}) as ActivityID`);
 
     return url;
   }
@@ -393,7 +398,7 @@ class XAPI extends Backbone.Model {
 
   setupListeners() {
     if (!this.get('isInitialised')) {
-      Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
+      logging.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
       return;
     }
 
@@ -730,7 +735,7 @@ class XAPI extends Backbone.Model {
    */
   getLessonActivity(page) {
     const pageModel = (typeof page === 'string')
-      ? Adapt.findById(page)
+      ? data.findById(page)
       : page;
     const activity = new window.ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel));
     const name = this.getNameObject(pageModel);
@@ -864,7 +869,7 @@ class XAPI extends Backbone.Model {
       verb = window.ADL.verbs[key];
 
       if (!verb) {
-        Adapt.log.error(`adapt-contrib-xapi: Verb " ${key} " does not exist in window.ADL.verbs object`);
+        logging.error(`adapt-contrib-xapi: Verb " ${key} " does not exist in window.ADL.verbs object`);
       }
     }
 
@@ -968,7 +973,7 @@ class XAPI extends Backbone.Model {
         if (restoreModel) {
           restoreModel.setTrackableState(stateObject);
         } else {
-          Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for component: ' + stateObject._id);
+          logging.warn('adapt-contrib-xapi: Unable to restore state for component: ' + stateObject._id);
         }
       });
     }
@@ -980,7 +985,7 @@ class XAPI extends Backbone.Model {
         if (restoreModel) {
           restoreModel.setTrackableState(stateObject);
         } else {
-          Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
+          logging.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
         }
       });
     }
@@ -1084,12 +1089,12 @@ class XAPI extends Backbone.Model {
         await new Promise((resolve, reject) => {
           this.xapiWrapper.getState(activityId, actor, type, registration, null, (error, xhr) => {
             if (error) {
-              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
               return reject(new Error(error));
             }
 
             if (!xhr) {
-              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
               return reject(new Error('\'xhr\' parameter is missing from callback'));
             }
 
@@ -1098,7 +1103,7 @@ class XAPI extends Backbone.Model {
             }
 
             if (xhr.status !== 200) {
-              Adapt.log.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: getState() failed for ${activityId} (${type})`);
               return reject(new Error(`Invalid status code ${xhr.status} returned from getState() call`));
             }
 
@@ -1122,7 +1127,7 @@ class XAPI extends Backbone.Model {
         });
       }
     } catch (error) {
-      Adapt.log.error('adapt-contrib-xapi:', error);
+      logging.error('adapt-contrib-xapi:', error);
       throw error;
     }
 
@@ -1148,17 +1153,17 @@ class XAPI extends Backbone.Model {
         await new Promise((resolve, reject) => {
           this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, (error, xhr) => {
             if (error) {
-              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
               return reject(error);
             }
 
             if (!xhr) {
-              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
               return reject(new Error('\'xhr\' parameter is missing from callback'));
             }
 
             if (xhr.status !== 204) {
-              Adapt.log.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
+              logging.warn(`adapt-contrib-xapi: deleteState() failed for ${activityId} (${type})`);
               return reject(new Error(`Invalid status code ${xhr.status} returned from getState() call`));
             }
 
@@ -1167,7 +1172,7 @@ class XAPI extends Backbone.Model {
         });
       }
     } catch (error) {
-      Adapt.log.error('adapt-contrib-xapi:', error);
+      logging.error('adapt-contrib-xapi:', error);
       throw error;
     }
   }
@@ -1272,12 +1277,12 @@ class XAPI extends Backbone.Model {
     let errorCount = 0;
 
     if (!this.get('actor') || typeof this.get('actor') !== 'object') {
-      Adapt.log.warn('adapt-contrib-xapi: "actor" attribute not found!');
+      logging.warn('adapt-contrib-xapi: "actor" attribute not found!');
       errorCount++;
     }
 
     if (!this.get('activityId')) {
-      Adapt.log.warn('adapt-contrib-xapi: "activityId" attribute not found!');
+      logging.warn('adapt-contrib-xapi: "activityId" attribute not found!');
       errorCount++;
     }
 
@@ -1429,7 +1434,7 @@ class XAPI extends Backbone.Model {
           xhr.responseType = 'blob';
           xhr.send();
         } else {
-          Adapt.log.warn('Attachment object contained neither a value or url property.');
+          logging.warn('Attachment object contained neither a value or url property.');
           return resolve();
         }
       });
@@ -1457,7 +1462,7 @@ class XAPI extends Backbone.Model {
         await this.sendStatement(statement);
       }
     } catch (error) {
-      Adapt.log.error('adapt-contrib-xapi:', error);
+      logging.error('adapt-contrib-xapi:', error);
       throw error;
     }
   }
@@ -1485,11 +1490,11 @@ class XAPI extends Backbone.Model {
     };
 
     // Setup wait so that notify does not get dismissed when the page loads
-    Adapt.wait.begin();
-    Adapt.notify.alert(notifyObject);
+    wait.begin();
+    notify.alert(notifyObject);
     // Ensure notify appears on top of the loading screen
     $('.notify').css({ position: 'relative', zIndex: 5001 });
-    Adapt.once('notify:closed', Adapt.wait.end);
+    Adapt.once('notify:closed', wait.end);
   }
 }
 

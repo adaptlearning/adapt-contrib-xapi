@@ -1,4 +1,5 @@
 import Adapt from 'core/js/adapt';
+import offlineStorage from 'core/js/offlineStorage';
 
 // xAPI handler for Adapt.offlineStorage interface.
 export default function setupOfflineStorage(XAPI) {
@@ -12,7 +13,7 @@ export default function setupOfflineStorage(XAPI) {
   const store = new Backbone.Model();
   let isDataRestored = false;
 
-  Adapt.offlineStorage.initialize({
+  offlineStorage.initialize({
 
     get(name) {
       if (!name) {
