@@ -1,4 +1,6 @@
 import Adapt from 'core/js/adapt';
+import logging from 'core/js/logging';
+import offlineStorage from 'core/js/offlineStorage';
 import setupOfflineStorage from './setupOfflineStorage';
 import XAPI from './XAPI';
 
@@ -20,7 +22,7 @@ class XAPIIndex extends Backbone.Controller {
     xapi.listenTo(Adapt, {
       'adapt:initialize': xapi.setupListeners,
       'xapi:lrs:initialize:error': error => {
-        Adapt.log.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
+        logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
         xapi.showError();
       },
       'xapi:lrs:sendStatement:error xapi:lrs:sendState:error': xapi.showError
@@ -36,8 +38,8 @@ class XAPIIndex extends Backbone.Controller {
   }
 
   onLRSReady() {
-    Adapt.offlineStorage.get();
-    Adapt.offlineStorage.setReadyStatus();
+    offlineStorage.get();
+    offlineStorage.setReadyStatus();
   }
 
 }
