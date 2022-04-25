@@ -156,7 +156,7 @@
                 "_shouldUseRegistration": {
                   "type": "boolean",
                   "required": false,
-                  "default": false,
+                  "default": true,
                   "title": "Use registration",
                   "inputType": "Checkbox",
                   "validators": [],
