@@ -1026,7 +1026,7 @@ class XAPI extends Backbone.Model {
    * @param {AdaptModel} model - The AdaptModel whose state has changed.
    */
   sendState(model, modelState) {
-    if (this.get('shouldTrackState') !== true) {
+    if (this.get('shouldTrackState') !== true || model.get('_isTrackable') === false) {
       return;
     }
 
