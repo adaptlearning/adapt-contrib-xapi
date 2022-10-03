@@ -1307,7 +1307,7 @@ class XAPI extends Backbone.Model {
 
     // Allow the trigger above to augment attachments if the attachments
     // parameter is not set.
-    if (attachments === undefined && statement.attachments) {
+    if (!attachments && statement.attachments) {
       return await this.processAttachments(statement);
     }
     await this.onStatementReady(statement, attachments);
