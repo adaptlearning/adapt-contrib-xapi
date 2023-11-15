@@ -127,7 +127,7 @@ class XAPI extends Backbone.Model {
     if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
       $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
     } else {
-      $(window).on('beforeunload unload', this.sendUnloadStatements.bind(this));
+      $(window).on('beforeunload unload pagehide', this.sendUnloadStatements.bind(this));
     }
 
     if (!this.get('shouldTrackState')) {
