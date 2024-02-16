@@ -62,16 +62,12 @@
                 },
                 "_specification": {
                   "type": "string",
-                  "enum": [
-                    "xAPI"
-                  ],
+                  "enum": ["xAPI", "cmi5"],
                   "default": "xAPI",
                   "title": "Specification",
                   "inputType": {
                     "type": "Select",
-                    "options": [
-                      "xAPI"
-                    ]
+                    "options": ["xAPI", "cmi5"]
                   },
                   "validators": [],
                   "help": "Indicates whether the plugin should use standard xAPI or cmi5 profile (coming soon)."
@@ -84,6 +80,12 @@
                   "inputType": "Text",
                   "validators": [],
                   "help": "Unique identifier for this xAPI activity, i.e. usually the URL to the course."
+                },
+                "_auID": {
+                  "type": "string",
+                  "title": "assignable unit (AU) ID",
+                  "default": "1",
+                  "help": "Unique identifier for this assignable unit."
                 },
                 "_endpoint": {
                   "type": "string",

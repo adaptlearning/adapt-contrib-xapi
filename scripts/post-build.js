@@ -11,10 +11,12 @@ module.exports = function(fs, path, log, options, done) {
     function(callback) {
       fs.readFile(path.join(pathToCourseFolder, 'config.json'), function(err, data) {
         if (err) {
+          log('Error: ', err);
           return callback(err);
         }
 
         configJson = JSON.parse(data.toString());
+        log('configJson: ', configJson);
         callback();
       });
     },
@@ -32,20 +34,23 @@ module.exports = function(fs, path, log, options, done) {
 
       // cmi5 is a profile of the xAPI specification and some systems, e.g. SCORM Cloud
       // do not work well with both manifest types, so remove the one which is not being used.
-      if (!configJson._xapi.hasOwnProperty('_specification') || configJson._xapi._specification === 'xAPI') {
-        // TODO - This will change once cmi5 is supported.
-        // Remove the cmi5.xml file (default behaviour).
-        // fs.unlink(path.join(options.outputdir, 'cmi5.xml'), callback);
-        callback();
-      } else if (configJson._xapi._specification === 'cmi5') {
-        // Remove the tincan.xml file.
-        fs.unlink(path.join(options.outputdir, 'tincan.xml'), callback);
+      log('specification: ', configJson._xapi._specification);
+
+        if (configJson?._xapi?._specification === 'xAPI') {
+          // Remove the cmi5.xml file (default behaviour).
+          log('Removing cmi5.xml');
+          fs.unlink(path.join(options.outputdir, 'cmi5.xml'), callback);
+        } else if (configJson._xapi._specification === 'cmi5') {
+          // Remove the tincan.xml file.
+          log('Removing tincan.xml');
+          fs.unlink(path.join(options.outputdir, 'tincan.xml'), callback);
+        }
+      },
+    ],
+    function (err, info) {
+      if (err) {
+        return done(err);
       }
-    }
-  ], function(err, info) {
-    if (err) {
-      return done(err);
-    }
 
     done();
   });
