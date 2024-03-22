@@ -14,7 +14,8 @@
   "description": "An extension to track learner activity via xAPI",
   "main": "/js/XAPIIndex.js",
   "scripts": {
-    "postversion": "cp package.json bower.json"
+    "postversion": "cp package.json bower.json",
+    "adaptpostbuild": "/scripts/post-build.js"
   },
   "keywords": [
     "adapt-plugin",
