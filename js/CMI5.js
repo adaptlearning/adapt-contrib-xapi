@@ -1,8 +1,8 @@
 import Adapt from 'core/js/adapt';
 import logging from 'core/js/logging';
 
-class CMI5 {
-  constructor(xapi) {
+class CMI5 extends Backbone.Controller {
+  initialize(xapi) {
     this.xapi = xapi;
   }
 
@@ -34,9 +34,7 @@ class CMI5 {
       this.respectLMSMasteryScore(cmi5LaunchData);
     }
     if (cmi5LaunchData?.returnURL) {
-      Adapt.on('adapt:userExit', () =>
-        this.exitCourse(cmi5LaunchData.returnURL)
-      );
+      this.listenTo(Adapt, 'adapt:userExit', () => this.exitCourse(cmi5LaunchData.returnURL));
     }
 
     // https://github.com/AICC/CMI-5_Spec_Current/blob/quartz/cmi5_spec.md#110-xapi-agent-profile-data-model
@@ -51,26 +49,24 @@ class CMI5 {
    */
   getLaunchParameters() {
     const params = new URLSearchParams(new URL(window.location).search);
-    if (params.size != 0) {
-      this.xapi.set({
-        _endpoint: params.get('endpoint'),
-        _fetch: params.get('fetch'),
-        _activityId: params.get('activityId'),
-        _actor: JSON.parse(decodeURIComponent(params.get('actor'))),
-        _registration: params.get('registration'),
-      });
-    }
+    if (params.size === 0) return;
+    this.xapi.set({
+      _endpoint: params.get('endpoint'),
+      _fetch: params.get('fetch'),
+      _activityId: params.get('activityId'),
+      _actor: JSON.parse(decodeURIComponent(params.get('actor'))),
+      _registration: params.get('registration'),
+    });
   }
 
   /** Retrieves an authentication token and sets it in the model */
   async setAuthToken() {
     const authToken = await this.getAuthToken();
-    if (authToken) {
-      // Set the auth token in the model
-      this.xapi.set({
-        _auth: authToken,
-      });
-    }
+    if (!authToken) return;
+    // Set the auth token in the model
+    this.xapi.set({
+      _auth: authToken,
+    });
   }
 
   /**
@@ -205,27 +201,27 @@ class CMI5 {
    */
   respectLMSMasteryScore(cmi5LaunchData) {
     const assessmentConfig = Adapt.course.get('_assessment');
+    if (!assessmentConfig) return;
     let assessmentCount = 0;
     let assessmentToModify = null;
 
-    if (assessmentConfig?._isPercentageBased) {
-      const masterScorePercentage = cmi5LaunchData.masteryScore * 100;
-      this.updateAssessmentConfig(assessmentConfig, masterScorePercentage);
-      Adapt.course.set('_assessment', assessmentConfig);
+    if (!assessmentConfig._isPercentageBased) return;
+    const masterScorePercentage = cmi5LaunchData.masteryScore * 100;
+    this.updateAssessmentConfig(assessmentConfig, masterScorePercentage);
+    Adapt.course.set('_assessment', assessmentConfig);
 
-      Adapt.articles?.models?.forEach((article) => {
-        if (article.get('_assessment')?._isEnabled) {
-          assessmentCount++;
-          assessmentToModify = article;
-        }
-      });
+    Adapt.articles?.models?.forEach((article) => {
+      if (article.get('_assessment')?._isEnabled) {
+        assessmentCount++;
+        assessmentToModify = article;
+      }
+    });
 
-      // If there is only one assessment in the course, update the assessment config
-      if (assessmentCount === 1 && assessmentToModify) {
-        const assessment = assessmentToModify.get('_assessment');
-        if (assessment) {
-          this.updateAssessmentConfig(assessment, masterScorePercentage);
-        }
+    // If there is only one assessment in the course, update the assessment config
+    if (assessmentCount === 1 && assessmentToModify) {
+      const assessment = assessmentToModify.get('_assessment');
+      if (assessment) {
+        this.updateAssessmentConfig(assessment, masterScorePercentage);
       }
     }
     logging.debug('New assessment config: ', Adapt.course.get('_assessment'));
@@ -424,18 +420,17 @@ class CMI5 {
    * @param {object} context - The context object to which the mastery score extension will be added.
    */
   addMasteryScoreExtension(context) {
-    if (this.isMasteryScoreSet(this.xapi.get('launchData'))) {
-      const { masteryScore } = this.xapi.get('launchData');
-      context.extensions
-        ? context.extensions.push({
-            'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
-              masteryScore,
-          })
-        : (context.extensions = {
-            'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
-              masteryScore,
-          });
-    }
+    if (!this.isMasteryScoreSet(this.xapi.get('launchData'))) return;
+    const { masteryScore } = this.xapi.get('launchData');
+    context.extensions
+      ? context.extensions.push({
+          'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
+            masteryScore,
+        })
+      : (context.extensions = {
+          'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
+            masteryScore,
+        });
   }
 
   /**
@@ -491,9 +486,9 @@ class CMI5 {
     const launchDataMoveOn = this.xapi.get('launchData')?.moveOn;
     const completion = true;
     const conditions = {
-      CompletedOrPassed: () => completionVerb == failed,
-      Completed: () => completionVerb != completed,
-      CompletedAndPassed: () => completionVerb == passed,
+      CompletedOrPassed: () => completionVerb === failed,
+      Completed: () => completionVerb !== completed,
+      CompletedAndPassed: () => completionVerb === passed,
     };
 
     if (conditions[launchDataMoveOn]?.()) {
