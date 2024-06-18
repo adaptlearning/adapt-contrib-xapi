@@ -144,7 +144,8 @@ class XAPI extends Backbone.Model {
       return this;
     }
 
-    if (this.get('state').length === 0) {
+    const state = this.get('state');
+    if (!state || Object.keys(state).length === 0) {
       // This is a new attempt, send 'attempted'.
       await this.sendStatement(this.getCourseStatement(window.ADL.verbs.attempted));
     } else {
