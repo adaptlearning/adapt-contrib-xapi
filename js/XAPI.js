@@ -253,13 +253,22 @@ class XAPI extends Backbone.Model {
   }
 
   async onLanguageChanged(newLanguage) {
-    // Update the language.
+    // Remove existing event listeners
+    this.removeEventListeners();
+
+    // Update the language
     this.set({ displayLang: newLanguage });
 
-    // Since a language change counts as a new attempt, reset the state.
+    // Since a language change counts as a new attempt, reset the state
     await this.deleteState();
-    // Send a statement to track the (new) course.
-    await this.sendStatement(this.getCourseStatement(window.ADL.verbs.launched));
+
+    // Send a statement to track the (new) course
+    await this.sendStatement(
+      this.getCourseStatement(window.ADL.verbs.launched)
+    );
+
+    // Re-add event listeners for the new language/session
+    this.setupListeners();
   }
 
   /**
@@ -450,6 +459,11 @@ class XAPI extends Backbone.Model {
         }
       }
     });
+  }
+
+  removeEventListeners() {
+    // Stop listening to all events
+    this.stopListening();
   }
 
   /**
