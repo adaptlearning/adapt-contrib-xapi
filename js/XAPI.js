@@ -262,13 +262,13 @@ class XAPI extends Backbone.Model {
     // Since a language change counts as a new attempt, reset the state
     await this.deleteState();
 
+    // Re-add event listeners for the new language/session
+    this.setupListeners();
+
     // Send a statement to track the (new) course
     await this.sendStatement(
       this.getCourseStatement(window.ADL.verbs.launched)
     );
-
-    // Re-add event listeners for the new language/session
-    this.setupListeners();
   }
 
   /**
