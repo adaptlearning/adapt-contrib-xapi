@@ -33,10 +33,10 @@ module.exports = function(fs, path, log, options, done) {
       // cmi5 is a profile of the xAPI specification and some systems, e.g. SCORM Cloud
       // do not work well with both manifest types, so remove the one which is not being used.
 
-        if (configJson?._xapi?._specification === 'xAPI') {
+        if (configJson?._xapi?._specification !== 'cmi5') {
           // Remove the cmi5.xml file (default behaviour).
           fs.unlink(path.join(options.outputdir, 'cmi5.xml'), callback);
-        } else if (configJson._xapi._specification === 'cmi5') {
+        } else {
           // Remove the tincan.xml file.
           fs.unlink(path.join(options.outputdir, 'tincan.xml'), callback);
         }
