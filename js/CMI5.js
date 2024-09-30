@@ -22,6 +22,7 @@ class CMI5 extends Backbone.Controller {
     this.xapi.xapiWrapper.changeConfig({
       auth: `Basic ${this.xapi.get('_auth')}`,
       activity_id: this.xapi.get('_activityId'),
+      endpoint: this.xapi.get('_endpoint'),
       strictCallbacks: true,
     });
     this.xapi.set({
@@ -51,7 +52,7 @@ class CMI5 extends Backbone.Controller {
     const params = new URLSearchParams(new URL(window.location).search);
     if (params.size === 0) return;
     this.xapi.set({
-      _endpoint: params.get('endpoint'),
+      _endpoint: params.get('endpoint') + '/',
       _fetch: params.get('fetch'),
       _activityId: params.get('activityId'),
       _actor: JSON.parse(decodeURIComponent(params.get('actor'))),
