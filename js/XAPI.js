@@ -6,6 +6,7 @@ import notify from 'core/js/notify';
 import offlineStorage from 'core/js/offlineStorage';
 import wait from 'core/js/wait';
 import XAPIWrapper from 'libraries/xapiwrapper.min';
+import CMI5 from './CMI5';
 
 class XAPI extends Backbone.Model {
 
@@ -21,7 +22,8 @@ class XAPI extends Backbone.Model {
       shouldUseRegistration: false,
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
-      state: {}
+      state: {},
+      shouldListenToTracking: true,
     };
 
     this.xapiWrapper = XAPIWrapper;
@@ -68,6 +70,9 @@ class XAPI extends Backbone.Model {
   /** Implementation starts here */
   async initialize() {
     if (!this.getConfig('_isEnabled')) return this;
+    if (this.getConfig('_specification') === 'cmi5') {
+      this.cmi5 = new CMI5(this);
+    }
 
     wait.begin();
 
@@ -111,11 +116,18 @@ class XAPI extends Backbone.Model {
     this.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
     this.courseDescription = Adapt.course.get('description') || '';
 
-    // Send the 'launched' and 'initialized' statements.
-    const statements = [
-      this.getCourseStatement(window.ADL.verbs.launched),
-      this.getCourseStatement(window.ADL.verbs.initialized)
-    ];
+    const statements = [];
+
+    if (this.cmi5) {
+      // Only send 'initialized' statement for cmi5, as the LMS will send 'launched'
+      statements.push(
+        this.cmi5.getCmi5DefinedStatement(window.ADL.verbs.initialized)
+      );
+    } else {
+      // Send the 'launched' and 'initialized' statements.
+      statements.push(this.getCourseStatement(window.ADL.verbs.launched));
+      statements.push(this.getCourseStatement(window.ADL.verbs.initialized));
+    }
 
     try {
       await this.sendStatements(statements);
@@ -180,12 +192,18 @@ class XAPI extends Backbone.Model {
    * Intializes the ADL xapiWrapper code.
    */
   async initializeWrapper() {
-    // If no endpoint has been configured, assume the ADL Launch method.
+    // If the specification is cmi5, use the cmi5 launch method.
+    if (this.cmi5) {
+      await this.cmi5.configureCmi5Launch();
+      return;
+    }
+
+    // If no endpoint has been configured, assume the ADL/URL Launch method.
     if (!this.getConfig('_endpoint')) {
       // check to see if configuration has been passed in URL
       this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
       if (this.checkWrapperConfig()) {
-        // URL had all necessary configuration so we continue using it.
+        // URL had all necessary configuration so we can assume the URL launch method.
         // Set the LRS specific properties.
         this.set({
           registration: this.getLRSAttribute('registration'),
@@ -218,7 +236,7 @@ class XAPI extends Backbone.Model {
         }, true, true);
       });
     }
-    // The endpoint has been defined in the config, so use the static values.
+    // The endpoint has been defined in the config, so assume this is using the wrapper launch method.
     // Initialise the xAPI wrapper.
     this.xapiWrapper = window.xapiWrapper || window.ADL.XAPIWrapper;
 
@@ -298,7 +316,13 @@ class XAPI extends Backbone.Model {
     }
 
     // Always send the 'terminated' verb.
-    statements.push(this.getCourseStatement(window.ADL.verbs.terminated));
+    if (this.cmi5) {
+      statements.push(
+        this.cmi5.getCmi5DefinedStatement(window.ADL.verbs.terminated)
+      );
+    } else {
+      statements.push(this.getCourseStatement(window.ADL.verbs.terminated));
+    }
 
     // Note: it is not possible to intercept these synchronous statements.
     await this.sendStatementsSync(statements);
@@ -412,6 +436,13 @@ class XAPI extends Backbone.Model {
       return;
     }
 
+    // If cmi5 and
+    // the launch mode is not normal (but either Review or Browse)
+    // THEN do not listen to cmi5 defined statements
+    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') {
+      return;
+    }
+
     // Allow surfacing the learner's info in _globals.
     this.getLearnerInfo();
 
@@ -424,8 +455,10 @@ class XAPI extends Backbone.Model {
     // Use the config to specify the core events.
     this.coreEvents = Object.assign(this.coreEvents, this.getConfig('_coreEvents'));
 
-    // Always listen out for course completion.
-    this.listenTo(Adapt, 'tracking:complete', this.onTrackingComplete);
+    // Listen out for course completion.
+    if (this.get('shouldListenToTracking')) {
+      this.listenTo(Adapt, 'tracking:complete', this.onTrackingComplete);
+    }
 
     // Conditionally listen to the events.
     // Visits to the menu.
@@ -546,6 +579,10 @@ class XAPI extends Backbone.Model {
   getActivityType(model) {
     let type = '';
 
+    if (!model || typeof model.get !== 'function') {
+      throw new Error('Invalid model object');
+    }
+
     switch (model.get('_type')) {
       case 'component': {
         type = model.get('_isQuestionType') ? window.ADL.activityTypes.interaction : window.ADL.activityTypes.media;
@@ -567,6 +604,9 @@ class XAPI extends Backbone.Model {
       case 'page': {
         type = window.ADL.activityTypes.lesson;
         break;
+      }
+      default: {
+        console.warn('Unexpected model type: ', model.get('_type'));
       }
     }
 
@@ -967,7 +1007,13 @@ class XAPI extends Backbone.Model {
 
     _.defer(async () => {
       // Send the completion status.
-      await this.sendStatement(this.getCourseStatement(completionVerb, result));
+      if (this.cmi5) {
+        await this.cmi5.handleCmi5TrackingCompletion(completionVerb, result);
+      } else {
+        await this.sendStatement(
+          this.getCourseStatement(completionVerb, result)
+        );
+      }
     });
   }
 
@@ -981,8 +1027,8 @@ class XAPI extends Backbone.Model {
 
     const Adapt = require('core/js/adapt');
 
-    if (state.components) {
-      state.components.forEach(stateObject => {
+    if (state.components && state.components.length > 0) {
+      state.components.forEach((stateObject) => {
         const restoreModel = Adapt.findById(stateObject._id);
 
         if (restoreModel) {
@@ -993,8 +1039,8 @@ class XAPI extends Backbone.Model {
       });
     }
 
-    if (state.blocks) {
-      state.blocks.forEach(stateObject => {
+    if (state.blocks && state.blocks.length > 0) {
+      state.blocks.forEach((stateObject) => {
         const restoreModel = Adapt.findById(stateObject._id);
 
         if (restoreModel) {
@@ -1407,6 +1453,9 @@ class XAPI extends Backbone.Model {
       }
 
       Adapt.trigger('xapi:lrs:sendStatement:success', body);
+    };
+    if (this.cmi5) {
+      this.cmi5.mergeDefaultContext(statement);
     }
 
     this.xapiWrapper.sendStatement(statement, sendStatementCallback, attachments);
