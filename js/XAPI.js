@@ -1041,9 +1041,8 @@ class XAPI extends Backbone.Model {
    * @param {AdaptModel} model - The AdaptModel whose state has changed.
    */
   async sendState(model, modelState) {
-    if (this.get('shouldTrackState') !== true || model.get('_isTrackable') === false) {
-      return;
-    }
+    if (this.get('shouldTrackState') !== true) return;
+    if (model.get('_isTrackable') === false) return;
 
     const activityId = this.get('activityId');
     const actor = this.get('actor');
@@ -1056,7 +1055,7 @@ class XAPI extends Backbone.Model {
       return (o === type || o.indexOf(type) > -1);
     });
     const stateCollection = Array.isArray(state[collectionName]) ? state[collectionName] : [];
-    let newState;
+    let newState = modelState;
 
     if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
       const index = _.findIndex(stateCollection, { _id: model.get('_id') });
@@ -1068,8 +1067,6 @@ class XAPI extends Backbone.Model {
       }
 
       newState = stateCollection;
-    } else {
-      newState = modelState;
     }
 
     // Update the locally held state.
@@ -1079,12 +1076,15 @@ class XAPI extends Backbone.Model {
     });
 
     // Pass the new state to the LRS.
-    await this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-      if (error) {
-        Adapt.trigger('xapi:lrs:sendState:error', error);
-      }
+    await new Promise((resolve, reject) => {
+      this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendState:error', error);
+        }
 
-      Adapt.trigger('xapi:lrs:sendState:success', newState);
+        Adapt.trigger('xapi:lrs:sendState:success', newState);
+        return resolve();
+      });
     });
   }
 
