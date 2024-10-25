@@ -1314,9 +1314,7 @@ class XAPI extends Backbone.Model {
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
    */
   async sendStatement(statement, attachments = null) {
-    if (!statement) {
-      return;
-    }
+    if (!statement) return;
 
     Adapt.trigger('xapi:preSendStatement', statement);
 
@@ -1467,9 +1465,7 @@ class XAPI extends Backbone.Model {
    * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
    */
   async sendStatements(statements) {
-    if (!statements || statements.length === 0) {
-      return;
-    }
+    if (!statements || statements.length === 0) return;
 
     Adapt.trigger('xapi:preSendStatements', statements);
 
