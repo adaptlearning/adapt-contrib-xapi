@@ -1040,7 +1040,7 @@ class XAPI extends Backbone.Model {
    * Sends the state to the or the given model to the configured LRS.
    * @param {AdaptModel} model - The AdaptModel whose state has changed.
    */
-  sendState(model, modelState) {
+  async sendState(model, modelState) {
     if (this.get('shouldTrackState') !== true || model.get('_isTrackable') === false) {
       return;
     }
@@ -1079,7 +1079,7 @@ class XAPI extends Backbone.Model {
     });
 
     // Pass the new state to the LRS.
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+    await this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
       if (error) {
         Adapt.trigger('xapi:lrs:sendState:error', error);
       }
