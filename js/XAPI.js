@@ -66,7 +66,7 @@ class XAPI extends Backbone.Model {
       offlineStorage: 'offlineStorage'
     };
 
-    this.sendState = _.debounce(this.sendState.bind(this), 500);
+    this.sendStateToServer = _.debounce(this.sendStateToServer.bind(this), 500);
   }
 
   /** Implementation starts here */
@@ -1123,16 +1123,18 @@ class XAPI extends Backbone.Model {
       state
     });
 
-    // Pass the new state to the LRS, but debounced to limit the server updates to periodic updates
-    _.debounce(() => {
-      this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-        if (error) {
-          Adapt.trigger('xapi:lrs:sendState:error', error);
-        }
+    // Pass the new state to the LRS.
+    this.sendStateToServer(activityId, actor, collectionName, registration, newState);
+  }
 
-        Adapt.trigger('xapi:lrs:sendState:success', newState);
-      });
-    }, 500);
+  sendStateToServer(activityId, actor, collectionName, registration, newState) {
+    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+      if (error) {
+        Adapt.trigger('xapi:lrs:sendState:error', error);
+      }
+
+      Adapt.trigger('xapi:lrs:sendState:success', newState);
+    });
   }
 
   /**
