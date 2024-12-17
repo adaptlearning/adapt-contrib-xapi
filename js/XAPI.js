@@ -65,6 +65,8 @@ class XAPI extends Backbone.Model {
       components: 'component',
       offlineStorage: 'offlineStorage'
     };
+
+    this.sendState = _.debounce(this.sendState.bind(this), 500);
   }
 
   /** Implementation starts here */
