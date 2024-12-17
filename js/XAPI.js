@@ -1130,7 +1130,6 @@ class XAPI extends Backbone.Model {
       }
 
       Adapt.trigger('xapi:lrs:sendState:success', newState);
-      return resolve();
     });
   }
 
