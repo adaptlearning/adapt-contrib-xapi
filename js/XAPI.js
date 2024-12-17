@@ -1123,16 +1123,14 @@ class XAPI extends Backbone.Model {
       state
     });
 
-    // Pass the new state to the LRS and wait for acknowledgement response.
-    await new Promise((resolve, reject) => {
-      this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-        if (error) {
-          Adapt.trigger('xapi:lrs:sendState:error', error);
-        }
+    // Pass the new state to the LRS
+    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+      if (error) {
+        Adapt.trigger('xapi:lrs:sendState:error', error);
+      }
 
-        Adapt.trigger('xapi:lrs:sendState:success', newState);
-        return resolve();
-      });
+      Adapt.trigger('xapi:lrs:sendState:success', newState);
+      return resolve();
     });
   }
 
