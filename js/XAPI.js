@@ -33,7 +33,7 @@ class XAPI extends Backbone.Model {
     this.courseDescription = '';
     this.defaultLang = 'en-US';
     this.isComplete = false;
-    this.changedCollectionNames = [];
+    this.changedCollectionNames = {};
 
     // Default events to send statements for.
     this.coreEvents = {
@@ -1115,7 +1115,7 @@ class XAPI extends Backbone.Model {
     }
 
     // Update the locally held state.
-    this.changedCollectionNames.push(collectionName);
+    this.changedCollectionNames[collectionNames] = true;
     state[collectionName] = newState;
     this.set({
       state
@@ -1132,8 +1132,8 @@ class XAPI extends Backbone.Model {
       ? this.get('registration')
       : null;
 
-    const changedCollectionNames = this.changedCollectionNames;
-    this.changedCollectionNames = [];
+    const changedCollectionNames = Object.keys(this.changedCollectionNames);
+    this.changedCollectionNames = {};
 
     for (const collectionName of changeCollectionNames) {
        const newState = this.get('state')[collectionName];
