@@ -10,7 +10,7 @@ Some setup is required in order to configure the xAPI extension.  If using a sta
 |Setting|Default|Help|
 |--|--|--|
 |Is Enabled|  `false` | Set to `true` to enable the extension
-|Specification | `xApi` | This must be set
+| Specification | xAPI or cmi5 | This must be set. Specify xAPI or cmi5 for course compliance. |
 |Endpoint| | URL to the LRS endpoint
 |User (or Key)| | This can be configured in your LRS, or omit if using ADL Launch mechanism
 |Password (or Secret)| | (as above)
