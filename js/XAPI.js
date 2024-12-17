@@ -33,6 +33,7 @@ class XAPI extends Backbone.Model {
     this.courseDescription = '';
     this.defaultLang = 'en-US';
     this.isComplete = false;
+    this.changedCollectionNames = [];
 
     // Default events to send statements for.
     this.coreEvents = {
@@ -1092,13 +1093,9 @@ class XAPI extends Backbone.Model {
     if (this.get('shouldTrackState') !== true) return;
     if (model.get('_isTrackable') === false) return;
 
-    const activityId = this.get('activityId');
-    const actor = this.get('actor');
     const type = model.get('_type');
     const state = this.get('state');
-    const registration = this.get('shouldUseRegistration') === true
-      ? this.get('registration')
-      : null;
+
     const collectionName = _.findKey(this.coreObjects, o => {
       return (o === type || o.indexOf(type) > -1);
     });
@@ -1118,23 +1115,41 @@ class XAPI extends Backbone.Model {
     }
 
     // Update the locally held state.
+    this.changedCollectionNames.push(collectionName);
     state[collectionName] = newState;
     this.set({
       state
     });
 
     // Pass the new state to the LRS.
-    this.sendStateToServer(activityId, actor, collectionName, registration, newState);
+    this.sendStateToServer();
   }
 
-  sendStateToServer(activityId, actor, collectionName, registration, newState) {
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-      if (error) {
-        Adapt.trigger('xapi:lrs:sendState:error', error);
-      }
+  sendStateToServer() {
+    const activityId = this.get('activityId');
+    const actor = this.get('actor');
+    const registration = this.get('shouldUseRegistration') === true
+      ? this.get('registration')
+      : null;
 
-      Adapt.trigger('xapi:lrs:sendState:success', newState);
-    });
+    const changedCollectionNames = this.changedCollectionNames;
+    this.changedCollectionNames = [];
+
+    for (const collectionName of changeCollectionNames) {
+       const newState = this.get('state')[collectionName];
+
+       await new Promise(resolve => {
+        this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+          if (error) {
+            Adapt.trigger('xapi:lrs:sendState:error', error);
+            return resolve();
+          }
+
+          Adapt.trigger('xapi:lrs:sendState:success', newState);
+          return resolve();
+        });
+      });
+    }
   }
 
   /**
