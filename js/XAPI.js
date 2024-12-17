@@ -1123,14 +1123,16 @@ class XAPI extends Backbone.Model {
       state
     });
 
-    // Pass the new state to the LRS
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-      if (error) {
-        Adapt.trigger('xapi:lrs:sendState:error', error);
-      }
+    // Pass the new state to the LRS, but debounced to limit the server updates to periodic updates
+    _.debounce(() => {
+      this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+        if (error) {
+          Adapt.trigger('xapi:lrs:sendState:error', error);
+        }
 
-      Adapt.trigger('xapi:lrs:sendState:success', newState);
-    });
+        Adapt.trigger('xapi:lrs:sendState:success', newState);
+      });
+    }, 500);
   }
 
   /**
