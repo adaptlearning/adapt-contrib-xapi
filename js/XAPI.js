@@ -1532,7 +1532,7 @@ class XAPI extends Backbone.Model {
    * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
    */
   async sendStatements(statements) {
-    if (!statements || statements.length === 0) return;
+    if (!statements?.length) return;
 
     Adapt.trigger('xapi:preSendStatements', statements);
 
