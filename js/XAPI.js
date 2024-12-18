@@ -33,6 +33,7 @@ class XAPI extends Backbone.Model {
     this.courseDescription = '';
     this.defaultLang = 'en-US';
     this.isComplete = false;
+    this.changedCollectionNames = {};
 
     // Default events to send statements for.
     this.coreEvents = {
@@ -65,6 +66,8 @@ class XAPI extends Backbone.Model {
       components: 'component',
       offlineStorage: 'offlineStorage'
     };
+
+    this.sendStateToServer = _.debounce(this.sendStateToServer.bind(this), 500);
   }
 
   /** Implementation starts here */
@@ -1086,23 +1089,18 @@ class XAPI extends Backbone.Model {
    * Sends the state to the or the given model to the configured LRS.
    * @param {AdaptModel} model - The AdaptModel whose state has changed.
    */
-  sendState(model, modelState) {
-    if (this.get('shouldTrackState') !== true || model.get('_isTrackable') === false) {
-      return;
-    }
+  async sendState(model, modelState) {
+    if (this.get('shouldTrackState') !== true) return;
+    if (model.get('_isTrackable') === false) return;
 
-    const activityId = this.get('activityId');
-    const actor = this.get('actor');
     const type = model.get('_type');
     const state = this.get('state');
-    const registration = this.get('shouldUseRegistration') === true
-      ? this.get('registration')
-      : null;
+
     const collectionName = _.findKey(this.coreObjects, o => {
       return (o === type || o.indexOf(type) > -1);
     });
     const stateCollection = Array.isArray(state[collectionName]) ? state[collectionName] : [];
-    let newState;
+    let newState = modelState;
 
     if (collectionName !== 'course' && collectionName !== 'offlineStorage') {
       const index = _.findIndex(stateCollection, { _id: model.get('_id') });
@@ -1114,24 +1112,44 @@ class XAPI extends Backbone.Model {
       }
 
       newState = stateCollection;
-    } else {
-      newState = modelState;
     }
 
     // Update the locally held state.
+    this.changedCollectionNames[collectionNames] = true;
     state[collectionName] = newState;
     this.set({
       state
     });
 
     // Pass the new state to the LRS.
-    this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-      if (error) {
-        Adapt.trigger('xapi:lrs:sendState:error', error);
-      }
+    this.sendStateToServer();
+  }
 
-      Adapt.trigger('xapi:lrs:sendState:success', newState);
-    });
+  sendStateToServer() {
+    const activityId = this.get('activityId');
+    const actor = this.get('actor');
+    const registration = this.get('shouldUseRegistration') === true
+      ? this.get('registration')
+      : null;
+
+    const changedCollectionNames = Object.keys(this.changedCollectionNames);
+    this.changedCollectionNames = {};
+
+    for (const collectionName of changeCollectionNames) {
+       const newState = this.get('state')[collectionName];
+
+       await new Promise(resolve => {
+        this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
+          if (error) {
+            Adapt.trigger('xapi:lrs:sendState:error', error);
+            return resolve();
+          }
+
+          Adapt.trigger('xapi:lrs:sendState:success', newState);
+          return resolve();
+        });
+      });
+    }
   }
 
   /**
@@ -1360,9 +1378,7 @@ class XAPI extends Backbone.Model {
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
    */
   async sendStatement(statement, attachments = null) {
-    if (!statement) {
-      return;
-    }
+    if (!statement) return;
 
     Adapt.trigger('xapi:preSendStatement', statement);
 
@@ -1516,9 +1532,7 @@ class XAPI extends Backbone.Model {
    * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
    */
   async sendStatements(statements) {
-    if (!statements || statements.length === 0) {
-      return;
-    }
+    if (!statements?.length) return;
 
     Adapt.trigger('xapi:preSendStatements', statements);
 
