@@ -23,7 +23,7 @@ class XAPI extends Backbone.Model {
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {},
-      shouldListenToTracking: true,
+      shouldListenToTracking: true
     };
 
     this.xapiWrapper = XAPIWrapper;
@@ -883,7 +883,7 @@ class XAPI extends Backbone.Model {
     name[this.get('displayLang')] = assessment.id || 'Assessment';
 
     object.definition = {
-      name: name,
+      name,
       type: window.ADL.activityTypes.assessment
     };
 
@@ -1115,7 +1115,7 @@ class XAPI extends Backbone.Model {
     }
 
     // Update the locally held state.
-    this.changedCollectionNames[collectionNames] = true;
+    this.changedCollectionNames[collectionName] = true;
     state[collectionName] = newState;
     this.set({
       state
@@ -1125,7 +1125,7 @@ class XAPI extends Backbone.Model {
     this.sendStateToServer();
   }
 
-  sendStateToServer() {
+  async sendStateToServer() {
     const activityId = this.get('activityId');
     const actor = this.get('actor');
     const registration = this.get('shouldUseRegistration') === true
@@ -1135,10 +1135,10 @@ class XAPI extends Backbone.Model {
     const changedCollectionNames = Object.keys(this.changedCollectionNames);
     this.changedCollectionNames = {};
 
-    for (const collectionName of changeCollectionNames) {
-       const newState = this.get('state')[collectionName];
+    for (const collectionName of changedCollectionNames) {
+      const newState = this.get('state')[collectionName];
 
-       await new Promise(resolve => {
+      await new Promise(resolve => {
         this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
           if (error) {
             Adapt.trigger('xapi:lrs:sendState:error', error);
@@ -1164,7 +1164,7 @@ class XAPI extends Backbone.Model {
     const state = {};
 
     try {
-      for (let type in this.coreObjects) {
+      for (const type in this.coreObjects) {
         await new Promise((resolve, reject) => {
           this.xapiWrapper.getState(activityId, actor, type, registration, null, (error, xhr) => {
             if (error) {
@@ -1228,7 +1228,7 @@ class XAPI extends Backbone.Model {
       : null;
 
     try {
-      for (let type in this.coreObjects) {
+      for (const type in this.coreObjects) {
         await new Promise((resolve, reject) => {
           this.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, (error, xhr) => {
             if (error) {
@@ -1447,7 +1447,7 @@ class XAPI extends Backbone.Model {
    * @returns {boolean}
    */
   isCORS(url) {
-    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:\/]*):?(\d+)?(\/.*)?$/);
+    const urlparts = url.toLowerCase().match(/^(.+):\/\/([^:/]*):?(\d+)?(\/.*)?$/);
     let isCORS = (location.protocol.toLowerCase().replace(':', '') !== urlparts[1] || location.hostname.toLowerCase() !== urlparts[2]);
     if (isCORS) return true;
     const urlPort = (urlparts[3] === null ? (urlparts[1] === 'http' ? '80' : '443') : urlparts[3]);
@@ -1487,7 +1487,7 @@ class XAPI extends Backbone.Model {
   async processAttachments(statement) {
     const attachments = statement.attachments;
 
-    for (let attachment of attachments) {
+    for (const attachment of attachments) {
       await new Promise((resolve, reject) => {
         // First check the attachment for a value
         if (attachment.value) {
@@ -1539,7 +1539,7 @@ class XAPI extends Backbone.Model {
     // Rather than calling the wrapper's sendStatements() function, iterate
     // over each statement and call sendStatement().
     try {
-      for (let statement of statements) {
+      for (const statement of statements) {
         await this.sendStatement(statement);
       }
     } catch (error) {
