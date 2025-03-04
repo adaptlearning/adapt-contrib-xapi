@@ -23,12 +23,12 @@ class CMI5 extends Backbone.Controller {
       auth: `Basic ${this.xapi.get('_auth')}`,
       activity_id: this.xapi.get('_activityId'),
       endpoint: this.xapi.get('_endpoint'),
-      strictCallbacks: true,
+      strictCallbacks: true
     });
     this.xapi.set({
       actor: this.xapi.get('_actor'),
       registration: this.xapi.get('_registration'),
-      activityId: this.xapi.get('_activityId'),
+      activityId: this.xapi.get('_activityId')
     });
     const cmi5LaunchData = await this.getCmi5LaunchData();
     if (this.isMasteryScoreSet(cmi5LaunchData)) {
@@ -56,7 +56,7 @@ class CMI5 extends Backbone.Controller {
       _fetch: params.get('fetch'),
       _activityId: params.get('activityId'),
       _actor: JSON.parse(decodeURIComponent(params.get('actor'))),
-      _registration: params.get('registration'),
+      _registration: params.get('registration')
     });
   }
 
@@ -66,7 +66,7 @@ class CMI5 extends Backbone.Controller {
     if (!authToken) return;
     // Set the auth token in the model
     this.xapi.set({
-      _auth: authToken,
+      _auth: authToken
     });
   }
 
@@ -82,7 +82,7 @@ class CMI5 extends Backbone.Controller {
     try {
       const fetchURL = this.xapi.get('_fetch');
       const requestOptions = {
-        method: 'POST',
+        method: 'POST'
       };
       const response = await fetch(fetchURL, requestOptions);
       if (!response.ok) {
@@ -255,14 +255,14 @@ class CMI5 extends Backbone.Controller {
           (error, xhr) => {
             if (error) {
               logging.warn(
-                `adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences`
+                'adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences'
               );
               return reject(new Error(error));
             }
 
             if (!xhr) {
               logging.warn(
-                `adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences`
+                'adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences'
               );
               return reject(
                 new Error("'xhr' parameter is missing from callback")
@@ -275,7 +275,7 @@ class CMI5 extends Backbone.Controller {
 
             if (xhr.status !== 200) {
               logging.warn(
-                `adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences`
+                'adapt-contrib-xapi: getAgentProfile() failed for cmi5LearnerPreferences'
               );
               return reject(
                 new Error(
@@ -379,10 +379,10 @@ class CMI5 extends Backbone.Controller {
         category: [
           {
             id: 'https://w3id.org/xapi/cmi5/context/categories/cmi5',
-            objectType: 'Activity',
-          },
-        ],
-      },
+            objectType: 'Activity'
+          }
+        ]
+      }
     };
 
     // Append the category and masteryScore.
@@ -411,7 +411,7 @@ class CMI5 extends Backbone.Controller {
 
     context.contextActivities.category.push({
       id: 'https://w3id.org/xapi/cmi5/context/categories/moveon',
-      objectType: 'Activity',
+      objectType: 'Activity'
     });
   }
 
@@ -425,13 +425,13 @@ class CMI5 extends Backbone.Controller {
     const { masteryScore } = this.xapi.get('launchData');
     context.extensions
       ? context.extensions.push({
-          'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
-            masteryScore,
-        })
+        'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
+            masteryScore
+      })
       : (context.extensions = {
-          'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
-            masteryScore,
-        });
+        'https://w3id.org/xapi/cmi5/context/extensions/masteryscore':
+            masteryScore
+      });
   }
 
   /**
@@ -453,17 +453,17 @@ class CMI5 extends Backbone.Controller {
         ...(context?.contextActivities || {}),
         parent: [
           ...(context?.contextActivities?.parent || []),
-          ...(contextActivities?.parent || []).filter(Boolean),
+          ...(contextActivities?.parent || []).filter(Boolean)
         ],
         grouping: [
           ...(context?.contextActivities?.grouping || []),
-          ...(contextActivities?.grouping || []).filter(Boolean),
-        ],
+          ...(contextActivities?.grouping || []).filter(Boolean)
+        ]
       },
       extensions: {
         ...(context?.extensions || {}),
-        ...(extensions || {}),
-      },
+        ...(extensions || {})
+      }
     };
 
     statement.timestamp = new Date().toISOString();
@@ -489,7 +489,7 @@ class CMI5 extends Backbone.Controller {
     const conditions = {
       CompletedOrPassed: () => completionVerb === failed,
       Completed: () => completionVerb !== completed,
-      CompletedAndPassed: () => completionVerb === passed,
+      CompletedAndPassed: () => completionVerb === passed
     };
 
     if (conditions[launchDataMoveOn]?.()) {
