@@ -265,10 +265,17 @@ class XAPI extends Backbone.Model {
 
     _.defer(() => {
       if (error) {
+        if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
+          this.hasRetriedConnection = true;
+          this.initialize();
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:initialize:error', error);
         return;
       }
 
+      this.hasRetriedConnection = false;
       Adapt.trigger('xapi:lrs:initialize:success');
     });
   }
@@ -442,9 +449,7 @@ class XAPI extends Backbone.Model {
     // If cmi5 and
     // the launch mode is not normal (but either Review or Browse)
     // THEN do not listen to cmi5 defined statements
-    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') {
-      return;
-    }
+    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') return;
 
     // Allow surfacing the learner's info in _globals.
     this.getLearnerInfo();
@@ -1141,10 +1146,17 @@ class XAPI extends Backbone.Model {
       await new Promise(resolve => {
         this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
           if (error) {
+            if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
+              this.hasRetriedConnection = true;
+              this.sendStateToServer();
+              return;
+            }
+
             Adapt.trigger('xapi:lrs:sendState:error', error);
             return resolve();
           }
 
+          this.hasRetriedConnection = false;
           Adapt.trigger('xapi:lrs:sendState:success', newState);
           return resolve();
         });
@@ -1435,9 +1447,17 @@ class XAPI extends Backbone.Model {
         method: 'POST'
       });
     } catch (error) {
+      if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
+        this.hasRetriedConnection = true;
+        this.sendStatementsSync(statements);
+        return;
+      }
+
       Adapt.trigger('xapi:lrs:sendStatement:error', error);
       return;
     }
+
+    this.hasRetriedConnection = false;
     Adapt.trigger('xapi:lrs:sendStatement:success', statements);
   }
 
@@ -1464,12 +1484,20 @@ class XAPI extends Backbone.Model {
   async onStatementReady(statement, attachments) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
+        if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
+          this.hasRetriedConnection = true;
+          this.sendStatementsSync(statements);
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:sendStatement:error', error);
         throw error;
       }
 
+      this.hasRetriedConnection = false;
       Adapt.trigger('xapi:lrs:sendStatement:success', body);
     };
+
     if (this.cmi5) {
       this.cmi5.mergeDefaultContext(statement);
     }

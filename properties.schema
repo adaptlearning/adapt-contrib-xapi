@@ -310,7 +310,16 @@
                   },
                   "validators": [],
                   "help": "Determines how the plugin should behave whenever it fails to successfully connect or send statements to the configured LRS"
-                }
+                },
+                "_shouldRetryConnection": {
+                  "type": "boolean",
+                  "required": true,
+                  "default": true,
+                  "title": "Should LRS connections be retried once upon failure?",
+                  "inputType": "Checkbox",
+                  "validators": [],
+                  "help": "Indicates whether this course should retry initialization or sending state/statements to a configured Learning Record Store (LRS) after a failure."
+                },
               }
             }
           }
