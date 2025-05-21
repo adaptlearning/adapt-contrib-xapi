@@ -31,6 +31,6 @@
             }
         },
         "_lrsFailureBehaviour": "show",
-        "_shouldRetryConnection": true
+        "_retryConnectionAttempts": 5
     }
 }

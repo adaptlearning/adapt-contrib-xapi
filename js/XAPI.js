@@ -265,8 +265,8 @@ class XAPI extends Backbone.Model {
 
     _.defer(() => {
       if (error) {
-        if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
-          this.hasRetriedConnection = true;
+        if (this.retriesRemaining > 0) {
+          this.retriesRemaining--;
           this.initialize();
           return;
         }
@@ -275,7 +275,7 @@ class XAPI extends Backbone.Model {
         return;
       }
 
-      this.hasRetriedConnection = false;
+      this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
       Adapt.trigger('xapi:lrs:initialize:success');
     });
   }
@@ -1146,8 +1146,8 @@ class XAPI extends Backbone.Model {
       await new Promise(resolve => {
         this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
           if (error) {
-            if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
-              this.hasRetriedConnection = true;
+            if (this.retriesRemaining > 0) {
+              this.retriesRemaining--;
               this.sendStateToServer();
               return;
             }
@@ -1156,7 +1156,7 @@ class XAPI extends Backbone.Model {
             return resolve();
           }
 
-          this.hasRetriedConnection = false;
+          this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
           Adapt.trigger('xapi:lrs:sendState:success', newState);
           return resolve();
         });
@@ -1447,8 +1447,8 @@ class XAPI extends Backbone.Model {
         method: 'POST'
       });
     } catch (error) {
-      if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
-        this.hasRetriedConnection = true;
+      if (this.retriesRemaining > 0) {
+        this.retriesRemaining--;
         this.sendStatementsSync(statements);
         return;
       }
@@ -1457,7 +1457,7 @@ class XAPI extends Backbone.Model {
       return;
     }
 
-    this.hasRetriedConnection = false;
+    this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
     Adapt.trigger('xapi:lrs:sendStatement:success', statements);
   }
 
@@ -1484,8 +1484,8 @@ class XAPI extends Backbone.Model {
   async onStatementReady(statement, attachments) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
-        if (this.getConfig('_shouldRetryConnection') && !this.hasRetriedConnection) {
-          this.hasRetriedConnection = true;
+        if (this.retriesRemaining > 0) {
+          this.retriesRemaining--;
           this.sendStatementsSync(statements);
           return;
         }
@@ -1494,7 +1494,7 @@ class XAPI extends Backbone.Model {
         throw error;
       }
 
-      this.hasRetriedConnection = false;
+      this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
       Adapt.trigger('xapi:lrs:sendStatement:success', body);
     };
 
