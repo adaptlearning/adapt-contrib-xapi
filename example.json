@@ -1,36 +1,36 @@
 // config.json
 {
-    "_xapi": {
-        "_isEnabled": true,
-        "_specification": "xAPI",
-        "_activityID": "https://my-url.com/my-adapt-course",
-        "_endpoint": "https://url-to-lrs/data",
-        "_user": "",
-        "_password": "",
-        "_lang": "en-US",
-        "_generateIds": false,
-        "_shouldTrackState": false,
-        "_coreEvents": {
-            "Adapt": {
-                "router:menu": true,
-                "router:page": true,
-                "questionView:recordInteraction": true,
-                "assessments:complete": true
-            },
-            "contentObjects": {
-                "change:_isComplete": true
-            },
-            "articles": {
-                "change:_isComplete": true
-            },
-            "blocks": {
-                "change:_isComplete": true
-            },
-            "components": {
-                "change:_isComplete": true
-            }
-        },
-        "_lrsFailureBehaviour": "show",
-        "_retryConnectionAttempts": 5
-    }
+        "_xapi": {
+                "_isEnabled": true,
+                "_specification": "xAPI",
+                "_activityID": "https://my-url.com/my-adapt-course",
+                "_endpoint": "https://url-to-lrs/data",
+                "_user": "",
+                "_password": "",
+                "_lang": "en-US",
+                "_generateIds": false,
+                "_shouldTrackState": false,
+                "_coreEvents": {
+                        "Adapt": {
+                                "router:menu": true,
+                                "router:page": true,
+                                "questionView:recordInteraction": true,
+                                "assessments:complete": true
+                        },
+                        "contentObjects": {
+                                "change:_isComplete": true
+                        },
+                        "articles": {
+                                "change:_isComplete": true
+                        },
+                        "blocks": {
+                                "change:_isComplete": true
+                        },
+                        "components": {
+                                "change:_isComplete": true
+                        }
+                },
+                "_lrsFailureBehaviour": "show",
+                "_retryConnectionAttempts": 5
+        }
 }
