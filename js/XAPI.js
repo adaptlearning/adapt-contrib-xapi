@@ -1146,26 +1146,41 @@ class XAPI extends Backbone.Model {
     for (const collectionName of changedCollectionNames) {
       const newState = this.get('state')[collectionName];
 
-      await new Promise(resolve => {
-        this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-          if (error) {
-            if (this.retriesRemaining > 0) {
-              this.retriesRemaining--;
+      const maxAttempts = this.getConfig('_retryConnectionAttempts') || 0;
 
-              logging.error('adapt-contrib-xapi: xAPI sendStateToServer failed. Retrying...');
-              this.sendStateToServer();
-              return;
+      while (this.retriesRemaining > 0) {
+        const result = await new Promise(resolve => {
+          this.xapiWrapper.sendState(
+            activityId,
+            actor,
+            collectionName,
+            registration,
+            newState,
+            null,
+            null,
+            (error, xhr) => {
+              if (error) {
+                logging.error('adapt-contrib-xapi: xAPI sendStateToServer failed. Retrying...');
+                return resolve({ success: false, error });
+              }
+              Adapt.trigger('xapi:lrs:sendState:success', newState);
+              return resolve({ success: true });
             }
+          );
+        });
 
-            Adapt.trigger('xapi:lrs:sendState:error', error);
-            return resolve();
+        if (result.success) {
+          this.retriesRemaining = maxAttempts;
+          break;
+        } else {
+          // Last retry attempt has just been performed
+          if (this.retriesRemaining = 1) {
+            Adapt.trigger('xapi:lrs:sendState:error', result.error);
           }
 
-          this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
-          Adapt.trigger('xapi:lrs:sendState:success', newState);
-          return resolve();
-        });
-      });
+          this.retriesRemaining--;
+        }
+      }
     }
   }
 
