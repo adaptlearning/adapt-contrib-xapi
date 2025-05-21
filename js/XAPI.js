@@ -267,6 +267,8 @@ class XAPI extends Backbone.Model {
       if (error) {
         if (this.retriesRemaining > 0) {
           this.retriesRemaining--;
+
+          logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed. Retrying...');
           this.initialize();
           return;
         }
@@ -1148,6 +1150,8 @@ class XAPI extends Backbone.Model {
           if (error) {
             if (this.retriesRemaining > 0) {
               this.retriesRemaining--;
+
+              logging.error('adapt-contrib-xapi: xAPI sendStateToServer failed. Retrying...');
               this.sendStateToServer();
               return;
             }
@@ -1449,6 +1453,8 @@ class XAPI extends Backbone.Model {
     } catch (error) {
       if (this.retriesRemaining > 0) {
         this.retriesRemaining--;
+
+        logging.error('adapt-contrib-xapi: xAPI sendStatementsSync failed. Retrying...');
         this.sendStatementsSync(statements);
         return;
       }
@@ -1486,7 +1492,9 @@ class XAPI extends Backbone.Model {
       if (error) {
         if (this.retriesRemaining > 0) {
           this.retriesRemaining--;
-          this.sendStatementsSync(statements);
+
+          logging.error('adapt-contrib-xapi: xAPI sendStatement failed. Retrying...');
+          this.onStatementReady(statement, attachments);
           return;
         }
 
