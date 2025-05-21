@@ -34,6 +34,7 @@ class XAPI extends Backbone.Model {
     this.defaultLang = 'en-US';
     this.isComplete = false;
     this.changedCollectionNames = {};
+    this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
 
     // Default events to send statements for.
     this.coreEvents = {
