@@ -34,6 +34,7 @@ class XAPI extends Backbone.Model {
     this.defaultLang = 'en-US';
     this.isComplete = false;
     this.changedCollectionNames = {};
+    this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
 
     // Default events to send statements for.
     this.coreEvents = {
@@ -265,10 +266,19 @@ class XAPI extends Backbone.Model {
 
     _.defer(() => {
       if (error) {
+        if (this.retriesRemaining > 0) {
+          this.retriesRemaining--;
+
+          logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed. Retrying...');
+          this.initialize();
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:initialize:error', error);
         return;
       }
 
+      this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
       Adapt.trigger('xapi:lrs:initialize:success');
     });
   }
@@ -442,9 +452,7 @@ class XAPI extends Backbone.Model {
     // If cmi5 and
     // the launch mode is not normal (but either Review or Browse)
     // THEN do not listen to cmi5 defined statements
-    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') {
-      return;
-    }
+    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') return;
 
     // Allow surfacing the learner's info in _globals.
     this.getLearnerInfo();
@@ -1138,17 +1146,41 @@ class XAPI extends Backbone.Model {
     for (const collectionName of changedCollectionNames) {
       const newState = this.get('state')[collectionName];
 
-      await new Promise(resolve => {
-        this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-          if (error) {
-            Adapt.trigger('xapi:lrs:sendState:error', error);
-            return resolve();
+      const maxAttempts = this.getConfig('_retryConnectionAttempts') || 0;
+
+      while (this.retriesRemaining > 0) {
+        const result = await new Promise(resolve => {
+          this.xapiWrapper.sendState(
+            activityId,
+            actor,
+            collectionName,
+            registration,
+            newState,
+            null,
+            null,
+            (error, xhr) => {
+              if (error) {
+                logging.error('adapt-contrib-xapi: xAPI sendStateToServer failed. Retrying...');
+                return resolve({ success: false, error });
+              }
+              Adapt.trigger('xapi:lrs:sendState:success', newState);
+              return resolve({ success: true });
+            }
+          );
+        });
+
+        if (result.success) {
+          this.retriesRemaining = maxAttempts;
+          break;
+        } else {
+          // Last retry attempt has just been performed
+          if (this.retriesRemaining = 1) {
+            Adapt.trigger('xapi:lrs:sendState:error', result.error);
           }
 
-          Adapt.trigger('xapi:lrs:sendState:success', newState);
-          return resolve();
-        });
-      });
+          this.retriesRemaining--;
+        }
+      }
     }
   }
 
@@ -1435,9 +1467,19 @@ class XAPI extends Backbone.Model {
         method: 'POST'
       });
     } catch (error) {
+      if (this.retriesRemaining > 0) {
+        this.retriesRemaining--;
+
+        logging.error('adapt-contrib-xapi: xAPI sendStatementsSync failed. Retrying...');
+        this.sendStatementsSync(statements);
+        return;
+      }
+
       Adapt.trigger('xapi:lrs:sendStatement:error', error);
       return;
     }
+
+    this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
     Adapt.trigger('xapi:lrs:sendStatement:success', statements);
   }
 
@@ -1464,12 +1506,22 @@ class XAPI extends Backbone.Model {
   async onStatementReady(statement, attachments) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
+        if (this.retriesRemaining > 0) {
+          this.retriesRemaining--;
+
+          logging.error('adapt-contrib-xapi: xAPI sendStatement failed. Retrying...');
+          this.onStatementReady(statement, attachments);
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:sendStatement:error', error);
         throw error;
       }
 
+      this.retriesRemaining = this.getConfig('_retryConnectionAttempts');
       Adapt.trigger('xapi:lrs:sendStatement:success', body);
     };
+
     if (this.cmi5) {
       this.cmi5.mergeDefaultContext(statement);
     }
