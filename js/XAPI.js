@@ -71,7 +71,7 @@ class XAPI extends Backbone.Model {
   }
 
   /** Implementation starts here */
-  async initialize() {
+  async initialize(retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     if (!this.getConfig('_isEnabled')) return this;
     if (this.getConfig('_specification') === 'cmi5') {
       this.cmi5 = new CMI5(this);
@@ -83,7 +83,7 @@ class XAPI extends Backbone.Model {
     try {
       await this.initializeWrapper();
     } catch (error) {
-      this.onInitialised(error);
+      this.onInitialised(error, retriesRemaining);
       return this;
     }
 
@@ -111,7 +111,7 @@ class XAPI extends Backbone.Model {
     if (!this.validateProps()) {
       const error = new Error('Missing required properties');
       logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed', error);
-      this.onInitialised(error);
+      this.onInitialised(error, retriesRemaining);
       return this;
     }
 
@@ -135,7 +135,7 @@ class XAPI extends Backbone.Model {
     try {
       await this.sendStatements(statements);
     } catch (error) {
-      this.onInitialised(error);
+      this.onInitialised(error, retriesRemaining);
       return this;
     }
 
@@ -155,7 +155,7 @@ class XAPI extends Backbone.Model {
     try {
       await this.getState();
     } catch (error) {
-      this.onInitialised(error);
+      this.onInitialised(error, retriesRemaining);
       return this;
     }
 
@@ -258,13 +258,19 @@ class XAPI extends Backbone.Model {
   /**
    * Triggers 'plugin:endWait' event (if required).
    */
-  onInitialised(error) {
+  onInitialised(error, retriesRemaining) {
     this.set({ isInitialised: !error });
 
     wait.end();
 
     _.defer(() => {
       if (error) {
+        if (retriesRemaining > 0) {
+          logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed. Retrying...');
+          this.initialize(retriesRemaining - 1);
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:initialize:error', error);
         return;
       }
@@ -442,9 +448,7 @@ class XAPI extends Backbone.Model {
     // If cmi5 and
     // the launch mode is not normal (but either Review or Browse)
     // THEN do not listen to cmi5 defined statements
-    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') {
-      return;
-    }
+    if (this.cmi5 && this.get('launchData')?.launchMode !== 'Normal') return;
 
     // Allow surfacing the learner's info in _globals.
     this.getLearnerInfo();
@@ -1138,17 +1142,41 @@ class XAPI extends Backbone.Model {
     for (const collectionName of changedCollectionNames) {
       const newState = this.get('state')[collectionName];
 
-      await new Promise(resolve => {
-        this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, (error, xhr) => {
-          if (error) {
-            Adapt.trigger('xapi:lrs:sendState:error', error);
-            return resolve();
+      const retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0;
+
+      while (retriesRemaining > 0) {
+        const result = await new Promise(resolve => {
+          this.xapiWrapper.sendState(
+            activityId,
+            actor,
+            collectionName,
+            registration,
+            newState,
+            null,
+            null,
+            (error, xhr) => {
+              if (error) {
+                logging.error('adapt-contrib-xapi: xAPI sendStateToServer failed. Retrying...');
+                return resolve({ success: false, error });
+              }
+
+              Adapt.trigger('xapi:lrs:sendState:success', newState);
+              return resolve({ success: true });
+            }
+          );
+        });
+
+        if (result.success) {
+          break;
+        } else {
+          // Last retry attempt has just been performed
+          if (retriesRemaining === 1) {
+            Adapt.trigger('xapi:lrs:sendState:error', result.error);
           }
 
-          Adapt.trigger('xapi:lrs:sendState:success', newState);
-          return resolve();
-        });
-      });
+          retriesRemaining--;
+        }
+      }
     }
   }
 
@@ -1395,7 +1423,7 @@ class XAPI extends Backbone.Model {
    * feature not available in AJAX requests. This makes the sending of suspended
    * and terminated statements more reliable.
    */
-  async sendStatementsSync(statements) {
+  async sendStatementsSync(statements, retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     const lrs = window.ADL.XAPIWrapper.lrs;
 
     // Fetch not supported in IE and keepalive/custom headers
@@ -1435,9 +1463,16 @@ class XAPI extends Backbone.Model {
         method: 'POST'
       });
     } catch (error) {
+      if (retriesRemaining > 0) {
+        logging.error('adapt-contrib-xapi: xAPI sendStatementsSync failed. Retrying...');
+        this.sendStatementsSync(statements, retriesRemaining - 1);
+        return;
+      }
+
       Adapt.trigger('xapi:lrs:sendStatement:error', error);
       return;
     }
+
     Adapt.trigger('xapi:lrs:sendStatement:success', statements);
   }
 
@@ -1460,16 +1495,24 @@ class XAPI extends Backbone.Model {
    * Send an xAPI statement to the LRS once all async operations are complete
    * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
+   * @param {int} retriesRemaining - The number of times to attempt retry of function on failure.
    */
-  async onStatementReady(statement, attachments) {
+  async onStatementReady(statement, attachments, retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
+        if (retriesRemaining > 0) {
+          logging.error('adapt-contrib-xapi: xAPI sendStatement failed. Retrying...');
+          this.onStatementReady(statement, attachments, retriesRemaining - 1);
+          return;
+        }
+
         Adapt.trigger('xapi:lrs:sendStatement:error', error);
         throw error;
       }
 
       Adapt.trigger('xapi:lrs:sendStatement:success', body);
     };
+
     if (this.cmi5) {
       this.cmi5.mergeDefaultContext(statement);
     }

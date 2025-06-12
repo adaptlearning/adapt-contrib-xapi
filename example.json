@@ -30,6 +30,7 @@
 				"change:_isComplete": true
 			}
 		},
-		"_lrsFailureBehaviour": "show"
+		"_lrsFailureBehaviour": "show",
+		"_retryConnectionAttempts": 5
 	}
 }
