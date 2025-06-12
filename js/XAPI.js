@@ -71,7 +71,7 @@ class XAPI extends Backbone.Model {
   }
 
   /** Implementation starts here */
-  async initialize(retriesRemaining = this.getConfig('_retryConnectionAttempts')) {
+  async initialize(retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     if (!this.getConfig('_isEnabled')) return this;
     if (this.getConfig('_specification') === 'cmi5') {
       this.cmi5 = new CMI5(this);
@@ -1170,7 +1170,7 @@ class XAPI extends Backbone.Model {
           break;
         } else {
           // Last retry attempt has just been performed
-          if (retriesRemaining = 1) {
+          if (retriesRemaining === 1) {
             Adapt.trigger('xapi:lrs:sendState:error', result.error);
           }
 
@@ -1423,7 +1423,7 @@ class XAPI extends Backbone.Model {
    * feature not available in AJAX requests. This makes the sending of suspended
    * and terminated statements more reliable.
    */
-  async sendStatementsSync(statements, retriesRemaining = this.getConfig('_retryConnectionAttempts')) {
+  async sendStatementsSync(statements, retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     const lrs = window.ADL.XAPIWrapper.lrs;
 
     // Fetch not supported in IE and keepalive/custom headers
@@ -1497,7 +1497,7 @@ class XAPI extends Backbone.Model {
    * @param {array} [attachments] - An array of attachments to pass to the LRS.
    * @param {int} retriesRemaining - The number of times to attempt retry of function on failure.
    */
-  async onStatementReady(statement, attachments, retriesRemaining = this.getConfig('_retryConnectionAttempts')) {
+  async onStatementReady(statement, attachments, retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
         if (retriesRemaining > 0) {
