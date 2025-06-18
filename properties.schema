@@ -85,6 +85,8 @@
                   "type": "string",
                   "title": "assignable unit (AU) ID",
                   "default": "1",
+                  "inputType": "Text",
+                  "validators": [],
                   "help": "Unique identifier for this assignable unit."
                 },
                 "_endpoint": {
