@@ -319,7 +319,7 @@
                   "inputType": "Number",
                   "validators": ["required", "number"],
                   "help": "Indicates how many attempts this course should make to retry initialization or sending state/statements to a configured Learning Record Store (LRS) after a failure."
-                },
+                }
               }
             }
           }
