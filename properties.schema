@@ -83,8 +83,10 @@
                 },
                 "_auID": {
                   "type": "string",
-                  "title": "assignable unit (AU) ID",
+                  "title": "Assignable Unit (AU) ID",
                   "default": "1",
+                  "inputType": "Text",
+                  "validators": [],
                   "help": "Unique identifier for this assignable unit."
                 },
                 "_endpoint": {
@@ -310,6 +312,15 @@
                   },
                   "validators": [],
                   "help": "Determines how the plugin should behave whenever it fails to successfully connect or send statements to the configured LRS"
+                },
+                "_retryConnectionAttempts": {
+                  "type": "number",
+                  "required": true,
+                  "default": 0,
+                  "title": "How many attempts should be made to reestablish an LRS connection if disconnected?",
+                  "inputType": "Number",
+                  "validators": ["required", "number"],
+                  "help": "Indicates how many attempts this course should make to retry initialization or sending state/statements to a configured Learning Record Store (LRS) after a failure."
                 }
               }
             }

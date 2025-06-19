@@ -504,9 +504,8 @@ class CMI5 extends Backbone.Controller {
    * @param {string} returnURL - The URL to redirect to after exiting the course.
    */
   exitCourse(returnURL) {
-    if (!returnURL) {
-      return;
-    }
+    if (!returnURL) return;
+
     window.location.href = returnURL;
   }
 }

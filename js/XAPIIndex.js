@@ -13,9 +13,7 @@ class XAPIIndex extends Backbone.Controller {
   async onDataLoaded() {
     const config = Adapt.config.get('_xapi') || {};
 
-    if (!config._isEnabled) {
-      return;
-    }
+    if (!config._isEnabled) return;
 
     const xapi = await XAPI.getInstance();
 
