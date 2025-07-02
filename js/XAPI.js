@@ -265,7 +265,7 @@ class XAPI extends Backbone.Model {
 
     _.defer(() => {
       if (error) {
-        if (retriesRemaining > 0) {
+        if (retriesRemaining >= 0) {
           logging.error('adapt-contrib-xapi: xAPI Wrapper initialisation failed. Retrying...');
           this.initialize(retriesRemaining - 1);
           return;
@@ -1144,7 +1144,7 @@ class XAPI extends Backbone.Model {
 
       const retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0;
 
-      while (retriesRemaining > 0) {
+      while (retriesRemaining >= 0) {
         const result = await new Promise(resolve => {
           this.xapiWrapper.sendState(
             activityId,
@@ -1170,7 +1170,7 @@ class XAPI extends Backbone.Model {
           break;
         } else {
           // Last retry attempt has just been performed
-          if (retriesRemaining === 1) {
+          if (retriesRemaining === 0) {
             Adapt.trigger('xapi:lrs:sendState:error', result.error);
           }
 
@@ -1463,7 +1463,7 @@ class XAPI extends Backbone.Model {
         method: 'POST'
       });
     } catch (error) {
-      if (retriesRemaining > 0) {
+      if (retriesRemaining >= 0) {
         logging.error('adapt-contrib-xapi: xAPI sendStatementsSync failed. Retrying...');
         this.sendStatementsSync(statements, retriesRemaining - 1);
         return;
@@ -1500,7 +1500,7 @@ class XAPI extends Backbone.Model {
   async onStatementReady(statement, attachments, retriesRemaining = this.getConfig('_retryConnectionAttempts') || 0) {
     const sendStatementCallback = (error, res, body) => {
       if (error) {
-        if (retriesRemaining > 0) {
+        if (retriesRemaining >= 0) {
           logging.error('adapt-contrib-xapi: xAPI sendStatement failed. Retrying...');
           this.onStatementReady(statement, attachments, retriesRemaining - 1);
           return;
