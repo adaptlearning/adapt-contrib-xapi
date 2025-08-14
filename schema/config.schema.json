@@ -193,14 +193,8 @@
               "description": "Determines how the plugin should behave whenever it fails to successfully connect or send statements to the configured LRS",
               "default": "show",
               "enum": [
-                {
-                  "label": "Ignore errors",
-                  "val": "ignore"
-                },
-                {
-                  "label": "Show errors",
-                  "val": "show"
-                }
+                  "ignore",
+                  "show"
               ],
               "_backboneForms": "Select"
             },
