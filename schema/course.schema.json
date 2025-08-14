@@ -1,0 +1,50 @@
+{
+  "$anchor": "extension-course",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$patch": {
+    "source": {
+      "$ref": "course"
+    },
+    "with": {
+      "properties": {
+        "_globals": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "_extension": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "confirm": {
+                  "type": "string",
+                  "title": "Confirm",
+                  "default": "OK",
+                  "_adapt": {
+                    "translatable": true
+                  }
+                },
+                "lrsConnectionErrorTitle": {
+                  "type": "string",
+                  "title": "LRS connection error title",
+                  "default": "LRS not available",
+                  "_adapt": {
+                    "translatable": true
+                  }
+                },
+                "lrsConnectionErrorMessage": {
+                  "type": "string",
+                  "title": "LRS connection error message",
+                  "default": "We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.",
+                  "_adapt": {
+                    "translatable": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
