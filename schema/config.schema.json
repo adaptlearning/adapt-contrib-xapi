@@ -1,0 +1,212 @@
+{
+  "$anchor": "extension-config",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "$patch": {
+    "source": {
+      "$ref": "config"
+    },
+    "with": {
+      "properties": {
+        "_xapi": {
+          "type": "object",
+          "title": "xAPI",
+          "default": {},
+          "properties": {
+            "_isEnabled": {
+              "type": "boolean",
+              "title": "Is Enabled",
+              "description": "Indicates whether this course should send statements to a configured Learning Record Store (LRS).",
+              "default": true
+            },
+            "_specification": {
+              "type": "string",
+              "title": "Specification",
+              "description": "Indicates whether the plugin should use standard xAPI or cmi5 profile.",
+              "default": "xAPI",
+              "enum": [
+                "xAPI",
+                "cmi5"
+              ],
+              "_backboneForms": "Select"
+            },
+            "_activityID": {
+              "type": "string",
+              "title": "Activity ID",
+              "description": "Unique identifier for this xAPI activity, i.e. usually the URL to the course.",
+              "default": ""
+            },
+            "_auID": {
+              "type": "string",
+              "title": "Assignable Unit (AU) ID",
+              "description": "Unique identifier for this assignable unit.",
+              "default": "1"
+            },
+            "_endpoint": {
+              "type": "string",
+              "title": "Endpoint",
+              "description": "The Learning Record Store (LRS) URL where xAPI statements will be sent to.",
+              "default": ""
+            },
+            "_user": {
+              "type": "string",
+              "title": "User (or Key)",
+              "description": "The 'user' or 'key' as defined in your Learning Record Store (LRS).",
+              "default": ""
+            },
+            "_password": {
+              "type": "string",
+              "title": "Password (or Secret)",
+              "description": "The 'password' or 'secret' as defined in your Learning Record Store (LRS).",
+              "default": ""
+            },
+            "_lang": {
+              "type": "string",
+              "title": "Verb language",
+              "description": "Select the language for verbs to be sent to the LRS.",
+              "default": "en-US",
+              "enum": [
+                "de-DE",
+                "en-US",
+                "fr-FR",
+                "es-ES"
+              ],
+              "_backboneForms": "Select"
+            },
+            "_generateIds": {
+              "type": "boolean",
+              "title": "Auto-generate ID for statements",
+              "description": "When enabled, this will append an auto-generated 'id' value for all xAPI statements.  NOTE: It is recommended this is left off so that the LRS will generate the IDs.",
+              "default": false
+            },
+            "_shouldTrackState": {
+              "type": "boolean",
+              "title": "Track state",
+              "description": "When enabled, the associated LRS be used to track state via the State API.",
+              "default": true
+            },
+            "_shouldUseRegistration": {
+              "type": "boolean",
+              "title": "Use registration",
+              "description": "When enabled, the registration will be used as part of get/set calls to the State API.",
+              "default": true
+            },
+            "_componentBlacklist": {
+              "type": "string",
+              "title": "Component blacklist",
+              "description": "Comma separated list of components which will not send statements.",
+              "default": "blank,graphic"
+            },
+            "_coreEvents": {
+              "type": "object",
+              "title": "Core Events",
+              "default": {},
+              "properties": {
+                "Adapt": {
+                  "type": "object",
+                  "title": "Adapt",
+                  "default": {},
+                  "properties": {
+                    "router:menu": {
+                      "type": "boolean",
+                      "title": "router:menu",
+                      "description": "Triggered when a menu item is displayed.",
+                      "default": false
+                    },
+                    "router:page": {
+                      "type": "boolean",
+                      "title": "router:page",
+                      "description": "Triggered when a page is displayed.",
+                      "default": false
+                    },
+                    "questionView:recordInteraction": {
+                      "type": "boolean",
+                      "title": "questionView:recordInteraction",
+                      "description": "Triggered when a user interacts with a question component.",
+                      "default": true
+                    },
+                    "assessments:complete": {
+                      "type": "boolean",
+                      "title": "assessments:complete",
+                      "description": "Triggered when an individual assessment is completed.",
+                      "default": true
+                    }
+                  }
+                },
+                "contentObjects": {
+                  "type": "object",
+                  "title": "contentObjects",
+                  "default": {},
+                  "properties": {
+                    "change:_isComplete": {
+                      "type": "boolean",
+                      "title": "change:_isComplete",
+                      "description": "Triggered when a contentobject, i.e. a page or menu item, is completed.",
+                      "default": false
+                    }
+                  }
+                },
+                "articles": {
+                  "type": "object",
+                  "title": "articles",
+                  "default": {},
+                  "properties": {
+                    "change:_isComplete": {
+                      "type": "boolean",
+                      "title": "change:_isComplete",
+                      "description": "Triggered when an article is completed.",
+                      "default": false
+                    }
+                  }
+                },
+                "blocks": {
+                  "type": "object",
+                  "title": "blocks",
+                  "default": {},
+                  "properties": {
+                    "change:_isComplete": {
+                      "type": "boolean",
+                      "title": "change:_isComplete",
+                      "description": "Triggered when a block is completed.",
+                      "default": false
+                    }
+                  }
+                },
+                "components": {
+                  "type": "object",
+                  "title": "components",
+                  "default": {},
+                  "properties": {
+                    "change:_isComplete": {
+                      "type": "boolean",
+                      "title": "change:_isComplete",
+                      "description": "Triggered when a component is completed.",
+                      "default": true
+                    }
+                  }
+                }
+              }
+            },
+            "_lrsFailureBehaviour": {
+              "type": "string",
+              "title": "LRS connection failure behaviour",
+              "description": "Determines how the plugin should behave whenever it fails to successfully connect or send statements to the configured LRS",
+              "default": "show",
+              "enum": [
+                  "ignore",
+                  "show"
+              ],
+              "_backboneForms": "Select"
+            },
+            "_retryConnectionAttempts": {
+              "type": "number",
+              "title": "How many attempts should be made to reestablish an LRS connection if disconnected?",
+              "description": "Indicates how many attempts this course should make to retry initialization or sending state/statements to a configured Learning Record Store (LRS) after a failure.",
+              "default": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}
